@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Portfolio social card placeholder</title>
+  <desc id="description">Neutral black and off-white placeholder for the unfinished portfolio social image.</desc>
+  <rect width="1200" height="630" fill="#fefefc"/>
+  <rect x="56" y="56" width="1088" height="518" fill="none" stroke="#171717" stroke-width="2"/>
+  <text x="100" y="188" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#171717">WEBAPP DESIGNER &amp; FRONT-END DEVELOPER</text>
+  <text x="100" y="300" font-family="Arial, sans-serif" font-size="68" font-weight="700" fill="#171717">PORTFOLIO V0</text>
+  <text x="100" y="370" font-family="Arial, sans-serif" font-size="24" fill="#555550">SOCIAL IMAGE PLACEHOLDER — REPLACE BEFORE LAUNCH</text>
+  <rect x="100" y="468" width="260" height="18" fill="#171717"/>
+</svg>

@@ -1,0 +1,101 @@
+html {
+  background: var(--page);
+  scroll-padding-block-start: 6rem;
+}
+
+body {
+  min-inline-size: 20rem;
+  min-block-size: 100vh;
+  background: var(--page);
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+button {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 4px;
+}
+
+::selection {
+  color: var(--inverse-text);
+  background: var(--inverse-bg);
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 100;
+  translate: 0 -180%;
+  padding: var(--space-3) var(--space-4);
+  color: var(--inverse-text);
+  background: var(--inverse-bg);
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  translate: 0;
+}
+
+.page-surface,
+main {
+  min-inline-size: 0;
+}
+
+.page-surface {
+  background: var(--page);
+}
+
+.standard-page {
+  max-inline-size: var(--content-max);
+  min-block-size: 72vh;
+  margin-inline: auto;
+}
+
+.narrow-page {
+  display: grid;
+  align-content: center;
+  gap: var(--space-5);
+  max-inline-size: 52rem;
+  padding: var(--space-10) var(--space-7);
+}
+
+.narrow-page p:not(.role-title) {
+  max-inline-size: var(--readable);
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-7);
+}
+
+.section-heading-row h2 {
+  max-inline-size: 18ch;
+}
+
+.error-page {
+  display: grid;
+  align-content: center;
+  gap: var(--space-5);
+  min-block-size: 100vh;
+  max-inline-size: 54rem;
+  margin-inline: auto;
+  padding: var(--space-8);
+}
+
+.error-page pre {
+  overflow: auto;
+  padding: var(--space-4);
+  border: var(--border);
+  background: var(--soft);
+}

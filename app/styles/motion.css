@@ -1,0 +1,74 @@
+.site-intro {
+  display: none;
+}
+
+html[data-intro="play"] .intro-target {
+  animation: page-resolve var(--duration-intro) var(--ease-out) both;
+}
+
+html[data-intro="play"] .site-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: var(--inverse-text);
+  background: var(--inverse-bg);
+  pointer-events: none;
+  animation: intro-clear var(--duration-intro) var(--ease-out) both;
+}
+
+.site-intro span {
+  font-size: var(--step-2);
+  font-weight: 820;
+  letter-spacing: -0.06em;
+}
+
+.site-intro i {
+  inline-size: 4rem;
+  block-size: 2px;
+  background: currentColor;
+  transform-origin: left;
+  animation: intro-line var(--duration-intro) var(--ease-out) both;
+}
+
+@keyframes page-resolve {
+  0% { opacity: 0.72; filter: blur(4px); }
+  60% { opacity: 0.94; filter: blur(1px); }
+  100% { opacity: 1; filter: none; }
+}
+
+@keyframes intro-clear {
+  0%, 48% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes intro-line {
+  0% { scale: 0 1; }
+  55%, 100% { scale: 1 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html[data-intro="play"] .site-intro {
+    display: none;
+  }
+
+  html[data-intro="play"] .intro-target {
+    animation: none;
+  }
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# V0 review build: replace this file before public launch.

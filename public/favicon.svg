@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="JS portfolio mark">
+  <rect width="64" height="64" rx="8" fill="#171717"/>
+  <path d="M15 14h14v25c0 8-4 12-12 12h-4v-9h3c3 0 4-1 4-4V23h-5V14Zm20 0h16v9H39v6h10v9H39v13h-9V23c0-6 2-9 5-9Z" fill="#fefefc"/>
+</svg>

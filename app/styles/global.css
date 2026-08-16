@@ -54,6 +54,30 @@ main {
   background: var(--page);
 }
 
+#hero,
+#selected-work,
+#skills,
+#lab,
+#experience,
+#references,
+#making-of,
+#contact {
+  scroll-margin-block-start: 1rem;
+}
+
+@media (max-width: 67.5rem) {
+  #hero,
+  #selected-work,
+  #skills,
+  #lab,
+  #experience,
+  #references,
+  #making-of,
+  #contact {
+    scroll-margin-block-start: 9rem;
+  }
+}
+
 .standard-page {
   max-inline-size: var(--content-max);
   min-block-size: 72vh;

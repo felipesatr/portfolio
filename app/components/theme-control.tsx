@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const themes = [
   { id: "light", label: "Neutral light" },
@@ -21,6 +22,8 @@ function selectTheme(theme: ThemeId) {
 }
 
 export function ThemeControl() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const controlRef = useRef<HTMLFieldSetElement>(null);
   const selectedTheme = useSyncExternalStore(
     (onStoreChange) => {
       window.addEventListener("portfolio-theme-change", onStoreChange);
@@ -32,27 +35,79 @@ export function ThemeControl() {
     },
     () => "light",
   );
+  const selectedIndex = themes.findIndex((theme) => theme.id === selectedTheme);
+  const selectedLabel = themes[selectedIndex]?.label ?? themes[0].label;
+  const progress = `${(selectedIndex / (themes.length - 1)) * 100}%`;
+
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!controlRef.current?.contains(event.target as Node)) setIsExpanded(false);
+    };
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setIsExpanded(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isExpanded]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    const keyTargets: Partial<Record<string, number>> = {
+      Home: 0,
+      End: themes.length - 1,
+      ArrowLeft: Math.max(0, selectedIndex - 1),
+      ArrowDown: Math.max(0, selectedIndex - 1),
+      ArrowRight: Math.min(themes.length - 1, selectedIndex + 1),
+      ArrowUp: Math.min(themes.length - 1, selectedIndex + 1),
+    };
+    const targetIndex = keyTargets[event.key];
+    if (targetIndex === undefined) return;
+
+    event.preventDefault();
+    selectTheme(themes[targetIndex].id);
+  };
 
   return (
-    <fieldset className="theme-control">
-      <legend>Theme</legend>
-      <span className="theme-control__count" aria-hidden="true">
-        {themes.findIndex((theme) => theme.id === selectedTheme) + 1} / {themes.length}
-      </span>
-      <div className="theme-control__options">
-        {themes.map((theme) => (
-          <button
-            key={theme.id}
-            type="button"
-            className={`theme-swatch theme-swatch--${theme.id}`}
-            aria-label={`Use ${theme.label} theme`}
-            aria-pressed={selectedTheme === theme.id}
-            title={theme.label}
-            onClick={() => selectTheme(theme.id)}
-          >
-            <span aria-hidden="true" />
-          </button>
-        ))}
+    <fieldset ref={controlRef} className={`theme-control${isExpanded ? " theme-control--expanded" : ""}`}>
+      <legend className="visually-hidden">Theme</legend>
+      <button
+        className="theme-control__toggle"
+        type="button"
+        aria-expanded={isExpanded}
+        aria-controls="theme-slider-panel"
+        aria-label={`${isExpanded ? "Close" : "Open"} theme selector. Current theme: ${selectedLabel}`}
+        onClick={() => setIsExpanded((expanded) => !expanded)}
+        style={{ "--theme-progress": progress } as CSSProperties}
+      >
+        <span aria-hidden="true" />
+      </button>
+      <div className="theme-slider-panel" id="theme-slider-panel">
+        <span className="theme-slider-panel__ticks" aria-hidden="true">
+          {themes.map((theme, index) => <i className={index === selectedIndex ? "is-active" : undefined} key={theme.id} />)}
+        </span>
+        <label title={`${selectedLabel} theme`}>
+          <span className="visually-hidden">Select color theme</span>
+          <span className="theme-slider-panel__range">
+        <input
+          type="range"
+          min="0"
+          max={themes.length - 1}
+          step="1"
+          value={selectedIndex}
+          aria-valuetext={selectedLabel}
+          onChange={(event) => selectTheme(themes[Number(event.currentTarget.value)].id)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsExpanded(true)}
+          style={{ "--theme-progress": progress } as CSSProperties}
+        />
+          </span>
+        </label>
       </div>
     </fieldset>
   );

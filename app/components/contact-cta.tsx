@@ -1,14 +1,15 @@
 import { Link } from "react-router";
 import { siteContent } from "~/content/site";
 import { ArrowUpRightIcon } from "./icons";
+import { RevealText, RevealTitle } from "./motion-reveal";
 
 export function ContactCta() {
   return (
-    <section className="contact-cta" aria-labelledby="contact-cta-heading">
-      <h2 id="contact-cta-heading">Design judgment. Practical front-end. Finished work.</h2>
+    <section className="contact-cta" id="contact" aria-labelledby="contact-cta-heading">
+      <RevealTitle id="contact-cta-heading" lines={["Design judgment.", "Practical front-end.", "Finished work."]} />
       <div className="contact-cta__lower">
         <div>
-          <p>Open to webapp design, UI, design-focused front-end, and web-production roles.</p>
+          <RevealText delay={120}>Open to webapp design, UI, design-focused front-end, and web-production roles.</RevealText>
           <span>{siteContent.location} · Remote availability placeholder</span>
         </div>
         <div className="contact-cta__actions">

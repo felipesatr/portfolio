@@ -50,6 +50,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: earlyPreferenceScript }} />
       </head>
       <body>
+        <noscript>
+          <style>{`.reveal-title__line-inner,.reveal-text{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
         {children}
         <ScrollRestoration />
         <Scripts />

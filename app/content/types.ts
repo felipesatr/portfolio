@@ -35,9 +35,7 @@ export type Audience = (typeof audienceIds)[number];
 export interface AudienceContent {
   id: Audience;
   label: string;
-  statement: string;
-  evidenceLabel?: string;
-  evidenceHref?: string;
+  headline: string;
 }
 
 export interface SkillGroup {

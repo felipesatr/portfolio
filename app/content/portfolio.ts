@@ -20,11 +20,11 @@ export const projects: Project[] = [
 ];
 
 export const audienceContent: AudienceContent[] = [
-  { id: "anyone", label: "Anyone", statement: "I design and build responsive, accessible websites and interfaces shaped by real content, production requirements, and the people responsible for delivering them.", evidenceLabel: "View selected work", evidenceHref: "#selected-work" },
-  { id: "recruiters", label: "Recruiters", statement: "Quickly see role fit, relevant responsibilities, practical implementation, and finished delivery without having to decode the site.", evidenceLabel: "Review experience", evidenceHref: "#experience" },
-  { id: "design-directors", label: "Design directors", statement: "See how visual judgment, content hierarchy, interaction decisions, and implementation constraints are handled as one connected design problem.", evidenceLabel: "Review design approach", evidenceHref: "/about#approach" },
-  { id: "engineers", label: "Engineers", statement: "See semantic structure, responsive CSS, accessibility decisions, typed content, and practical front-end implementation without unnecessary architecture.", evidenceLabel: "See implementation", evidenceHref: "/work/behind-this-portfolio" },
-  { id: "project-leads", label: "Project leads", statement: "See how requirements, quality checks, production constraints, collaboration, and delivery responsibilities are kept visible throughout the work.", evidenceLabel: "Review delivery experience", evidenceHref: "#experience" },
+  { id: "anyone", label: "For anyone", headline: "Design the interface. Understand the constraints. Finish the work." },
+  { id: "recruiters", label: "Recruiters", headline: "A webapp designer who can carry the work into the browser." },
+  { id: "design-directors", label: "Design directors", headline: "Design judgment that survives real content, constraints, and delivery." },
+  { id: "engineers", label: "Engineers", headline: "Interfaces designed to be understood, built, and maintained." },
+  { id: "project-leads", label: "Project leads", headline: "Clear interfaces. Practical decisions. Reliable delivery." },
 ];
 
 export const skillGroups: SkillGroup[] = [
@@ -46,6 +46,12 @@ export const testimonials: Testimonial[] = [
   { id: "reference-01", quote: "Verified colleague reference will appear here after wording and publication permission are confirmed.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
   { id: "reference-02", quote: "This space is reserved for a reference about quality, collaboration, or dependable delivery.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
   { id: "reference-03", quote: "This space is reserved for a reference about leadership, process, or team support.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-04", quote: "This space is reserved for verified feedback about responsive implementation and attention to detail.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-05", quote: "This space is reserved for verified feedback about ownership, follow-through, and finished delivery.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-06", quote: "This space is reserved for verified feedback about collaboration across design, content, and development.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-07", quote: "This space is reserved for verified feedback about production workflows and consistent quality.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-08", quote: "This space is reserved for verified feedback about communication, planning, and timeline awareness.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
+  { id: "reference-09", quote: "This space is reserved for verified feedback about mentoring, leadership, and team support.", name: "Name placeholder", role: "Role placeholder", relationship: "Professional relationship placeholder", permissionStatus: "unpublished-placeholder" },
 ];
 
 export const labExperiments: LabExperiment[] = [

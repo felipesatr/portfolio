@@ -1,19 +1,21 @@
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Link } from "react-router";
 import { experience, labExperiments, skillGroups, testimonials } from "~/content/portfolio";
-import { ArrowUpRightIcon } from "./icons";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "./icons";
+import { RevealText, RevealTitle } from "./motion-reveal";
 
 export function SkillsSection() {
   return (
-    <section className="skills-section" aria-labelledby="skills-heading">
+    <section className="skills-section" id="skills" aria-labelledby="skills-heading">
       <div className="skills-section__intro">
-        <h2 id="skills-heading">Design judgment and front-end execution belong in the same conversation.</h2>
-        <p>The detailed work process belongs on About. Here, the distinction between established strengths and developing skills stays explicit.</p>
+        <RevealTitle id="skills-heading" lines={["Design judgment and front-end execution", "belong in the same conversation."]} />
+        <RevealText delay={120}>The detailed work process belongs on About. Here, the distinction between established strengths and developing skills stays explicit.</RevealText>
       </div>
       <dl className="skills-list">
-        {skillGroups.map((group) => (
+        {skillGroups.map((group, index) => (
           <div key={group.title} className={group.developing ? "skills-list__developing" : undefined}>
-            <dt>{group.title}</dt>
-            <dd>{group.skills.join(" · ")}</dd>
+            <dt><span>0{index + 1}</span>{group.title}</dt>
+            <dd>{group.skills.map((skill) => <span key={skill}>{skill}</span>)}</dd>
           </div>
         ))}
       </dl>
@@ -23,10 +25,10 @@ export function SkillsSection() {
 
 export function LabPreview() {
   return (
-    <section className="lab-preview" aria-labelledby="lab-preview-heading">
+    <section className="lab-preview" id="lab" aria-labelledby="lab-preview-heading">
       <div className="lab-preview__header">
-        <h2 id="lab-preview-heading">A place to test movement without making the whole portfolio an experiment.</h2>
-        <p>Static posters load first. Future interactive studies will load only after clear user intent or on the dedicated Lab route.</p>
+        <RevealTitle id="lab-preview-heading" lines={["A place to test movement", "without making the whole portfolio an experiment."]} />
+        <RevealText delay={120}>Static posters load first. Future interactive studies will load only after clear user intent or on the dedicated Lab route.</RevealText>
       </div>
       <ul className="lab-grid">
         {labExperiments.map((experiment, index) => (
@@ -53,7 +55,7 @@ export function ExperienceSection() {
   return (
     <section className="experience-section" id="experience" aria-labelledby="experience-heading">
       <div className="section-heading-row">
-        <h2 id="experience-heading">Experience that connects delivery, quality, and people.</h2>
+        <RevealTitle id="experience-heading" lines={["Experience that connects delivery,", "quality, and people."]} />
         <Link className="outlined-link" to="/about#experience">Full About and experience <ArrowUpRightIcon /></Link>
       </div>
       <ol className="experience-list">
@@ -70,25 +72,72 @@ export function ExperienceSection() {
 }
 
 export function ReferencesSection() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef({ startX: 0, startScrollLeft: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const scrollReferences = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    track.scrollBy({ left: direction * track.clientWidth, behavior: reduceMotion ? "auto" : "smooth" });
+  };
+
+  const startDragging = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    const track = event.currentTarget;
+    dragState.current = { startX: event.clientX, startScrollLeft: track.scrollLeft };
+    track.setPointerCapture(event.pointerId);
+    setIsDragging(true);
+  };
+
+  const dragReferences = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    event.currentTarget.scrollLeft = dragState.current.startScrollLeft - (event.clientX - dragState.current.startX);
+  };
+
+  const stopDragging = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setIsDragging(false);
+  };
+
   return (
-    <section className="references-section" aria-labelledby="references-heading">
-      <div className="visually-hidden">
-        <h2 id="references-heading">Colleague references</h2>
-        <p>All references in this V0 are unpublished layout placeholders.</p>
+    <section className="references-section" id="references" aria-labelledby="references-heading">
+      <div className="references-section__intro">
+        <RevealTitle id="references-heading" lines={["Colleague references"]} />
+        <RevealText delay={100}>Nine positions reserved for verified feedback with publication permission.</RevealText>
       </div>
-      <div className="reference-card reference-card--featured">
-        <span>Unpublished reference placeholder</span>
-        <blockquote>“{testimonials[0].quote}”</blockquote>
-        <p>{testimonials[0].name} · {testimonials[0].role} · {testimonials[0].relationship}</p>
-      </div>
-      <div className="references-section__side">
-        {testimonials.slice(1).map((testimonial) => (
-          <div className="reference-card" key={testimonial.id}>
-            <span>Unpublished reference placeholder</span>
-            <blockquote>“{testimonial.quote}”</blockquote>
-            <p>{testimonial.name} · {testimonial.role} · {testimonial.relationship}</p>
-          </div>
-        ))}
+      <div className="references-carousel">
+        <button className="references-carousel__arrow" type="button" onClick={() => scrollReferences(-1)} aria-label="Show previous references">
+          <ArrowLeftIcon size={22} />
+        </button>
+        <div
+          className={`references-carousel__track${isDragging ? " is-dragging" : ""}`}
+          ref={trackRef}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Colleague reference placeholders"
+          tabIndex={0}
+          onPointerDown={startDragging}
+          onPointerMove={dragReferences}
+          onPointerUp={stopDragging}
+          onPointerCancel={stopDragging}
+        >
+          {testimonials.map((testimonial, index) => (
+            <article className="reference-card" key={testimonial.id} aria-label={`Reference ${index + 1} of ${testimonials.length}`}>
+              <span>Unpublished reference placeholder · {String(index + 1).padStart(2, "0")}</span>
+              <blockquote>“{testimonial.quote}”</blockquote>
+              <p>{testimonial.name} · {testimonial.role} · {testimonial.relationship}</p>
+            </article>
+          ))}
+        </div>
+        <button className="references-carousel__arrow" type="button" onClick={() => scrollReferences(1)} aria-label="Show next references">
+          <ArrowRightIcon size={22} />
+        </button>
       </div>
     </section>
   );
@@ -96,11 +145,11 @@ export function ReferencesSection() {
 
 export function MakingOfSection() {
   return (
-    <section className="making-of" aria-labelledby="making-of-heading">
+    <section className="making-of" id="making-of" aria-labelledby="making-of-heading">
       <div>
         <p className="role-title">Extra / Behind this portfolio</p>
-        <h2 id="making-of-heading">The decisions behind this portfolio are documented too.</h2>
-        <p>Positioning, inspiration research, Figma exploration, content structure, accessible implementation, performance, and lessons learned.</p>
+        <RevealTitle id="making-of-heading" lines={["The decisions behind this portfolio", "are documented too."]} />
+        <RevealText delay={120}>Positioning, inspiration research, Figma exploration, content structure, accessible implementation, performance, and lessons learned.</RevealText>
         <Link className="outlined-link" to="/work/behind-this-portfolio">See how it was made <ArrowUpRightIcon /></Link>
       </div>
       <div className="making-of__graphic" role="img" aria-label="Neutral layered frames representing the path from strategy through Figma to code">

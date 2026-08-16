@@ -1,23 +1,30 @@
 .site-frame {
-  display: grid;
-  grid-template-columns: var(--rail-width) minmax(0, 1fr);
-  max-inline-size: 90rem;
   min-block-size: 100vh;
-  margin-inline: auto;
-  border-inline: var(--border);
 }
 
 .desktop-rail {
-  position: sticky;
-  inset-block-start: 0;
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  inline-size: var(--rail-width);
   block-size: 100vh;
-  padding: 2.6rem 1.75rem 2.25rem 2rem;
-  border-inline-end: var(--border);
+  padding: 2rem 1.75rem 2rem 2rem;
   background: var(--page);
   overflow-y: auto;
+}
+
+.desktop-rail::after {
+  position: absolute;
+  inset-block: 1.5rem;
+  inset-inline-end: 0;
+  inline-size: 1px;
+  background: linear-gradient(to bottom, transparent, var(--line) 12%, var(--line) 88%, transparent);
+  content: "";
+  pointer-events: none;
 }
 
 .rail__top {
@@ -35,26 +42,20 @@
   text-decoration: none;
 }
 
-.rail__title {
-  max-inline-size: 11rem;
-  color: var(--muted);
-  font-size: 0.64rem;
-  font-weight: 720;
-  letter-spacing: 0.05em;
-  line-height: 1.35;
-  text-transform: uppercase;
-}
-
 .rail-nav {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline: 2rem 1.75rem;
   display: grid;
   gap: 0.15rem;
-  margin-block: 3rem 2.1rem;
+  margin: 0;
+  transform: translateY(-50%);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0;
   min-block-size: 2.75rem;
   color: var(--text);
   font-size: 0.74rem;
@@ -62,43 +63,80 @@
   letter-spacing: 0.045em;
   text-decoration: none;
   text-transform: uppercase;
+  transition: color var(--duration-fast) var(--ease-out), font-size var(--duration-fast) var(--ease-out);
 }
 
 .nav-link__marker {
-  display: block;
+  display: grid;
+  place-items: center;
   inline-size: 0;
-  block-size: 0.18rem;
-  background: currentColor;
-  transition: inline-size var(--duration-fast) var(--ease-out);
+  margin-inline-end: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0;
+  transition: inline-size var(--duration-fast) var(--ease-out), margin var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 
-.nav-link:hover .nav-link__marker,
-.nav-link:focus-visible .nav-link__marker,
 .nav-link--active .nav-link__marker {
-  inline-size: 1.1rem;
+  inline-size: 0.8rem;
+  margin-inline-end: 0.45rem;
+  opacity: 1;
 }
 
 .nav-link--active {
-  text-decoration: underline;
-  text-underline-offset: 0.4em;
+  font-size: 1.35rem;
+  letter-spacing: 0.025em;
 }
 
 .rail__bottom {
   display: grid;
-  gap: var(--space-2);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
   color: var(--muted);
   font-size: 0.66rem;
   line-height: 1.35;
   text-transform: uppercase;
 }
 
-.rail__bottom strong {
-  font-size: 0.68rem;
+.local-time {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+  min-inline-size: 0;
+  text-align: end;
+}
+
+.local-time > span {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.45rem;
+  align-items: baseline;
+}
+
+.local-time small {
+  color: var(--muted);
+  font-size: 0.54rem;
   letter-spacing: 0.04em;
+}
+
+.local-time time {
+  color: var(--text);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 .mobile-header {
   display: none;
+}
+
+.page-surface {
+  inline-size: min(100%, var(--content-max));
+  margin-inline: auto;
 }
 
 .site-footer {
@@ -132,7 +170,6 @@
 
   .site-frame {
     display: block;
-    border: 0;
   }
 
   .desktop-rail {
@@ -144,6 +181,9 @@
     inset-block-start: 0;
     z-index: 30;
     display: grid;
+    inline-size: 100%;
+    min-inline-size: 0;
+    overflow-x: clip;
     border-block-end: var(--border);
     background: color-mix(in srgb, var(--page) 94%, transparent);
     backdrop-filter: blur(12px);
@@ -157,9 +197,16 @@
     padding-inline: clamp(1.125rem, 4vw, 2rem);
   }
 
+  .mobile-header .wordmark {
+    margin-inline-start: 0;
+  }
+
   .mobile-nav {
     display: flex;
     gap: var(--space-5);
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100vw;
     overflow-x: auto;
     padding: 0 clamp(1.125rem, 4vw, 2rem) var(--space-2);
     scrollbar-width: thin;
@@ -173,6 +220,10 @@
     display: none;
   }
 
+  .mobile-nav .nav-link--active {
+    font-size: 1.2rem;
+  }
+
   .site-footer {
     grid-template-columns: 1fr;
   }
@@ -180,9 +231,9 @@
 
 @media (max-width: 38rem) {
   .mobile-nav {
-    justify-content: space-between;
-    gap: 0.2rem;
-    overflow-x: visible;
+    justify-content: flex-start;
+    gap: var(--space-4);
+    overflow-x: auto;
     padding-block-end: var(--space-2);
   }
 

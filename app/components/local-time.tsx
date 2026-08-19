@@ -22,22 +22,15 @@ export function LocalTime() {
   }, []);
 
   if (!now) {
-    return <div className="local-time" aria-label="Local time loading">Time</div>;
+    return <div className="local-time" aria-label="Bogota time loading"><span><time>--:--</time><small>Bogota, Colombia</small></span></div>;
   }
 
-  const visitorTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const inColombia = visitorTimeZone === COLOMBIA_TIME_ZONE;
-
   return (
-    <div className="local-time" aria-label={inColombia ? "Current time in Colombia" : "Visitor local time compared with Colombia"}>
-      {inColombia ? (
-        <span><small>Colombia</small><time dateTime={now.toISOString()}>{formatTime(now, COLOMBIA_TIME_ZONE)}</time></span>
-      ) : (
-        <>
-          <span><small>Local</small><time dateTime={now.toISOString()}>{formatTime(now, visitorTimeZone)}</time></span>
-          <span><small>Colombia</small><time dateTime={now.toISOString()}>{formatTime(now, COLOMBIA_TIME_ZONE)}</time></span>
-        </>
-      )}
+    <div className="local-time" aria-label="Current time in Bogota, Colombia">
+      <span>
+        <time dateTime={now.toISOString()}>{formatTime(now, COLOMBIA_TIME_ZONE)}</time>
+        <small>Bogota, Colombia</small>
+      </span>
     </div>
   );
 }

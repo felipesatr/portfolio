@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
+import { ArrowUpIcon } from "./icons";
 
 export function ScrollToTop() {
   const { pathname } = useLocation();
@@ -32,9 +33,7 @@ export function ScrollToTop() {
       tabIndex={visible ? 0 : -1}
       onClick={returnToTop}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="m6 11 6-6 6 6M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" />
-      </svg>
+      <ArrowUpIcon size={20} />
     </button>
   );
 }

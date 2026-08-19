@@ -8,6 +8,9 @@ body {
 h1,
 h2,
 h3,
+h4,
+h5,
+h6,
 strong,
 dt {
   color: var(--text);
@@ -16,20 +19,35 @@ dt {
 }
 
 h1 {
-  font-size: var(--step-4);
+  font-size: var(--type-h1);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
 
 h2 {
-  font-size: var(--step-3);
+  font-size: var(--type-h2);
   line-height: 1.03;
   letter-spacing: -0.045em;
 }
 
 h3 {
-  font-size: var(--step-1);
+  font-size: var(--type-h3);
   line-height: 1.15;
+}
+
+h4 {
+  font-size: var(--type-h4);
+  line-height: 1.18;
+}
+
+h5 {
+  font-size: var(--type-h5);
+  line-height: 1.22;
+}
+
+h6 {
+  font-size: var(--type-h6);
+  line-height: 1.25;
 }
 
 .role-title,

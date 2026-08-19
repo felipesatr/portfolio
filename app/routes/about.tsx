@@ -1,6 +1,6 @@
 import type { Route } from "./+types/about";
 import { PageHeader } from "~/components/page-header";
-import { experience } from "~/content/portfolio";
+import { experience, testimonials } from "~/content/portfolio";
 import { routeMeta, siteContent } from "~/content/site";
 
 export function meta(_args: Route.MetaArgs) {
@@ -44,6 +44,19 @@ export default function About() {
         <article><p className="section-index">Design philosophy</p><h2>Make the important thing easy to understand, then make the system resilient.</h2><p>Final wording will be refined around verified working principles and examples.</p></article>
         <article><p className="section-index">Location</p><h2>{siteContent.location}</h2><p>Replace with confirmed location, time zone, and working availability.</p></article>
         <article><p className="section-index">Interests</p><h2>Personal interests placeholder</h2><p>Reserved for photography, books, music, or other interests that add useful personality without competing with the professional work.</p></article>
+      </section>
+
+      <section className="about-references" id="references" aria-labelledby="about-references-heading">
+        <h2 id="about-references-heading">More kind words</h2>
+        <div className="references-grid references-grid--more">
+          {testimonials.slice(3).map((testimonial, index) => (
+            <article className="reference-card" key={testimonial.id}>
+              <span>Unpublished reference placeholder · {String(index + 4).padStart(2, "0")}</span>
+              <blockquote>“{testimonial.quote}”</blockquote>
+              <p>{testimonial.name} · {testimonial.role} · {testimonial.relationship}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </div>
   );

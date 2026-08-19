@@ -1,6 +1,7 @@
 html {
   background: var(--page);
   scroll-padding-block-start: 6rem;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -60,28 +61,38 @@ main {
 #lab,
 #experience,
 #references,
-#making-of,
 #contact {
   scroll-margin-block-start: 1rem;
 }
 
-@media (max-width: 67.5rem) {
+@media (max-width: 80rem) {
   #hero,
   #selected-work,
   #skills,
   #lab,
   #experience,
   #references,
-  #making-of,
   #contact {
     scroll-margin-block-start: 9rem;
   }
 }
 
 .standard-page {
-  max-inline-size: var(--content-max);
+  inline-size: min(100%, var(--layout-content-width));
   min-block-size: 72vh;
   margin-inline: auto;
+}
+
+.home-page {
+  inline-size: min(100%, var(--layout-content-width));
+  margin-inline: auto;
+}
+
+@media (max-width: 80rem) {
+  .standard-page,
+  .home-page {
+    inline-size: 100%;
+  }
 }
 
 .narrow-page {

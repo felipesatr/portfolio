@@ -19,12 +19,32 @@ export const projects: Project[] = [
   { slug: "project-09", title: "Project title placeholder 09", summary: "A future case study slot for connected design and front-end execution.", tags: ["Design", "Front-end", "Interaction"], image: "placeholder-09", alt: "Neutral geometric placeholder for project 09", placeholder: true },
 ];
 
+export const portfolioProject: Project = {
+  slug: "behind-this-portfolio",
+  title: "Behind this portfolio",
+  summary: "The strategy, design system, interaction decisions, accessible implementation, testing, and iteration behind this site.",
+  tags: ["Design", "Front-end", "Interaction"],
+  image: "portfolio-process",
+  alt: "Neutral geometric placeholder representing the portfolio design and development process",
+  featured: false,
+  placeholder: false,
+};
+
+const workLayoutPlaceholders: Project[] = [
+  { slug: "project-10", title: "Project title placeholder 10", summary: "A neutral work-index slot reserved for a future verified case study.", tags: ["Design"], image: "placeholder-10", alt: "Neutral geometric placeholder for project 10", placeholder: true },
+  { slug: "project-11", title: "Project title placeholder 11", summary: "A neutral work-index slot reserved for future verified front-end evidence.", tags: ["Front-end"], image: "placeholder-11", alt: "Neutral geometric placeholder for project 11", placeholder: true },
+  { slug: "project-12", title: "Project title placeholder 12", summary: "A neutral work-index slot reserved for a future verified production case study.", tags: ["Production", "Accessibility"], image: "placeholder-12", alt: "Neutral geometric placeholder for project 12", placeholder: true },
+  { slug: "project-13", title: "Project title placeholder 13", summary: "A neutral work-index slot reserved for a future verified interaction case study.", tags: ["Interaction"], image: "placeholder-13", alt: "Neutral geometric placeholder for project 13", placeholder: true },
+];
+
+export const workProjects: Project[] = [...projects, ...workLayoutPlaceholders, portfolioProject];
+
 export const audienceContent: AudienceContent[] = [
-  { id: "anyone", label: "For anyone", headline: "Design the interface. Understand the constraints. Finish the work." },
-  { id: "recruiters", label: "Recruiters", headline: "A webapp designer who can carry the work into the browser." },
-  { id: "design-directors", label: "Design directors", headline: "Design judgment that survives real content, constraints, and delivery." },
-  { id: "engineers", label: "Engineers", headline: "Interfaces designed to be understood, built, and maintained." },
-  { id: "project-leads", label: "Project leads", headline: "Clear interfaces. Practical decisions. Reliable delivery." },
+  { id: "anyone", label: "For anyone", headline: "Design the interface.\nUnderstand the constraints.\nFinish the work." },
+  { id: "recruiters", label: "Recruiters", headline: "A webapp designer\nwho carries the work\ninto the browser." },
+  { id: "design-directors", label: "Design directors", headline: "Design judgment\nfor real constraints\nand finished delivery." },
+  { id: "engineers", label: "Engineers", headline: "Interfaces designed\nto be built clearly\nand maintained." },
+  { id: "project-leads", label: "Project leads", headline: "Clear interfaces.\nPractical decisions.\nReliable delivery." },
 ];
 
 export const skillGroups: SkillGroup[] = [

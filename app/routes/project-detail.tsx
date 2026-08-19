@@ -1,11 +1,11 @@
 import { Link, useParams } from "react-router";
 import type { Route } from "./+types/project-detail";
 import { ArrowUpRightIcon } from "~/components/icons";
-import { projects } from "~/content/portfolio";
+import { workProjects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
 
 export function meta({ params }: Route.MetaArgs) {
-  const project = projects.find((item) => item.slug === params.slug);
+  const project = workProjects.find((item) => item.slug === params.slug);
   return routeMeta(
     project?.title ?? "Project not found",
     project?.summary ?? "The requested placeholder project could not be found.",
@@ -15,7 +15,7 @@ export function meta({ params }: Route.MetaArgs) {
 
 export default function ProjectDetail() {
   const { slug } = useParams();
-  const project = projects.find((item) => item.slug === slug);
+  const project = workProjects.find((item) => item.slug === slug);
 
   if (!project) {
     return (

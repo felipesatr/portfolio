@@ -9,7 +9,7 @@ export const siteContent = {
     "I design and build responsive, accessible websites and interfaces shaped by real content, production requirements, and the people responsible for delivering them.",
   canonicalOrigin: "https://portfolio.example",
   email: "replace-me@example.invalid",
-  location: "Location / time zone placeholder",
+  location: "Bogota, Colombia",
   availability: "Availability placeholder for selected design and front-end roles",
 } as const;
 

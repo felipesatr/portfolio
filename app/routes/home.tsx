@@ -1,7 +1,7 @@
 import type { Route } from "./+types/home";
 import { ContactCta } from "~/components/contact-cta";
 import { Hero } from "~/components/hero";
-import { ExperienceSection, LabPreview, MakingOfSection, ReferencesSection, SkillsSection } from "~/components/home-sections";
+import { ExperienceSection, LabPreview, ReferencesSection, SkillsSection } from "~/components/home-sections";
 import { ProjectGrid } from "~/components/project-grid";
 import { projects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
@@ -16,15 +16,14 @@ export function meta(_args: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <>
+    <div className="home-page">
       <Hero />
-      <ProjectGrid projects={projects} />
+      <ProjectGrid projects={projects} variant="home-marquee" />
       <SkillsSection />
       <LabPreview />
       <ExperienceSection />
       <ReferencesSection />
-      <MakingOfSection />
       <ContactCta />
-    </>
+    </div>
   );
 }

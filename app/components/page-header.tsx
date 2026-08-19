@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { RevealText, RevealTitle } from "./motion-reveal";
 
 interface PageHeaderProps {
   title: string;
@@ -12,8 +13,8 @@ export function PageHeader({ title, intro, eyebrow, aside }: PageHeaderProps) {
     <header className="page-header">
       <div>
         {eyebrow ? <p className="role-title">{eyebrow}</p> : null}
-        <h1>{title}</h1>
-        <p>{intro}</p>
+        <RevealTitle as="h1" lines={[title]} />
+        <RevealText delay={100}>{intro}</RevealText>
       </div>
       {aside ? <div className="page-header__aside">{aside}</div> : null}
     </header>

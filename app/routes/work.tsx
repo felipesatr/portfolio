@@ -1,7 +1,6 @@
 import type { Route } from "./+types/work";
-import { PageHeader } from "~/components/page-header";
 import { ProjectGrid } from "~/components/project-grid";
-import { projects } from "~/content/portfolio";
+import { workProjects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
 
 export function meta(_args: Route.MetaArgs) {
@@ -10,17 +9,12 @@ export function meta(_args: Route.MetaArgs) {
 
 export default function Work() {
   return (
-    <div className="standard-page">
-      <PageHeader
-        eyebrow="Work index / V0 structure"
-        title="Work should explain the decisions, not just display the screens."
-        intro="These nine entries are neutral placeholders. Each will be replaced with verified work and clearly scoped individual contributions before launch."
-      />
+    <div className="standard-page work-page">
       <ProjectGrid
-        projects={projects}
-        heading="Project index"
+        projects={workProjects}
+        heading="Work."
         headingId="work-index-heading"
-        intro="Filter by the kind of evidence a future case study will contain."
+        intro="A visual index for finished websites, interfaces, production systems, and interaction studies. Placeholder entries will be replaced only with verified work and clearly scoped contributions."
       />
     </div>
   );

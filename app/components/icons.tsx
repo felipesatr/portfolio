@@ -1,36 +1,73 @@
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpRight,
+  CodeBrackets,
+  FilterAlt,
+  Language,
+  Sparks,
+  SunLight,
+  ViewGrid,
+  WindowTabs,
+} from "iconoir-react";
+
 interface IconProps {
   size?: number;
   className?: string;
 }
 
+const sharedProps = {
+  "aria-hidden": true,
+  focusable: false,
+  strokeWidth: 1.5,
+} as const;
+
 export function ArrowUpRightIcon({ size = 18, className }: IconProps) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M7 17 17 7M8 7h9v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" strokeLinejoin="miter" />
-    </svg>
-  );
+  return <ArrowUpRight {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowDownIcon({ size = 18, className }: IconProps) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 5v14m-6-6 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" strokeLinejoin="miter" />
-    </svg>
-  );
+  return <ArrowDown {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function ArrowUpIcon({ size = 18, className }: IconProps) {
+  return <ArrowUp {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowLeftIcon({ size = 18, className }: IconProps) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="m15 5-7 7 7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" strokeLinejoin="miter" />
-    </svg>
-  );
+  return <ArrowLeft {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowRightIcon({ size = 18, className }: IconProps) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="m9 5 7 7-7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" strokeLinejoin="miter" />
-    </svg>
-  );
+  return <ArrowRight {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function GridIcon({ size = 18, className }: IconProps) {
+  return <ViewGrid {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function FilterIcon({ size = 18, className }: IconProps) {
+  return <FilterAlt {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function LanguageIcon({ size = 18, className }: IconProps) {
+  return <Language {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function SunIcon({ size = 18, className }: IconProps) {
+  return <SunLight {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function InterfaceIcon({ size = 28, className }: IconProps) {
+  return <WindowTabs {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function CodeIcon({ size = 28, className }: IconProps) {
+  return <CodeBrackets {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function SparkIcon({ size = 28, className }: IconProps) {
+  return <Sparks {...sharedProps} className={className} width={size} height={size} />;
 }

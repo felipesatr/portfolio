@@ -6,3 +6,6 @@
 # React Router
 /.react-router/
 /build/
+
+# Local preview process output
+/.preview-*.log

@@ -1,8 +1,8 @@
-import type { CSSProperties, ElementType, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ElementType, ReactNode, RefObject } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 
-function useRevealOnView() {
-  const ref = useRef<HTMLElement>(null);
+function useRevealOnView<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
   const [isRevealed, setIsRevealed] = useState(false);
 
   useEffect(() => {
@@ -31,6 +31,46 @@ function useRevealOnView() {
   return { ref, isRevealed };
 }
 
+function useRenderedLineIndexes(ref: RefObject<HTMLParagraphElement | null>, content: ReactNode) {
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element || typeof content !== "string") return;
+
+    let frame = 0;
+    let disposed = false;
+    const measure = () => {
+      if (disposed) return;
+
+      const lineTops: number[] = [];
+      const words = element.querySelectorAll<HTMLElement>("[data-reveal-word]");
+      words.forEach((word) => {
+        const top = word.offsetTop;
+        let lineIndex = lineTops.findIndex((lineTop) => Math.abs(lineTop - top) < 2);
+        if (lineIndex === -1) {
+          lineIndex = lineTops.length;
+          lineTops.push(top);
+        }
+        word.style.setProperty("--reveal-line-index", String(lineIndex));
+      });
+    };
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(measure);
+    };
+
+    measure();
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
+    resizeObserver.observe(element);
+    void document.fonts?.ready.then(scheduleMeasure);
+
+    return () => {
+      disposed = true;
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
+  }, [content, ref]);
+}
+
 interface RevealTitleProps {
   as?: "h1" | "h2" | "h3";
   className?: string;
@@ -40,8 +80,9 @@ interface RevealTitleProps {
 }
 
 export function RevealTitle({ as = "h2", className, id, lines, live }: RevealTitleProps) {
-  const { ref, isRevealed } = useRevealOnView();
+  const { ref, isRevealed } = useRevealOnView<HTMLElement>();
   const Heading = as as ElementType;
+  let wordIndex = 0;
 
   return (
     <Heading
@@ -50,15 +91,28 @@ export function RevealTitle({ as = "h2", className, id, lines, live }: RevealTit
       className={`${className ? `${className} ` : ""}reveal-title${isRevealed ? " is-revealed" : ""}`}
       aria-live={live}
     >
-      {lines.map((line, index) => (
-        <span className="reveal-title__line" key={`${line}-${index}`}>
-          <span
-            className="reveal-title__line-inner"
-            style={{ "--reveal-index": index } as CSSProperties}
-          >
-            {line}
+      {lines.map((line, lineIndex) => (
+        <Fragment key={`${line}-${lineIndex}`}>
+          <span className="reveal-title__line">
+            {line.trim().split(/\s+/).map((word, index, words) => {
+              const currentWordIndex = wordIndex++;
+              return (
+                <Fragment key={`${word}-${index}`}>
+                  <span className="reveal-title__word-mask">
+                    <span
+                      className="reveal-title__word-inner"
+                      style={{ "--reveal-word-index": currentWordIndex } as CSSProperties}
+                    >
+                      {word}
+                    </span>
+                  </span>
+                  {index < words.length - 1 ? " " : null}
+                </Fragment>
+              );
+            })}
           </span>
-        </span>
+          {lineIndex < lines.length - 1 ? " " : null}
+        </Fragment>
       ))}
     </Heading>
   );
@@ -71,15 +125,22 @@ interface RevealTextProps {
 }
 
 export function RevealText({ children, className, delay = 0 }: RevealTextProps) {
-  const { ref, isRevealed } = useRevealOnView();
+  const { ref, isRevealed } = useRevealOnView<HTMLParagraphElement>();
+  useRenderedLineIndexes(ref, children);
+  const words = typeof children === "string" ? children.trim().split(/\s+/) : null;
 
   return (
     <p
-      ref={ref as React.RefObject<HTMLParagraphElement>}
+      ref={ref}
       className={`${className ? `${className} ` : ""}reveal-text${isRevealed ? " is-revealed" : ""}`}
       style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
     >
-      {children}
+      {words ? words.map((word, index) => (
+        <Fragment key={`${word}-${index}`}>
+          <span className="reveal-text__word" data-reveal-word>{word}</span>
+          {index < words.length - 1 ? " " : null}
+        </Fragment>
+      )) : children}
     </p>
   );
 }

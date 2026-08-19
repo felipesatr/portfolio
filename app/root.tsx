@@ -51,7 +51,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <noscript>
-          <style>{`.reveal-title__line-inner,.reveal-text{opacity:1!important;transform:none!important}`}</style>
+          <style>{`.reveal-title__word-inner,.reveal-text__word{opacity:1!important;transform:none!important}`}</style>
         </noscript>
         {children}
         <ScrollRestoration />

@@ -35,6 +35,7 @@ const earlyPreferenceScript = `
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cal+Sans:wght@400&display=swap" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -83,7 +84,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       <p className="role-title">Portfolio V0</p>
       <h1>{message}</h1>
       <p>{details}</p>
-      <Link className="button button--primary" to="/">Return home</Link>
+      <Link className="button button--primary" to="/"><span className="liquid-button__surface">Return home</span></Link>
       {stack ? <pre><code>{stack}</code></pre> : null}
     </main>
   );

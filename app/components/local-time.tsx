@@ -22,15 +22,13 @@ export function LocalTime() {
   }, []);
 
   if (!now) {
-    return <div className="local-time" aria-label="Bogota time loading"><span><time>--:--</time><small>Bogota, Colombia</small></span></div>;
+    return <div className="local-time" aria-label="Bogota time loading"><time>--:--</time><small>Bogota,<br />Colombia</small></div>;
   }
 
   return (
     <div className="local-time" aria-label="Current time in Bogota, Colombia">
-      <span>
-        <time dateTime={now.toISOString()}>{formatTime(now, COLOMBIA_TIME_ZONE)}</time>
-        <small>Bogota, Colombia</small>
-      </span>
+      <time dateTime={now.toISOString()}>{formatTime(now, COLOMBIA_TIME_ZONE)}</time>
+      <small>Bogota,<br />Colombia</small>
     </div>
   );
 }

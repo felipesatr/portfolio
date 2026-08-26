@@ -73,22 +73,76 @@ function useRenderedLineIndexes(ref: RefObject<HTMLParagraphElement | null>, con
 
 interface RevealTitleProps {
   as?: "h1" | "h2" | "h3";
+  autoFit?: boolean;
   className?: string;
   id?: string;
   lines: string[];
   live?: "polite" | "assertive";
 }
 
-export function RevealTitle({ as = "h2", className, id, lines, live }: RevealTitleProps) {
+function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, enabled: boolean) {
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const container = element?.parentElement;
+    if (!enabled || !element || !container) return;
+
+    let frame = 0;
+    let disposed = false;
+
+    const fit = () => {
+      if (disposed) return;
+      const availableWidth = Math.max(container.clientWidth, 1);
+      const availableHeight = Math.max(container.clientHeight, 1);
+      let lower = 28;
+      let upper = 128;
+      let best = lower;
+
+      while (lower <= upper) {
+        const candidate = Math.floor((lower + upper) / 2);
+        element.style.setProperty("--reveal-fit-size", `${candidate}px`);
+        const fits = element.scrollWidth <= availableWidth + 0.5 && element.scrollHeight <= availableHeight + 0.5;
+
+        if (fits) {
+          best = candidate;
+          lower = candidate;
+        } else {
+          upper = candidate;
+        }
+      }
+
+      element.style.setProperty("--reveal-fit-size", `${best}px`);
+    };
+
+    const scheduleFit = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(fit);
+    };
+
+    fit();
+    window.addEventListener("resize", scheduleFit);
+    window.addEventListener("portfolio-heading-font-change", scheduleFit);
+    void document.fonts?.ready.then(scheduleFit);
+
+    return () => {
+      disposed = true;
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", scheduleFit);
+      window.removeEventListener("portfolio-heading-font-change", scheduleFit);
+    };
+  }, [content, enabled, ref]);
+}
+
+export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live }: RevealTitleProps) {
   const { ref, isRevealed } = useRevealOnView<HTMLElement>();
   const Heading = as as ElementType;
   let wordIndex = 0;
+  useAutoFitTitle(ref, lines.join(" "), autoFit);
 
   return (
     <Heading
       ref={ref}
       id={id}
-      className={`${className ? `${className} ` : ""}reveal-title${isRevealed ? " is-revealed" : ""}`}
+      className={`${className ? `${className} ` : ""}reveal-title${autoFit ? " reveal-title--auto-fit" : ""}${isRevealed ? " is-revealed" : ""}`}
       aria-live={live}
     >
       {lines.map((line, lineIndex) => (
@@ -111,7 +165,6 @@ export function RevealTitle({ as = "h2", className, id, lines, live }: RevealTit
               );
             })}
           </span>
-          {lineIndex < lines.length - 1 ? " " : null}
         </Fragment>
       ))}
     </Heading>

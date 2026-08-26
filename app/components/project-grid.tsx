@@ -503,7 +503,7 @@ function ProjectPreview({ preview, expanded, closing, onClose, onTransformEnd }:
             <ul className="tag-list" aria-label={`Tags for ${preview.project.title}`}>
               {preview.project.tags.map((tag) => <li key={tag}>{tag}</li>)}
             </ul>
-            <Link className="button button--primary" to={`/work/${preview.project.slug}`}>Open full case study <ArrowUpRightIcon /></Link>
+            <Link className="button button--primary" to={`/work/${preview.project.slug}`}><span className="liquid-button__surface">Open full case study <ArrowUpRightIcon /></span></Link>
           </div>
         </header>
 
@@ -633,7 +633,7 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
             />
           </div>
           <div className="projects-section__all">
-            <Link className="outlined-link" to="/work">View all projects <ArrowUpRightIcon /></Link>
+            <Link className="button button--primary projects-section__all-button" to="/work"><span className="liquid-button__surface">View all projects <ArrowUpRightIcon /></span></Link>
           </div>
         </>
       ) : (
@@ -642,7 +642,7 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
         <div className="empty-state" id="project-results">
           <h3>No matching projects</h3>
           <p>Try another filter or return to All.</p>
-          <button type="button" className="button button--secondary" onClick={clearFilters}>Show all projects</button>
+          <button type="button" className="button button--secondary" onClick={clearFilters}><span className="liquid-button__surface">Show all projects</span></button>
         </div>
       )}
 

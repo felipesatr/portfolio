@@ -8,12 +8,13 @@ import { SoftRevealObserver } from "./soft-reveal-observer";
 import { ThemeControl } from "./theme-control";
 import { FluidCursor } from "./fluid-cursor";
 import { LanguageIcon } from "./icons";
+import { TypographyPreviewControl } from "./typography-preview-control";
 
 const navigation = [
   { label: "Home", href: "/" },
   { label: "About me", href: "/about" },
   { label: "Work", href: "/work" },
-  { label: "What I do", href: "/services" },
+  { label: "Design process", href: "/services" },
   { label: "Lab", href: "/lab" },
   { label: "Contact", href: "/contact" },
 ];
@@ -37,6 +38,7 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
       {showSocials ? (
         <div className="rail-nav__socials" aria-label="Social profile placeholders">
           <span className="nav-link nav-link--placeholder" aria-disabled="true" title="LinkedIn profile placeholder">LinkedIn</span>
+          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="GitHub profile placeholder">GitHub</span>
           <span className="nav-link nav-link--placeholder" aria-disabled="true" title="Instagram profile placeholder">Instagram</span>
         </div>
       ) : null}
@@ -114,6 +116,7 @@ export function SiteShell() {
       <FluidCursor />
       <SoftRevealObserver />
       <LayoutGridOverlay isVisible={isGridVisible} />
+      <TypographyPreviewControl />
       <div className="site-intro" aria-hidden="true"><span>JS</span><i /></div>
     </div>
   );

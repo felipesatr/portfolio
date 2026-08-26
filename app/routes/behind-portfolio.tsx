@@ -1,5 +1,6 @@
 import type { Route } from "./+types/behind-portfolio";
 import { routeMeta } from "~/content/site";
+import { RevealTitle } from "~/components/motion-reveal";
 
 export function meta(_args: Route.MetaArgs) {
   return routeMeta("Behind this portfolio", "The positioning, research, design, implementation, accessibility, and performance decisions behind this portfolio.", "/work/behind-this-portfolio");
@@ -21,14 +22,14 @@ export default function BehindPortfolio() {
     <article className="standard-page making-case-study">
       <header className="making-case-study__header">
         <p className="role-title">Extra / Active portfolio project</p>
-        <h1>The portfolio itself is part of the evidence—but it stays secondary to professional work.</h1>
+        <RevealTitle as="h1" lines={["The portfolio itself is part of the evidence—but it stays secondary to professional work."]} />
         <p>This case-study structure documents the real process used to plan and build the site. It does not invent results or treat V0 placeholders as finished evidence.</p>
       </header>
       <div className="making-case-study__path" aria-label="Strategy to Figma to React to review">
         <span>Strategy</span><i /><span>Figma</span><i /><span>React</span><i /><span>Review</span>
       </div>
       <ol className="making-case-study__stages">
-        {stages.map(([number, title, summary]) => <li key={number}><span>{number}</span><div><h2>{title}</h2><p>{summary}</p></div></li>)}
+        {stages.map(([number, title, summary]) => <li key={number}><span>{number}</span><div><RevealTitle lines={[title]} /><p>{summary}</p></div></li>)}
       </ol>
     </article>
   );

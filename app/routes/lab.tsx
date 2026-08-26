@@ -1,5 +1,6 @@
 import type { Route } from "./+types/lab";
 import { PageHeader } from "~/components/page-header";
+import { RevealTitle } from "~/components/motion-reveal";
 import { labExperiments } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
 
@@ -19,7 +20,7 @@ export default function Lab() {
         {labExperiments.map((experiment, index) => (
           <article id={experiment.slug} key={experiment.slug} className="lab-index__item">
             <div className={`lab-index__poster lab-card__graphic--${index + 1}`} aria-hidden="true"><span>0{index + 1}</span></div>
-            <div><p className="section-index">{experiment.category} · Future experiment</p><h2>{experiment.title}</h2><p>{experiment.summary}</p><dl><div><dt>Status</dt><dd>Static placeholder</dd></div><div><dt>Future loading</dt><dd>Dynamic import after user intent</dd></div><div><dt>Accessibility</dt><dd>Keyboard, reduced-motion, and non-canvas alternative required</dd></div></dl></div>
+            <div><p className="section-index">{experiment.category} · Future experiment</p><RevealTitle lines={[experiment.title]} /><p>{experiment.summary}</p><dl><div><dt>Status</dt><dd>Static placeholder</dd></div><div><dt>Future loading</dt><dd>Dynamic import after user intent</dd></div><div><dt>Accessibility</dt><dd>Keyboard, reduced-motion, and non-canvas alternative required</dd></div></dl></div>
           </article>
         ))}
       </div>

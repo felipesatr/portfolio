@@ -6,7 +6,10 @@ import {
   ArrowUpRight,
   CodeBrackets,
   FilterAlt,
+  FaceId,
   Language,
+  LightBulb,
+  SendDiagonalSolid,
   Sparks,
   SunLight,
   ViewGrid,
@@ -52,6 +55,14 @@ export function FilterIcon({ size = 18, className }: IconProps) {
   return <FilterAlt {...sharedProps} className={className} width={size} height={size} />;
 }
 
+export function FaceIdIcon({ size = 18, className }: IconProps) {
+  return <FaceId {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function SendDiagonalSolidIcon({ size = 18, className }: IconProps) {
+  return <SendDiagonalSolid {...sharedProps} className={className} width={size} height={size} />;
+}
+
 export function LanguageIcon({ size = 18, className }: IconProps) {
   return <Language {...sharedProps} className={className} width={size} height={size} />;
 }
@@ -66,6 +77,10 @@ export function InterfaceIcon({ size = 28, className }: IconProps) {
 
 export function CodeIcon({ size = 28, className }: IconProps) {
   return <CodeBrackets {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function StrategyIcon({ size = 28, className }: IconProps) {
+  return <LightBulb {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function SparkIcon({ size = 28, className }: IconProps) {

@@ -6,6 +6,8 @@ import { ProjectGrid } from "~/components/project-grid";
 import { projects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
 
+const homeProjects = projects.slice(0, 5);
+
 export function meta(_args: Route.MetaArgs) {
   return routeMeta(
     "Portfolio home",
@@ -18,7 +20,7 @@ export default function Home() {
   return (
     <div className="home-page">
       <Hero />
-      <ProjectGrid projects={projects} variant="home-marquee" />
+      <ProjectGrid projects={homeProjects} variant="home-marquee" />
       <SkillsSection />
       <LabPreview />
       <ExperienceSection />

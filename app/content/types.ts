@@ -25,9 +25,10 @@ export interface Project {
 export const audienceIds = [
   "anyone",
   "recruiters",
-  "design-directors",
+  "designers",
   "engineers",
   "project-leads",
+  "ai-teams",
 ] as const;
 
 export type Audience = (typeof audienceIds)[number];
@@ -36,6 +37,7 @@ export interface AudienceContent {
   id: Audience;
   label: string;
   headline: string;
+  format?: "display" | "compact" | "code";
 }
 
 export interface SkillGroup {
@@ -47,7 +49,9 @@ export interface SkillGroup {
 export interface ExperienceItem {
   id: string;
   title: string;
+  company: string;
   summary: string;
+  years: string;
   placeholder: boolean;
 }
 

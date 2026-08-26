@@ -8,6 +8,7 @@ body {
   min-inline-size: 20rem;
   min-block-size: 100vh;
   background: var(--page);
+  overflow-x: clip;
 }
 
 a {

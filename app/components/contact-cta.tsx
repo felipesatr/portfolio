@@ -14,10 +14,10 @@ export function ContactCta() {
         </div>
         <div className="contact-cta__actions">
           <a className="button button--light" href={`mailto:${siteContent.email}`}>
-            Email placeholder <ArrowUpRightIcon />
+            <span className="liquid-button__surface">Email placeholder <ArrowUpRightIcon /></span>
           </a>
           <a className="button button--outline-light" href="/resume-placeholder.txt" target="_blank" rel="noreferrer">
-            Résumé placeholder <ArrowUpRightIcon />
+            <span className="liquid-button__surface">Résumé placeholder <ArrowUpRightIcon /></span>
           </a>
           <Link className="text-link text-link--light" to="/contact">All contact details <ArrowUpRightIcon /></Link>
         </div>

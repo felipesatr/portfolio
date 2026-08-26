@@ -21,6 +21,20 @@
 
   --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-heading: "Cal Sans", var(--font-sans);
+  --font-body-preview: var(--font-sans);
+  --font-body-weight: 400;
+  --font-body-letter-spacing: normal;
+  --font-body-word-spacing: normal;
+  --font-body-optical-sizing: auto;
+
+  /* Named text sizes use round pixel values at the 16px browser baseline. */
+  --type-caption: 0.625rem;
+  --type-label: 0.75rem;
+  --type-small: 0.875rem;
+  --type-body: 1rem;
+  --type-body-large: 1.125rem;
+  --type-subhead: 1.25rem;
 
   --step--1: clamp(0.74rem, 0.7rem + 0.14vw, 0.82rem);
   --step-0: clamp(1rem, 0.95rem + 0.2vw, 1.08rem);
@@ -61,6 +75,9 @@
   --readable: 65ch;
   --border: 1px solid var(--line);
   --focus-ring: 3px solid var(--focus);
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+  --radius-pill: 999px;
   --duration-fast: 140ms;
   --duration-medium: 320ms;
   --duration-intro: 900ms;

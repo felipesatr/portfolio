@@ -4,15 +4,19 @@
 
 .reveal-title__line {
   display: block;
-  padding-block-end: 0.06em;
-  margin-block-end: -0.06em;
+  padding: 0;
+  margin: 0;
+  line-height: inherit;
 }
 
 .reveal-title__word-mask {
   display: inline-block;
-  overflow: clip;
-  overflow-clip-margin: 0.16em;
-  vertical-align: bottom;
+  /* Display fonts can extend beyond their em box. Do not trim real glyphs. */
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+  line-height: inherit;
+  vertical-align: baseline;
 }
 
 .reveal-title__word-inner {
@@ -55,6 +59,27 @@
   transform: translateY(0);
 }
 
+/* The hero is fitted from its authored lines. Keep reveal wrappers out of
+   layout calculations: no added padding, margins, word gaps, or line height. */
+.hero .hero-title-reveal .reveal-title__line {
+  display: block;
+  padding: 0;
+  margin: 0;
+  line-height: inherit;
+  white-space: pre;
+  text-wrap: nowrap;
+}
+
+.hero-title-reveal .reveal-title__word-mask {
+  display: inline-block;
+  /* Keep the hero's fitted dimensions, but allow the font's full outlines. */
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
 .reveal-text {
   opacity: 1;
 }
@@ -89,7 +114,7 @@
 }
 
 html[data-intro="play"] .intro-target {
-  animation: page-resolve var(--duration-intro) var(--ease-out) both;
+  animation: page-resolve var(--duration-intro) var(--ease-out) backwards;
 }
 
 html[data-intro="play"] .site-intro {

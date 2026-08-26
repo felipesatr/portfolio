@@ -1,5 +1,6 @@
 import type { Route } from "./+types/accessibility";
 import { PageHeader } from "~/components/page-header";
+import { RevealTitle } from "~/components/motion-reveal";
 import { siteContent, routeMeta } from "~/content/site";
 
 export function meta(_args: Route.MetaArgs) {
@@ -16,7 +17,7 @@ export default function AccessibilityStatement() {
       <div className="policy-page__body">
         <section>
           <p className="section-index">Current measures</p>
-          <h2>What is already considered</h2>
+          <RevealTitle lines={["What is already considered"]} />
           <ul>
             <li>Semantic page regions, heading structure, lists, links, and buttons.</li>
             <li>Keyboard access, visible focus states, a skip link, and focus return after modal dialogs.</li>
@@ -26,17 +27,17 @@ export default function AccessibilityStatement() {
         </section>
         <section>
           <p className="section-index">Testing status</p>
-          <h2>What still needs verification</h2>
+          <RevealTitle lines={["What still needs verification"]} />
           <p>Before V1 launch, the site still needs structured keyboard testing across every route and state, automated WCAG checks, contrast verification for every theme, zoom and reflow testing, and screen-reader testing with representative browser combinations.</p>
         </section>
         <section>
           <p className="section-index">Known limitations</p>
-          <h2>What is not finished</h2>
+          <RevealTitle lines={["What is not finished"]} />
           <p>Project images, résumé details, social links, colleague references, and some labels remain placeholders. Experimental interactions may change as their keyboard, touch, performance, and reduced-motion behavior is reviewed.</p>
         </section>
         <section>
           <p className="section-index">Feedback</p>
-          <h2>Report a barrier</h2>
+          <RevealTitle lines={["Report a barrier"]} />
           <p>If something prevents you from reading, navigating, or operating this portfolio, email <a href={`mailto:${siteContent.email}`}>{siteContent.email}</a> with the page, browser, device, and a short description of the problem. The address must be replaced before public launch.</p>
         </section>
       </div>

@@ -6,38 +6,48 @@ export interface Service {
   deliverables: string[];
   tools: string[];
   boundary: string;
-  icon: "interface" | "code" | "spark";
+  icon: "interface" | "strategy" | "code" | "spark";
 }
 
 export const services: Service[] = [
   {
     id: "webapp-ui-design",
-    title: "Webapp & UI Design",
-    shortTitle: "Webapp & UI design",
-    summary: "I turn real content and requirements into clear responsive interfaces, from page structure and visual direction to practical prototypes.",
-    deliverables: ["Information architecture", "Responsive layouts", "UI direction", "Component patterns", "Figma prototypes"],
+    title: "UX/UI & WebApp Design",
+    shortTitle: "UX/UI & WebApp design",
+    summary: "I shape content, requirements, and user needs into clear responsive websites and interfaces that can move into production.",
+    deliverables: ["Information architecture", "Responsive layouts", "UI direction", "Interaction states", "Figma prototypes"],
     tools: ["Figma", "HTML", "CSS", "Design systems"],
     boundary: "Best suited to content-rich websites, web interfaces, and design work that must remain practical when it reaches production.",
     icon: "interface",
   },
   {
-    id: "accessible-front-end",
-    title: "Accessible Front-End & Production",
-    shortTitle: "Front-end & production",
-    summary: "I build responsive HTML and CSS interfaces with semantic structure, accessibility, content quality, and repeatable delivery in mind.",
-    deliverables: ["Responsive implementation", "Semantic HTML", "Accessible interaction states", "Production QA", "Migration workflow support"],
-    tools: ["HTML", "CSS", "Git", "GitHub", "Vite", "React — developing", "TypeScript — developing"],
-    boundary: "My strongest implementation work is currently HTML and CSS. React and TypeScript are developing skills and are labeled that way rather than presented as senior expertise.",
+    id: "strategy-brand-consulting",
+    title: "Strategy, Brand & Consulting",
+    shortTitle: "Strategy, brand & consulting",
+    summary: "I help clarify the idea, audience, message, and visual direction before turning those decisions into a useful identity or digital experience.",
+    deliverables: ["Creative direction", "Brand foundations", "Content structure", "Website strategy", "Design consultation"],
+    tools: ["Workshops", "Research", "Figma", "Content planning"],
+    boundary: "Focused on practical brand and digital decisions, not large-scale market research or a full advertising-agency engagement.",
+    icon: "strategy",
+  },
+  {
+    id: "front-end-technical-delivery",
+    title: "Frontend Development, Code & No-Code",
+    shortTitle: "Frontend development, code & no-code",
+    summary: "I turn approved designs into responsive, accessible websites using code or the right no-code platform, then review the work through delivery.",
+    deliverables: ["Responsive implementation", "Semantic HTML", "No-code builds", "Production QA", "Migration workflow support"],
+    tools: ["HTML", "CSS", "JavaScript", "Git", "GitHub", "Vite", "No-code platforms"],
+    boundary: "My strongest implementation work is HTML and CSS. JavaScript, React, and TypeScript remain developing skills and are presented honestly.",
     icon: "code",
   },
   {
-    id: "ai-assisted-workflows",
-    title: "AI-Assisted Creative Workflows",
-    shortTitle: "AI-assisted workflows",
-    summary: "I use AI as a supervised production tool for research synthesis, content structure, rapid alternatives, documentation, and repetitive workflow support.",
-    deliverables: ["Research synthesis", "Content outlines", "Prompt and workflow design", "Rapid design alternatives", "Documentation support"],
-    tools: ["ChatGPT", "Generative image tools", "Structured prompting", "Human review"],
-    boundary: "This is AI-assisted design and production support—not machine-learning engineering, custom-model development, or unsupervised decision-making. Final judgment and quality review remain human-led.",
+    id: "ai-workflows-automation",
+    title: "AI Workflows & Automation",
+    shortTitle: "AI workflows & automation",
+    summary: "I design supervised AI workflows, automate repetitive production work, and turn useful ideas into practical prototypes and tools.",
+    deliverables: ["Workflow mapping", "Prompt systems", "Task automation", "Rapid prototypes", "Documentation and review"],
+    tools: ["ChatGPT", "AI agents", "Structured prompting", "Automation tools", "Human review"],
+    boundary: "This is applied AI workflow design and automation, not machine-learning engineering or custom-model development. Final judgment stays human-led.",
     icon: "spark",
   },
 ];

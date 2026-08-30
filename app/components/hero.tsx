@@ -8,6 +8,8 @@ import { FaceIdIcon, SendDiagonalSolidIcon } from "./icons";
 // the animated words; authored line breaks and the heading-fit formula remain
 // the layout source of truth.
 const wordRevealEnabled = true;
+// Layout test: flip this to false to restore the selectors occupying flow above the H1.
+const useH03HeadlineLayoutTest = true;
 
 function headlineLines(headline: string, preserveAuthoredLines: boolean) {
   if (preserveAuthoredLines) {
@@ -49,24 +51,35 @@ function useHeadlineAutoFit(
     let disposed = false;
     const minimum = format === "code" ? 8 : 28;
     const maximum = format === "code" ? 96 : 220;
-    const lineHeight = format === "code" ? 1.08 : 1.06;
+    // Keep a 0.4% fit reserve for display glyph metrics. With the H03-to-H08
+    // title frame this resolves the four-line "For anyone" copy to ~105.3px
+    // at the reference desktop size, while the rendered line-height remains 1.06.
+    const fitLineHeight = format === "code" ? 1.08 : 1.064;
     const fit = () => {
       if (disposed) return;
       const availableWidth = Math.max(container.clientWidth, 1);
       const availableHeight = Math.max(container.clientHeight, 1);
+      // Display glyphs can overhang their measured frame by a few pixels even
+      // when the authored line is visually contained. Allow a tiny horizontal
+      // tolerance while keeping the height equation as the source of truth.
+      const widthTolerance = Math.max(0.5, availableWidth * 0.005);
       // Manual line breaks are the source of truth. This makes each headline
       // fill the same frame through a predictable equation rather than being
       // pushed between different row counts by browser wrapping thresholds.
       const authoredLines = headline.split("\n").length;
-      let fittedSize = Math.floor(availableHeight / (Math.max(authoredLines, 1) * lineHeight));
+      let fittedSize = Math.round(
+        (availableHeight / (Math.max(authoredLines, 1) * fitLineHeight)) * 10,
+      ) / 10;
       fittedSize = Math.min(maximum, Math.max(minimum, fittedSize));
       element.style.setProperty("--hero-fit-size", `${fittedSize}px`);
 
-      // On narrow screens an authored line can still wrap. Reduce only then,
-      // preserving the exact equation whenever the authored layout fits.
+      // On narrow screens an authored line can still exceed the frame. Reduce
+      // only for genuine horizontal overflow. Rechecking scrollHeight here
+      // would count animated glyph overhang and incorrectly turn 103px into
+      // 101px even though the authored four-line equation fits the frame.
       while (
         fittedSize > minimum &&
-        (element.scrollWidth > availableWidth + 0.5 || element.scrollHeight > availableHeight + 0.5)
+        element.scrollWidth > availableWidth + widthTolerance
       ) {
         fittedSize -= 1;
         element.style.setProperty("--hero-fit-size", `${fittedSize}px`);
@@ -205,7 +218,11 @@ export function Hero() {
   };
 
   return (
-    <section id="hero" className="hero" aria-labelledby="hero-heading">
+    <section
+      id="hero"
+      className={`hero${useH03HeadlineLayoutTest ? " hero--headline-h03-test" : ""}`}
+      aria-labelledby="hero-heading"
+    >
       <div className="hero__primary">
         <div className="hero__copy">
           <div className="hero-audience" role="group" aria-label="Choose who the introduction is for">
@@ -251,10 +268,14 @@ export function Hero() {
                   <span>me</span>
                 </span>
               </Link>
-              <Link className="button button--outline hero-contact-button" to="/contact">
+              <Link
+                className="button button--primary button--red"
+                to="/contact"
+                aria-label="Let's talk"
+              >
                 <span className="liquid-button__surface">
-                  <span className="liquid-button__label">Let&apos;s talk! <SendDiagonalSolidIcon /></span>
-                  <span className="liquid-button__label liquid-button__label--ink" aria-hidden="true">Let&apos;s talk! <SendDiagonalSolidIcon /></span>
+                  <span>Let&apos;s talk!</span>
+                  <SendDiagonalSolidIcon />
                 </span>
               </Link>
             </div>

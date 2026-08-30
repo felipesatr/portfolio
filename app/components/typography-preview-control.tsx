@@ -54,6 +54,7 @@ function removePreviewAssets(except?: Element) {
 
 function resetBodyFont() {
   const root = document.documentElement;
+  if (!root) return;
   root.style.removeProperty("--font-body-preview");
   root.style.removeProperty("--font-body-weight");
   root.style.removeProperty("--font-body-letter-spacing");

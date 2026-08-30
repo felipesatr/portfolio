@@ -103,6 +103,7 @@
   background: #090909;
   transform: translate3d(0, 0, 0);
   transform-origin: center;
+  transition: background-color 0ms linear 0ms;
   will-change: transform;
 }
 
@@ -112,6 +113,10 @@
 .button--outline-light {
   color: #fff;
   background: transparent;
+}
+
+.button--red .liquid-button__surface {
+  background: var(--liquid-red);
 }
 
 .button--outline {
@@ -204,6 +209,14 @@
 
 .liquid-webgl-ready .button--outline[data-liquid-active="true"] .liquid-button__surface {
   background: transparent;
+}
+
+/* The real link remains above the canvas for its label, focus ring and click
+   target. While WebGL owns the active silhouette, remove only the static DOM
+   fill so it cannot cover the deforming pill rendered beneath it. */
+.liquid-webgl-ready .button:not(.button--outline)[data-liquid-rendered="true"] .liquid-button__surface {
+  background: transparent;
+  transition-delay: 120ms;
 }
 
 .outlined-link {
@@ -479,8 +492,8 @@
   inline-size: calc(6 * var(--layout-column));
   min-inline-size: 0;
   max-inline-size: 100%;
-  /* H03-to-H08, less the 1.5rem tab row and its 1rem bottom margin. */
-  block-size: calc((5 * var(--grid-row)) - 1rem - 1.5rem);
+  /* H03-to-H08, less the 1.5rem tab row and its 0.5rem bottom margin. */
+  block-size: calc((5 * var(--grid-row)) - 0.5rem - 1.5rem);
   margin-block-start: 0;
   margin-inline: 0;
   color: var(--text);
@@ -565,7 +578,16 @@
   flex-wrap: wrap;
   gap: var(--space-5);
   block-size: 1.5rem;
-  margin-block-end: 1rem;
+  margin-block-end: 0.5rem;
+}
+
+/* Reversible H03 layout test: the selector row (1.5rem + 0.5rem gap) ends at H03. */
+.hero--headline-h03-test .hero-audience {
+  position: absolute;
+  inset-block-start: -2rem;
+  inset-inline-start: 0;
+  z-index: 3;
+  margin-block-end: 0;
 }
 
 .project-filters {
@@ -679,19 +701,22 @@
   inline-size: calc(10 * var(--layout-column));
   margin-inline-start: calc(-1.5 * var(--layout-column));
   padding-block-start: 0;
-  overflow: hidden;
+  padding-block-end: 0;
+  margin-block-end: 12rem;
 }
 
 .projects-section__all {
   display: flex;
-  justify-content: flex-start;
-  margin-block-start: calc(var(--grid-row) / 2);
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-5);
+  margin-inline-end: calc(1.5 * var(--layout-column));
+  margin-block-start: 0;
 }
 
-.projects-section--home-marquee .projects-section__all-button {
-  inline-size: calc(3 * var(--layout-column));
-  max-inline-size: none;
-  margin-inline-start: calc(3.5 * var(--layout-column));
+.projects-section__all h3 {
+  margin: 0;
+  text-align: end;
 }
 
 .projects-section__header {
@@ -731,11 +756,12 @@
 }
 
 .projects-section--home-marquee .project-marquee__viewport {
-  /* H11 to H16.5. The existing half-row gap places the CTA at H17. */
-  block-size: calc(5.5 * var(--grid-row));
-  padding-block-end: 0.75rem;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.12) 3%, #000 9%, #000 91%, rgb(0 0 0 / 0.12) 97%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.12) 3%, #000 9%, #000 91%, rgb(0 0 0 / 0.12) 97%, transparent 100%);
+  /* Exactly five grid rows; card proportions leave room for their tag row. */
+  block-size: calc(5 * var(--grid-row));
+}
+
+.projects-section--home-marquee .project-marquee {
+  margin-block-end: 1.75rem;
 }
 
 .projects-section--home-marquee .project-marquee__track {
@@ -771,19 +797,16 @@
   inline-size: clamp(7rem, 10vw, 14rem);
   content: "";
   pointer-events: none;
-  backdrop-filter: blur(34px);
 }
 
 .projects-section--home-marquee .project-marquee__viewport::before {
   inset-inline-start: 0;
   background: linear-gradient(to right, var(--page) 0%, color-mix(in srgb, var(--page) 92%, transparent) 38%, transparent 100%);
-  mask-image: linear-gradient(to right, black 0%, black 44%, transparent 100%);
 }
 
 .projects-section--home-marquee .project-marquee__viewport::after {
   inset-inline-end: 0;
   background: linear-gradient(to left, var(--page) 0%, color-mix(in srgb, var(--page) 92%, transparent) 38%, transparent 100%);
-  mask-image: linear-gradient(to left, black 0%, black 44%, transparent 100%);
 }
 
 .project-marquee__track {
@@ -795,6 +818,11 @@
 .project-marquee--animated .project-marquee__track {
   display: flex;
   inline-size: max-content;
+  /* Reserve a transform layer before the first pointer event. The marquee
+     stays on the compositor instead of being promoted mid-interaction. */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: paint;
   will-change: transform;
 }
 
@@ -810,11 +838,11 @@
   aspect-ratio: var(--project-card-ratio);
 }
 
-.project-card--shape-1 { --project-card-width: min(19cqw, 24rem); --project-card-ratio: 0.85; }
+.project-card--shape-1 { --project-card-width: min(18cqw, 23rem); --project-card-ratio: 0.85; }
 .project-card--shape-2 { --project-card-width: min(27cqw, 31rem); --project-card-ratio: 1.6; }
 .project-card--shape-3 { --project-card-width: min(22cqw, 27rem); --project-card-ratio: 1.13; }
 .project-card--shape-4 { --project-card-width: min(24cqw, 29rem); --project-card-ratio: 1.35; }
-.project-card--shape-5 { --project-card-width: min(18cqw, 23rem); --project-card-ratio: 0.78; }
+.project-card--shape-5 { --project-card-width: min(16.5cqw, 21rem); --project-card-ratio: 0.78; }
 
 .project-card article {
   display: grid;
@@ -1295,7 +1323,6 @@
   opacity: 0;
   pointer-events: none;
   transform-origin: center;
-  transition: opacity 120ms ease;
   will-change: transform;
 }
 
@@ -1311,11 +1338,27 @@
   block-size: 100vh;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 120ms ease;
 }
 
 .liquid-button-canvas.is-visible {
   opacity: 1;
+}
+
+/* Development-only diagnostic. It is rendered by FluidCursor only in Vite
+   development mode, so visitors will never receive this control. */
+.fluid-cursor-toggle {
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  z-index: 100;
+  min-block-size: 2.25rem;
+  padding-inline: 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
 .button {
@@ -1772,7 +1815,7 @@
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: var(--space-6);
-  padding-block-start: calc(var(--section-block-space) + var(--space-5));
+  padding-block-start: 0;
   background: var(--page);
 }
 
@@ -1817,11 +1860,29 @@
   min-inline-size: 0;
 }
 
+/* Keep the existing soft-reveal treatment, but let each What I do card
+   enter after the previous one instead of resolving as a single group. */
+.soft-reveal-ready .service-summary-grid > .service-summary-card {
+  transition-delay: 60ms;
+}
+
+.soft-reveal-ready .service-summary-grid > .service-summary-card:nth-child(2) {
+  transition-delay: 180ms;
+}
+
+.soft-reveal-ready .service-summary-grid > .service-summary-card:nth-child(3) {
+  transition-delay: 300ms;
+}
+
+.soft-reveal-ready .service-summary-grid > .service-summary-card:nth-child(4) {
+  transition-delay: 420ms;
+}
+
 .service-summary-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  min-block-size: 16rem;
+  min-block-size: 18rem;
   padding: var(--space-4);
   border: var(--border);
   border-radius: var(--radius-card);
@@ -1836,7 +1897,7 @@
   min-inline-size: 0;
 }
 
-.service-summary-card__top h3 {
+.service-summary-card__top h5 {
   margin: 0;
 }
 
@@ -1850,10 +1911,9 @@
   border-radius: 0.85rem;
 }
 
-.service-summary-card h3 {
-  max-inline-size: 12ch;
-  font-size: var(--step-1);
-  overflow-wrap: anywhere;
+.service-summary-card h5 {
+  min-inline-size: 0;
+  overflow-wrap: normal;
 }
 
 .service-summary-card > p {
@@ -1971,7 +2031,7 @@
 
 .lab-grid > li.lab-grid__intro {
   display: grid;
-  align-content: center;
+  align-content: start;
   justify-items: start;
   gap: var(--space-5);
   padding: 0 var(--space-5) var(--space-5) 0;
@@ -3195,14 +3255,14 @@ h6 { font-size: var(--type-h6) !important; }
   .hero-headline {
     inline-size: min(100%, calc(6 * var(--layout-column)));
     /* Preserve the same five-grid-row title area below the desktop rail breakpoint. */
-    block-size: calc((5 * var(--grid-row)) - 1rem - 1.5rem);
+    block-size: calc((5 * var(--grid-row)) - 0.5rem - 1.5rem);
     font-size: var(--type-h1) !important;
     line-height: 1.06;
     letter-spacing: normal;
   }
 
   .skills-section.what-i-do {
-    padding-block-start: var(--section-block-space);
+    padding-block-start: 0;
   }
 
   .hero__details {
@@ -3213,6 +3273,10 @@ h6 { font-size: var(--type-h6) !important; }
   .projects-section--home-marquee {
     inline-size: 100%;
     margin-inline-start: 0;
+  }
+
+  .projects-section--home-marquee .projects-section__all {
+    margin-inline-end: 0;
   }
 
   .project-preview {
@@ -3477,7 +3541,7 @@ h6 { font-size: var(--type-h6) !important; }
 
   .hero-headline {
     inline-size: 100%;
-    block-size: calc((5 * var(--grid-row)) - 1rem - 1.5rem);
+    block-size: calc((5 * var(--grid-row)) - 0.5rem - 1.5rem);
     max-inline-size: 11ch;
   }
 
@@ -3523,11 +3587,6 @@ h6 { font-size: var(--type-h6) !important; }
   .projects-section--home-marquee .project-card__link,
   .projects-section--home-marquee .project-art {
     block-size: auto;
-  }
-
-  .projects-section--home-marquee .projects-section__all-button {
-    inline-size: 100%;
-    margin-inline-start: 0;
   }
 
   .project-tetris-grid {

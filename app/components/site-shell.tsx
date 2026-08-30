@@ -2,7 +2,6 @@ import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import { siteContent } from "~/content/site";
 import { LayoutGridOverlay, LayoutGridToggle } from "./layout-grid-overlay";
-import { LocalTime } from "./local-time";
 import { ScrollToTop } from "./scroll-to-top";
 import { SoftRevealObserver } from "./soft-reveal-observer";
 import { ThemeControl } from "./theme-control";
@@ -14,7 +13,7 @@ const navigation = [
   { label: "Home", href: "/" },
   { label: "About me", href: "/about" },
   { label: "Work", href: "/work" },
-  { label: "Design process", href: "/services" },
+  { label: "Process", href: "/services" },
   { label: "Lab", href: "/lab" },
   { label: "Contact", href: "/contact" },
 ];
@@ -89,7 +88,6 @@ export function SiteShell() {
         <div className="rail__bottom">
           <div className="rail-utilities">
             {railTools}
-            <LocalTime />
           </div>
         </div>
       </aside>
@@ -103,7 +101,6 @@ export function SiteShell() {
 
       <div className="mobile-theme-control">
         {railTools}
-        <LocalTime />
       </div>
 
       <div className="page-surface">

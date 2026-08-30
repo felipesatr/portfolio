@@ -21,7 +21,7 @@ export function SkillsSection() {
         {services.map((service) => (
           <article key={service.id} className="service-summary-card">
             <div className="service-summary-card__top">
-              <h3>{service.title}</h3>
+              <h5>{service.title}</h5>
               <span className="service-summary-card__icon"><ServiceIcon service={service} /></span>
             </div>
             <p>{service.summary}</p>

@@ -139,8 +139,8 @@ function ProjectMarqueeRow({ animated, direction, projects, allProjects, interac
       const loopDistance = (track.scrollWidth / 2) + (gap / 2);
       const duration = (loopDistance / PROJECT_SPEED_PX_PER_SECOND) * 1000;
       const keyframes = direction === "left"
-        ? [{ transform: "translateX(0)" }, { transform: `translateX(-${loopDistance}px)` }]
-        : [{ transform: `translateX(-${loopDistance}px)` }, { transform: "translateX(0)" }];
+        ? [{ transform: "translate3d(0, 0, 0)" }, { transform: `translate3d(-${loopDistance}px, 0, 0)` }]
+        : [{ transform: `translate3d(-${loopDistance}px, 0, 0)` }, { transform: "translate3d(0, 0, 0)" }];
 
       const animation = track.animate(keyframes, {
         duration,
@@ -172,25 +172,11 @@ function ProjectMarqueeRow({ animated, direction, projects, allProjects, interac
     };
     document.addEventListener("visibilitychange", syncDocumentVisibility);
 
-    const resumeAfterHover = (event: PointerEvent) => {
-      if (!interactiveHover || !hoverRef.current.active) return;
-      const bounds = viewport.getBoundingClientRect();
-      const isInside = event.clientX >= bounds.left
-        && event.clientX <= bounds.right
-        && event.clientY >= bounds.top
-        && event.clientY <= bounds.bottom;
-      if (isInside) return;
-      hoverRef.current.active = false;
-      if (!pausedRef.current && visibleRef.current && !document.hidden) animationRef.current?.play();
-    };
-    window.addEventListener("pointermove", resumeAfterHover, { passive: true });
-
     return () => {
       visibilityObserver.disconnect();
       resizeObserver.disconnect();
       motionQuery.removeEventListener("change", createAnimation);
       document.removeEventListener("visibilitychange", syncDocumentVisibility);
-      window.removeEventListener("pointermove", resumeAfterHover);
       animationRef.current?.cancel();
       animationRef.current = null;
     };
@@ -633,6 +619,7 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
             />
           </div>
           <div className="projects-section__all">
+            <h3>This is only a selection</h3>
             <Link className="button button--primary projects-section__all-button" to="/work"><span className="liquid-button__surface">View all projects <ArrowUpRightIcon /></span></Link>
           </div>
         </>

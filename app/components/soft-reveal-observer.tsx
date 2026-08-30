@@ -15,6 +15,7 @@ const softRevealSelector = [
   ".project-tetris-grid > .project-card",
   ".work-gallery__column > .project-card",
   ".service-summary-card",
+  ".what-i-do__process",
   ".lab-grid__intro",
   ".lab-grid > li:not(.lab-grid__intro)",
   ".section-heading-row > *",

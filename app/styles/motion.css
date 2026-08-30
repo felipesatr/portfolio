@@ -105,7 +105,10 @@
   transition:
     opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
     filter 680ms cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(var(--soft-reveal-index, 0) * 60ms);
+  /* Give every soft reveal a small initial pause before its existing sibling
+     cadence begins. The What I do cards override this with their own
+     explicit stagger in components.css. */
+  transition-delay: calc((var(--soft-reveal-index, 0) + 1) * 60ms);
 }
 
 .soft-reveal-ready .soft-reveal-target.is-soft-revealed {

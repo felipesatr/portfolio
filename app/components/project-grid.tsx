@@ -519,6 +519,7 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const [previewClosing, setPreviewClosing] = useState(false);
   const [marqueeLocked, setMarqueeLocked] = useState(false);
+  const [isAllProjectsActionRevealed, setIsAllProjectsActionRevealed] = useState(false);
   const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const closeStageTimerRef = useRef<number | null>(null);
   const closeFallbackTimerRef = useRef<number | null>(null);
@@ -619,8 +620,13 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
             />
           </div>
           <div className="projects-section__all">
-            <h3>This is only a selection</h3>
-            <Link className="button button--primary projects-section__all-button" to="/work"><span className="liquid-button__surface">View all projects <ArrowUpRightIcon /></span></Link>
+            <RevealTitle as="h3" lines={["This is only a selection"]} onRevealComplete={() => setIsAllProjectsActionRevealed(true)} />
+            <Link
+              className={`button button--primary projects-section__all-button reveal-following-action${isAllProjectsActionRevealed ? " is-revealed" : ""}`}
+              to="/work"
+              tabIndex={isAllProjectsActionRevealed ? undefined : -1}
+              aria-hidden={!isAllProjectsActionRevealed}
+            ><span className="liquid-button__surface">View all projects <ArrowUpRightIcon /></span></Link>
           </div>
         </>
       ) : (

@@ -3,11 +3,11 @@ import { NavLink, Outlet } from "react-router";
 import { siteContent } from "~/content/site";
 import { LayoutGridOverlay, LayoutGridToggle } from "./layout-grid-overlay";
 import { ScrollToTop } from "./scroll-to-top";
+import { SiteScrollbar } from "./site-scrollbar";
 import { SoftRevealObserver } from "./soft-reveal-observer";
 import { ThemeControl } from "./theme-control";
 import { FluidCursor } from "./fluid-cursor";
 import { LanguageIcon } from "./icons";
-import { TypographyPreviewControl } from "./typography-preview-control";
 
 const navigation = [
   { label: "Home", href: "/" },
@@ -82,7 +82,7 @@ export function SiteShell() {
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <aside className="desktop-rail" aria-label="Site navigation rail">
         <div className="rail__top">
-          <NavLink className="wordmark" to="/" aria-label="Portfolio home">JS</NavLink>
+          <NavLink className="wordmark" to="/" aria-label="Felipe Salazar portfolio home"><span>Felipe</span><span>Salazar</span></NavLink>
           <PrimaryNavigation className="rail-nav" showSocials />
         </div>
         <div className="rail__bottom">
@@ -94,7 +94,7 @@ export function SiteShell() {
 
       <header className="mobile-header">
         <div className="mobile-header__top">
-          <NavLink className="wordmark" to="/" aria-label="Portfolio home">JS</NavLink>
+          <NavLink className="wordmark" to="/" aria-label="Felipe Salazar portfolio home"><span>Felipe</span><span>Salazar</span></NavLink>
         </div>
         <PrimaryNavigation className="mobile-nav" />
       </header>
@@ -110,10 +110,10 @@ export function SiteShell() {
         <SiteFooter />
       </div>
       <ScrollToTop />
+      <SiteScrollbar />
       <FluidCursor />
       <SoftRevealObserver />
       <LayoutGridOverlay isVisible={isGridVisible} />
-      <TypographyPreviewControl />
       <div className="site-intro" aria-hidden="true"><span>JS</span><i /></div>
     </div>
   );

@@ -5,13 +5,17 @@ import {
   ArrowUp,
   ArrowUpRight,
   CodeBrackets,
+  Download,
   FilterAlt,
   FaceId,
+  InfoCircle,
   Language,
   LightBulb,
+  Refresh,
   SendDiagonalSolid,
   Sparks,
   SunLight,
+  Trash,
   ViewGrid,
   WindowTabs,
 } from "iconoir-react";
@@ -69,6 +73,22 @@ export function LanguageIcon({ size = 18, className }: IconProps) {
 
 export function SunIcon({ size = 18, className }: IconProps) {
   return <SunLight {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function TrashIcon({ size = 18, className }: IconProps) {
+  return <Trash {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function InfoCircleIcon({ size = 18, className }: IconProps) {
+  return <InfoCircle {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function DownloadIcon({ size = 18, className }: IconProps) {
+  return <Download {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function RestartIcon({ size = 18, className }: IconProps) {
+  return <Refresh {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function InterfaceIcon({ size = 28, className }: IconProps) {

@@ -135,7 +135,9 @@ function HeadlineLayer({ audience, headline, format = "display", fixedSize, inco
                   className="reveal-title__word-inner"
                   data-last-word={isLastWord || undefined}
                   style={{ "--reveal-word-index": currentWordIndex } as CSSProperties}
-                  onTransitionEnd={isLastWord ? onFinished : undefined}
+                  onTransitionEnd={isLastWord ? (event) => {
+                    if (event.propertyName === "transform") onFinished?.();
+                  } : undefined}
                 >
                   {word}
                 </span>
@@ -165,6 +167,7 @@ export function Hero() {
   const [outgoingAudience, setOutgoingAudience] = useState<Audience | null>(null);
   const [outgoingSize, setOutgoingSize] = useState<number | null>(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [hasCompletedInitialReveal, setHasCompletedInitialReveal] = useState(false);
   const frameRef = useRef<number | null>(null);
   const fittedSizesRef = useRef(new Map<Audience, number>());
   const selectedContent = audienceContent.find((item) => item.id === selectedAudience) ?? audienceContent[0];
@@ -172,17 +175,44 @@ export function Hero() {
     ? audienceContent.find((item) => item.id === outgoingAudience) ?? null
     : null;
 
+  useLayoutEffect(() => {
+    document.documentElement.dataset.heroIntro = "pending";
+    return () => { delete document.documentElement.dataset.heroIntro; };
+  }, []);
+
+  useEffect(() => {
+    if (!hasCompletedInitialReveal) return;
+    const root = document.documentElement;
+    root.dataset.heroIntro = "ready";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.dataset.heroIntro = "complete";
+      window.dispatchEvent(new Event("portfolio-hero-intro-complete"));
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      root.dataset.heroIntro = "complete";
+      window.dispatchEvent(new Event("portfolio-hero-intro-complete"));
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [hasCompletedInitialReveal]);
+
   useEffect(() => {
     if (!wordRevealEnabled) {
       setIsMoving(true);
       setOutgoingAudience(null);
       setOutgoingSize(null);
+      setHasCompletedInitialReveal(true);
       return;
     }
 
-    frameRef.current = window.requestAnimationFrame(() => {
-      frameRef.current = window.requestAnimationFrame(() => setIsMoving(true));
-    });
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIsMoving(true);
+      setHasCompletedInitialReveal(true);
+      return;
+    }
+
+    frameRef.current = window.requestAnimationFrame(() => setIsMoving(true));
 
     return () => {
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
@@ -215,6 +245,7 @@ export function Hero() {
   const finishAudienceTransition = () => {
     setOutgoingAudience(null);
     setOutgoingSize(null);
+    setHasCompletedInitialReveal(true);
   };
 
   return (

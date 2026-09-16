@@ -186,18 +186,21 @@
 }
 
 .wordmark {
+  display: grid;
   inline-size: max-content;
   color: var(--text);
-  font-size: 1.5rem;
-  font-weight: 820;
-  letter-spacing: -0.06em;
-  line-height: 1;
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  line-height: 0.9;
   text-decoration: none;
+  text-transform: uppercase;
 }
 
 .rail-nav {
   position: absolute;
-  inset-block-start: calc(4 * var(--grid-row));
+  inset-block-start: calc(3 * var(--grid-row));
   inset-inline: clamp(0.75rem, 1.25vw, 2rem) clamp(0.75rem, 1.1vw, 1.75rem);
   display: grid;
   gap: 0.15rem;

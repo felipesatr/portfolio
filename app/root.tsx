@@ -33,9 +33,12 @@ const earlyPreferenceScript = `
   })();
 `;
 
+const figtreeStylesheet = "https://fonts.googleapis.com/css2?family=Figtree:wght@400&display=swap";
+
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
   { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cal+Sans:wght@400&display=swap" },
+  { rel: "stylesheet", href: figtreeStylesheet },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -52,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <noscript>
-          <style>{`.reveal-title__word-inner,.reveal-text__word{opacity:1!important;transform:none!important}`}</style>
+          <style>{`.reveal-title__word-inner,.reveal-text__word,.soft-blur-text__character{opacity:1!important;filter:none!important;transform:none!important}`}</style>
         </noscript>
         {children}
         <ScrollRestoration />

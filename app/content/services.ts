@@ -1,6 +1,7 @@
 export interface Service {
   id: string;
   title: string;
+  cardTitle: string;
   shortTitle: string;
   summary: string;
   deliverables: string[];
@@ -13,6 +14,7 @@ export const services: Service[] = [
   {
     id: "webapp-ui-design",
     title: "UX/UI & WebApp Design",
+    cardTitle: "UX/UI & WebApp\nDesign",
     shortTitle: "UX/UI & WebApp design",
     summary: "I shape content, requirements, and user needs into clear responsive websites and interfaces that can move into production.",
     deliverables: ["Information architecture", "Responsive layouts", "UI direction", "Interaction states", "Figma prototypes"],
@@ -23,6 +25,7 @@ export const services: Service[] = [
   {
     id: "strategy-brand-consulting",
     title: "Strategy, Brand & Consulting",
+    cardTitle: "Strategy, Brand &\nConsulting",
     shortTitle: "Strategy, brand & consulting",
     summary: "I help clarify the idea, audience, message, and visual direction before turning those decisions into a useful identity or digital experience.",
     deliverables: ["Creative direction", "Brand foundations", "Content structure", "Website strategy", "Design consultation"],
@@ -33,6 +36,7 @@ export const services: Service[] = [
   {
     id: "front-end-technical-delivery",
     title: "Frontend Development, Code & No-Code",
+    cardTitle: "Frontend Development,\nCode & No-Code",
     shortTitle: "Frontend development, code & no-code",
     summary: "I turn approved designs into responsive, accessible websites using code or the right no-code platform, then review the work through delivery.",
     deliverables: ["Responsive implementation", "Semantic HTML", "No-code builds", "Production QA", "Migration workflow support"],
@@ -43,6 +47,7 @@ export const services: Service[] = [
   {
     id: "ai-workflows-automation",
     title: "AI Workflows & Automation",
+    cardTitle: "AI Workflows &\nAutomation",
     shortTitle: "AI workflows & automation",
     summary: "I design supervised AI workflows, automate repetitive production work, and turn useful ideas into practical prototypes and tools.",
     deliverables: ["Workflow mapping", "Prompt systems", "Task automation", "Rapid prototypes", "Documentation and review"],

@@ -1,5 +1,5 @@
 import type { CSSProperties, ElementType, ReactNode, RefObject } from "react";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 function useRevealOnView<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -78,6 +78,7 @@ interface RevealTitleProps {
   id?: string;
   lines: string[];
   live?: "polite" | "assertive";
+  onRevealComplete?: () => void;
 }
 
 function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, enabled: boolean) {
@@ -132,11 +133,31 @@ function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, en
   }, [content, enabled, ref]);
 }
 
-export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live }: RevealTitleProps) {
+export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live, onRevealComplete }: RevealTitleProps) {
   const { ref, isRevealed } = useRevealOnView<HTMLElement>();
+  const hasCompleted = useRef(false);
   const Heading = as as ElementType;
   let wordIndex = 0;
+  const totalWords = lines.reduce((count, line) => count + line.trim().split(/\s+/).filter(Boolean).length, 0);
   useAutoFitTitle(ref, lines.join(" "), autoFit);
+  const completeReveal = useCallback(() => {
+    if (hasCompleted.current) return;
+    hasCompleted.current = true;
+    onRevealComplete?.();
+  }, [onRevealComplete]);
+
+  useEffect(() => {
+    if (!isRevealed || !onRevealComplete) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const frame = window.requestAnimationFrame(completeReveal);
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    // Let a dependent element take the very next word slot, rather than
+    // waiting for the final word's long settling transition to finish.
+    const timer = window.setTimeout(completeReveal, totalWords * 42 + 192);
+    return () => window.clearTimeout(timer);
+  }, [completeReveal, isRevealed, onRevealComplete, totalWords]);
 
   return (
     <Heading
@@ -194,6 +215,36 @@ export function RevealText({ children, className, delay = 0 }: RevealTextProps) 
           {index < words.length - 1 ? " " : null}
         </Fragment>
       )) : children}
+    </p>
+  );
+}
+
+interface SoftBlurTextProps {
+  children: string;
+  className?: string;
+  delay?: number;
+}
+
+/* For body copy inside a parent that already owns a soft reveal. The parent
+   resolves first; then this applies the supplied reference's character-level
+   fade, blur, and upward settle without changing heading animation. */
+export function SoftBlurText({ children, className, delay = 600 }: SoftBlurTextProps) {
+  return (
+    <p
+      className={`${className ? `${className} ` : ""}soft-blur-text`}
+      style={{ "--soft-blur-delay": `${delay}ms` } as CSSProperties}
+    >
+      {Array.from(children).map((character, index) => (
+        <span
+          key={`${character}-${index}`}
+          className="soft-blur-text__character"
+          style={{ "--soft-blur-index": index } as CSSProperties}
+          aria-hidden="true"
+        >
+          {character === " " ? "\u00a0" : character}
+        </span>
+      ))}
+      <span className="visually-hidden">{children}</span>
     </p>
   );
 }

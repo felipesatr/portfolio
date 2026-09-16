@@ -3,11 +3,11 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { SunIcon } from "./icons";
 
 const themes = [
-  { id: "light", label: "Neutral light" },
-  { id: "dark", label: "Neutral dark" },
-  { id: "warm", label: "Warm" },
-  { id: "cool", label: "Muted cool" },
-  { id: "contrast", label: "Higher-contrast accent" },
+  { id: "light", label: "Violet light" },
+  { id: "dark", label: "Lavender dark" },
+  { id: "warm", label: "Terracotta warm" },
+  { id: "cool", label: "Teal cool" },
+  { id: "contrast", label: "Electric violet contrast" },
 ] as const;
 
 type ThemeId = (typeof themes)[number]["id"];

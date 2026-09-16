@@ -34,6 +34,26 @@
   transform: translateY(0);
 }
 
+/* CTAs that follow a reveal title use its next word slot, preserving the
+   title's cadence without waiting for its long word-settle duration. */
+.reveal-following-action {
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(0.5rem);
+  pointer-events: none;
+  transition:
+    opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-following-action.is-revealed {
+  opacity: 1;
+  filter: none;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .hero-headline__layer--incoming .reveal-title__word-inner {
   opacity: 0;
   transform: translateY(115%);
@@ -99,6 +119,29 @@
   transform: translateX(0);
 }
 
+.soft-blur-text {
+  opacity: 1;
+}
+
+.soft-blur-text__character {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(0.65rem);
+  transform: translateY(0.6rem);
+  transition:
+    opacity 520ms linear,
+    filter 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--soft-blur-delay, 600ms) + (var(--soft-blur-index, 0) * 10ms));
+  white-space: pre;
+}
+
+.soft-reveal-ready .soft-reveal-target.is-soft-revealed .soft-blur-text__character {
+  opacity: 1;
+  filter: none;
+  transform: translateY(0);
+}
+
 .soft-reveal-ready .soft-reveal-target {
   opacity: 0;
   filter: blur(10px);
@@ -114,6 +157,45 @@
 .soft-reveal-ready .soft-reveal-target.is-soft-revealed {
   opacity: 1;
   filter: none;
+}
+
+/* Keep the initial screen intentionally empty around the headline. Once its
+   word-by-word reveal resolves, these surfaces use the normal soft fade/unblur. */
+html[data-hero-intro] .desktop-rail,
+html[data-hero-intro] .mobile-header,
+html[data-hero-intro] .hero-audience,
+html[data-hero-intro] .hero__details,
+html[data-hero-intro] .project-marquee__viewport {
+  transition:
+    opacity 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0ms;
+}
+
+html[data-hero-intro="pending"] .desktop-rail,
+html[data-hero-intro="pending"] .mobile-header,
+html[data-hero-intro="pending"] .hero-audience,
+html[data-hero-intro="pending"] .hero__details,
+html[data-hero-intro="pending"] .project-marquee__viewport {
+  opacity: 0 !important;
+  filter: blur(10px) !important;
+  pointer-events: none;
+}
+
+html[data-hero-intro="ready"] .desktop-rail,
+html[data-hero-intro="ready"] .mobile-header,
+html[data-hero-intro="ready"] .hero-audience,
+html[data-hero-intro="ready"] .hero__details,
+html[data-hero-intro="ready"] .project-marquee__viewport {
+  pointer-events: none;
+}
+
+html[data-hero-intro="complete"] .desktop-rail,
+html[data-hero-intro="complete"] .mobile-header,
+html[data-hero-intro="complete"] .hero-audience,
+html[data-hero-intro="complete"] .hero__details,
+html[data-hero-intro="complete"] .project-marquee__viewport {
+  pointer-events: auto;
 }
 
 html[data-intro="play"] .intro-target {
@@ -188,10 +270,16 @@ html[data-intro="play"] .site-intro {
 
   .reveal-title__word-inner,
   .reveal-text__word,
+  .reveal-following-action,
+  .soft-blur-text__character,
   .soft-reveal-target,
   .soft-reveal-target.is-soft-revealed {
     opacity: 1;
     filter: none;
     transform: none;
+  }
+
+  .reveal-following-action {
+    pointer-events: auto;
   }
 }

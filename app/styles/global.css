@@ -1,7 +1,38 @@
 html {
   background: var(--page);
   scroll-padding-block-start: 6rem;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+
+/* A custom scroll indicator keeps the native scroll model intact, but presents
+   a calmer, theme-aware thumb like the Incredibles reference. */
+html::-webkit-scrollbar {
+  inline-size: 0;
+  block-size: 0;
+}
+
+/* Lenis' recommended native-scroll integration: it smooths the browser's
+   actual scroll position without moving the page into a transformed wrapper. */
+html.lenis,
+html.lenis body {
+  block-size: auto;
+}
+
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+html.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+html.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+html.lenis.lenis-smooth iframe {
+  pointer-events: none;
 }
 
 body {
@@ -56,6 +87,53 @@ main {
   background: var(--page);
 }
 
+.site-scrollbar {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 35;
+  inline-size: 1.25rem;
+  pointer-events: auto;
+  transition: opacity 70ms linear;
+}
+
+.site-scrollbar--hidden {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.site-scrollbar__track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.site-scrollbar__thumb {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0.4375rem;
+  block-size: var(--scrollbar-height, 0);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 42%, var(--page));
+  cursor: grab;
+  translate: 0 var(--scrollbar-top, 0);
+  transition:
+    background-color 160ms var(--ease-out),
+    opacity 70ms linear,
+    scale 200ms cubic-bezier(0.215, 0.61, 0.355, 1);
+  will-change: translate;
+}
+
+.site-scrollbar__thumb:hover {
+  background: color-mix(in srgb, var(--primary) 82%, var(--text));
+  scale: 1.25 1;
+}
+
+.site-scrollbar--dragging .site-scrollbar__thumb {
+  background: var(--primary-hover);
+  cursor: grabbing;
+  scale: 1.25 1;
+}
+
 #hero,
 #selected-work,
 #skills,
@@ -75,6 +153,23 @@ main {
   #references,
   #contact {
     scroll-margin-block-start: 9rem;
+  }
+}
+
+@media (pointer: coarse), (max-width: 48rem) {
+  html,
+  html.has-custom-scrollbar {
+    scrollbar-gutter: stable;
+    scrollbar-width: auto;
+  }
+
+  html::-webkit-scrollbar {
+    inline-size: initial;
+    block-size: initial;
+  }
+
+  .site-scrollbar {
+    display: none;
   }
 }
 

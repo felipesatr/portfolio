@@ -6,14 +6,26 @@
   --text-body: #373735;
   --muted: #666660;
   --line: #bdbcb6;
+  /* Shared neutral for explicit design directions that call for grey. */
+  --grey: #b8b8b8;
   --soft: #f2f1ec;
   --soft-strong: #e5e3dc;
   --inverse-bg: #171717;
   --inverse-text: #fefefc;
   --inverse-muted: #c8c8c2;
-  --accent: #6948e8;
-  --liquid-red: #e33333;
-  --focus: #6948e8;
+  /* Interaction roles — the current values are documented in
+     docs/design/theme-colors.md. Components consume the role, never a raw
+     palette value, so each theme can evolve independently. */
+  --primary: #6948e8;
+  --primary-hover: #5636c8;
+  --primary-ink: #ffffff;
+  --secondary: #e33333;
+  --secondary-hover: #bf2428;
+  --secondary-ink: #ffffff;
+  --accent: var(--primary);
+  --focus: var(--primary);
+  --cursor: #171717;
+  --cursor-ink: #fefefc;
   --theme-light: #fefefc;
   --theme-dark: #171717;
   --theme-warm: #e7ded0;
@@ -23,11 +35,7 @@
   --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-heading: "Cal Sans", var(--font-sans);
-  --font-body-preview: var(--font-sans);
-  --font-body-weight: 400;
-  --font-body-letter-spacing: normal;
-  --font-body-word-spacing: normal;
-  --font-body-optical-sizing: auto;
+  --font-body: "Figtree", var(--font-sans);
 
   /* Named text sizes use round pixel values at the 16px browser baseline. */
   --type-caption: 0.625rem;
@@ -90,7 +98,7 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --page: #151515;
+  --page: #0a0a0a;
   --text: #f5f5f1;
   --text-body: #deded8;
   --muted: #b9b9b2;
@@ -100,7 +108,16 @@
   --inverse-bg: #f1f1ed;
   --inverse-text: #161616;
   --inverse-muted: #555550;
-  --focus: #cdbdff;
+  --primary: #b8a4ff;
+  --primary-hover: #9b82ef;
+  --primary-ink: #1c1727;
+  --secondary: #ff7772;
+  --secondary-hover: #e65d59;
+  --secondary-ink: #2a1211;
+  --accent: var(--primary);
+  --focus: var(--primary);
+  --cursor: #f5f5f1;
+  --cursor-ink: #0a0a0a;
 }
 
 [data-theme="warm"] {
@@ -115,7 +132,16 @@
   --inverse-bg: #2d211a;
   --inverse-text: #fff8ed;
   --inverse-muted: #d6c7b7;
-  --focus: #794cc4;
+  --primary: #9c4d2c;
+  --primary-hover: #7e3c22;
+  --primary-ink: #fff8ed;
+  --secondary: #386f62;
+  --secondary-hover: #28584d;
+  --secondary-ink: #f4fbf7;
+  --accent: var(--primary);
+  --focus: var(--primary);
+  --cursor: #281d17;
+  --cursor-ink: #fff8ed;
 }
 
 [data-theme="cool"] {
@@ -130,7 +156,16 @@
   --inverse-bg: #17251f;
   --inverse-text: #f2faf6;
   --inverse-muted: #bed0c8;
-  --focus: #6a3dde;
+  --primary: #216f70;
+  --primary-hover: #18595a;
+  --primary-ink: #f5fffd;
+  --secondary: #90518d;
+  --secondary-hover: #733e70;
+  --secondary-ink: #fff9ff;
+  --accent: var(--primary);
+  --focus: var(--primary);
+  --cursor: #15211d;
+  --cursor-ink: #f2faf6;
 }
 
 [data-theme="contrast"] {
@@ -145,5 +180,14 @@
   --inverse-bg: #000000;
   --inverse-text: #ffffff;
   --inverse-muted: #f1f1f1;
-  --focus: #5327d4;
+  --primary: #4d19c4;
+  --primary-hover: #32008a;
+  --primary-ink: #ffffff;
+  --secondary: #d9183d;
+  --secondary-hover: #ad102f;
+  --secondary-ink: #ffffff;
+  --accent: var(--primary);
+  --focus: var(--primary);
+  --cursor: #000000;
+  --cursor-ink: #ffffff;
 }

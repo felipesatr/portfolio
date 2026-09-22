@@ -32,13 +32,13 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
         </NavLink>
       ))}
       <a className="nav-link" href="/resume-placeholder.txt" target="_blank" rel="noreferrer">
-        Résumé <span className="visually-hidden">placeholder, opens in a new tab</span>
+        Resume <span className="visually-hidden">placeholder, opens in a new tab</span>
       </a>
       {showSocials ? (
         <div className="rail-nav__socials" aria-label="Social profile placeholders">
           <span className="nav-link nav-link--placeholder" aria-disabled="true" title="LinkedIn profile placeholder">LinkedIn</span>
           <span className="nav-link nav-link--placeholder" aria-disabled="true" title="GitHub profile placeholder">GitHub</span>
-          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="Instagram profile placeholder">Instagram</span>
+          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="Behance profile placeholder">Behance</span>
         </div>
       ) : null}
     </nav>

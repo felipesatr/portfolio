@@ -21,13 +21,57 @@ import "./styles/motion.css";
 const earlyPreferenceScript = `
   (() => {
     try {
+      const root = document.documentElement;
+      const resetToTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      const navigation = performance.getEntriesByType('navigation')[0];
+      const isReload = navigation && navigation.type === 'reload';
+
+      // New documents remain invisible until their scroll position has settled.
+      root.dataset.pageReset = 'pending';
+      root.style.scrollBehavior = 'auto';
+      history.scrollRestoration = 'manual';
+      resetToTop();
+      requestAnimationFrame(() => {
+        resetToTop();
+        requestAnimationFrame(() => {
+          resetToTop();
+          root.style.removeProperty('scroll-behavior');
+          delete root.dataset.pageReset;
+        });
+      });
+
+      // Keyboard reloads get a complete exit: fade and blur the live page,
+      // jump to the top only once it is invisible, then reload into the intro.
+      const reloadWithExit = () => {
+        if (root.dataset.pageExit === 'leaving') return;
+        root.dataset.pageExit = 'leaving';
+        window.setTimeout(() => {
+          root.style.scrollBehavior = 'auto';
+          resetToTop();
+          sessionStorage.removeItem('portfolio-intro-seen');
+          window.setTimeout(() => window.location.reload(), 24);
+        }, 300);
+      };
+      window.addEventListener('keydown', (event) => {
+        const key = event.key.toLowerCase();
+        if (event.key === 'F5' || ((event.ctrlKey || event.metaKey) && key === 'r')) {
+          event.preventDefault();
+          reloadWithExit();
+        }
+      }, { capture: true });
+      window.addEventListener('beforeunload', () => {
+        root.dataset.pageExit = 'leaving';
+        root.style.scrollBehavior = 'auto';
+        resetToTop();
+      });
+
       const savedTheme = localStorage.getItem('portfolio-theme');
-      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
-      if (sessionStorage.getItem('portfolio-intro-seen')) {
-        document.documentElement.dataset.intro = 'seen';
-      } else {
+      if (savedTheme) root.dataset.theme = savedTheme;
+      if (isReload || !sessionStorage.getItem('portfolio-intro-seen')) {
         sessionStorage.setItem('portfolio-intro-seen', 'true');
-        document.documentElement.dataset.intro = 'play';
+        root.dataset.intro = 'play';
+      } else {
+        root.dataset.intro = 'seen';
       }
     } catch (_) {}
   })();
@@ -43,14 +87,15 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="theme-color" content="#fefefc" />
+        <meta name="theme-color" content="#161616" />
         <Meta />
         <Links />
+        <style>{`html[data-page-reset="pending"] { scroll-behavior: auto !important; } html[data-page-reset="pending"] body { visibility: hidden; } body { transition: opacity 300ms var(--ease-out), filter 300ms var(--ease-out); } html[data-page-exit="leaving"] body { opacity: 0; filter: blur(12px); pointer-events: none; }`}</style>
         <script dangerouslySetInnerHTML={{ __html: earlyPreferenceScript }} />
       </head>
       <body>

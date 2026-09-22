@@ -66,7 +66,7 @@
   padding: 0.12rem 0.22rem;
   color: var(--focus);
   background: var(--page);
-  font: 700 var(--type-caption)/1 var(--font-mono);
+  font: 700 var(--type-caption) / 1 var(--font-mono);
   font-style: normal;
   transform: translateX(-50%);
   opacity: 0;
@@ -108,11 +108,13 @@
 .layout-grid__horizontal-line span {
   position: absolute;
   inset-block-start: 0.2rem;
-  inset-inline-start: calc(50% + var(--layout-half-column) - var(--layout-content-half) + 0.35rem);
+  inset-inline-start: calc(
+    50% + var(--layout-half-column) - var(--layout-content-half) + 0.35rem
+  );
   padding: 0.12rem 0.22rem;
   color: var(--focus);
   background: var(--page);
-  font: 700 var(--type-caption)/1 var(--font-mono);
+  font: 700 var(--type-caption) / 1 var(--font-mono);
   font-style: normal;
   opacity: 0;
   filter: blur(8px);
@@ -152,13 +154,15 @@
   padding: 0.12rem 0.25rem;
   color: var(--text);
   background: var(--page);
-  font: 700 var(--type-caption)/1 var(--font-mono);
+  font: 700 var(--type-caption) / 1 var(--font-mono);
   font-style: normal;
   text-transform: uppercase;
 }
 
 .layout-grid__content-boundary {
-  inset-inline-start: calc(50% + var(--layout-half-column) - var(--layout-content-half));
+  inset-inline-start: calc(
+    50% + var(--layout-half-column) - var(--layout-content-half)
+  );
   inline-size: var(--layout-content-width);
   border-inline-end: 1px dashed var(--grid-boundary-color);
 }
@@ -192,7 +196,7 @@
   font-family: var(--font-heading);
   font-size: 1.125rem;
   font-weight: 700;
-  letter-spacing: normal;
+  letter-spacing: 0.07em;
   line-height: 0.9;
   text-decoration: none;
   text-transform: uppercase;
@@ -272,13 +276,15 @@
   color: var(--text);
   background: color-mix(in srgb, var(--page) 90%, transparent);
   text-decoration: none;
-  transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
   backdrop-filter: blur(10px);
 }
 
 .rail-circle-control:hover,
 .rail-circle-control:focus-visible,
-.rail-circle-control[aria-pressed="true"] {
+.rail-circle-control[aria-pressed='true'] {
   color: var(--page);
   border-color: var(--text);
   background: var(--text);
@@ -467,7 +473,7 @@
   .mobile-nav .nav-link {
     justify-content: center;
     min-block-size: 2.35rem;
-  font-size: var(--type-label);
+    font-size: var(--type-label);
   }
 
   .site-footer nav {

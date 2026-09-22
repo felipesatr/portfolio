@@ -3,8 +3,8 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { SunIcon } from "./icons";
 
 const themes = [
-  { id: "light", label: "Violet light" },
   { id: "dark", label: "Lavender dark" },
+  { id: "light", label: "Violet light" },
   { id: "warm", label: "Terracotta warm" },
   { id: "cool", label: "Teal cool" },
   { id: "contrast", label: "Electric violet contrast" },
@@ -37,9 +37,9 @@ export function ThemeControl() {
     },
     () => {
       const documentTheme = document.documentElement.dataset.theme;
-      return isTheme(documentTheme ?? null) ? documentTheme : "light";
+      return isTheme(documentTheme ?? null) ? documentTheme : "dark";
     },
-    () => "light",
+    () => "dark",
   );
   const selectedIndex = themes.findIndex((theme) => theme.id === selectedTheme);
   const visualIndex = hasPositionedTheme ? selectedIndex : 0;

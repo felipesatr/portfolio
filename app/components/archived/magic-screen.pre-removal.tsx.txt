@@ -1,10 +1,10 @@
 import { Link } from "react-router";
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
-import { ArrowUpRightIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
-import { RevealTitle, SoftBlurText } from "./motion-reveal";
-import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
+import { ArrowUpRightIcon, CodeIcon, DownloadIcon, InfoCircleIcon, InterfaceIcon, RestartIcon, SparkIcon, StrategyIcon, TrashIcon } from "../icons";
+import { RevealTitle, SoftBlurText } from "../motion-reveal";
+import { SpotlightCard, SpotlightGrid } from "../spotlight-card";
 
 function ServiceIcon({ service }: { service: Service }) {
   if (service.icon === "code") return <CodeIcon />;
@@ -53,198 +53,6 @@ function withoutTrailingPeriod(value: string) {
   return value.endsWith(".") ? value.slice(0, -1) : value;
 }
 
-type MemoryCell = { x: number; y: number };
-type MemoryStatus = "ready" | "preparing" | "revealing" | "recalling" | "recap" | "gameover";
-type MemoryRevealPhase = "idle" | "entering" | "shown" | "hiding";
-
-function memoryGridSize(level: number) {
-  return Math.floor(Math.sqrt(9 + level * 3));
-}
-
-function memoryPatternSize(level: number) {
-  return level + 2;
-}
-
-function makeMemoryPattern(gridSize: number, count: number) {
-  const cells: MemoryCell[] = [];
-  for (let y = 0; y < gridSize; y += 1) {
-    for (let x = 0; x < gridSize; x += 1) cells.push({ x, y });
-  }
-
-  for (let index = cells.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [cells[index], cells[swapIndex]] = [cells[swapIndex], cells[index]];
-  }
-
-  return cells.slice(0, count);
-}
-
-function includesMemoryCell(cells: MemoryCell[], cell: MemoryCell) {
-  return cells.some((item) => item.x === cell.x && item.y === cell.y);
-}
-
-function VisualMemoryGame() {
-  const [level, setLevel] = useState(1);
-  const [gridSize, setGridSize] = useState(3);
-  const [pattern, setPattern] = useState<MemoryCell[]>([]);
-  const [selected, setSelected] = useState<MemoryCell[]>([]);
-  const [errors, setErrors] = useState<MemoryCell[]>([]);
-  const [lives, setLives] = useState(3);
-  const [status, setStatus] = useState<MemoryStatus>("ready");
-  const [revealPhase, setRevealPhase] = useState<MemoryRevealPhase>("idle");
-  const [resultFadeMode, setResultFadeMode] = useState<"none" | "all" | "white" | "fast">("none");
-  const [isBoardTransitioning, setIsBoardTransitioning] = useState(false);
-  const [isControlLeaving, setIsControlLeaving] = useState(false);
-
-  const [isPointerInsideGame, setIsPointerInsideGame] = useState(false);
-  const [highScore, setHighScore] = useState<number | null>(null);
-  const memoryTimers = useRef<number[]>([]);
-
-  const clearMemoryTimers = () => {
-    memoryTimers.current.forEach((timer) => window.clearTimeout(timer));
-    memoryTimers.current = [];
-  };
-
-  const scheduleMemoryStep = (callback: () => void, delay: number) => {
-    const timer = window.setTimeout(() => {
-      memoryTimers.current = memoryTimers.current.filter((item) => item !== timer);
-      callback();
-    }, delay);
-    memoryTimers.current.push(timer);
-  };
-
-  useEffect(() => () => clearMemoryTimers(), []);
-
-  const shouldHideMemoryCursor = isPointerInsideGame && (isControlLeaving || (status !== "ready" && status !== "gameover"));
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("memory-cursor-hidden", shouldHideMemoryCursor);
-    return () => document.documentElement.classList.remove("memory-cursor-hidden");
-  }, [shouldHideMemoryCursor]);
-
-  const beginStage = (nextLevel: number, revealDelay = 500) => {
-    clearMemoryTimers();
-    const nextGridSize = memoryGridSize(nextLevel);
-
-    const setUpStage = () => {
-      setLevel(nextLevel);
-      setGridSize(nextGridSize);
-      setPattern(makeMemoryPattern(nextGridSize, memoryPatternSize(nextLevel)));
-      setSelected([]);
-      setErrors([]);
-      setStatus("preparing");
-      setRevealPhase("idle");
-      setResultFadeMode("none");
-      setIsBoardTransitioning(false);
-      setIsControlLeaving(false);
-      scheduleMemoryStep(() => {
-        setStatus("revealing");
-        setRevealPhase("entering");
-        scheduleMemoryStep(() => {
-          setRevealPhase("shown");
-          scheduleMemoryStep(() => {
-            setRevealPhase("hiding");
-            scheduleMemoryStep(() => {
-              setRevealPhase("idle");
-              setStatus("recalling");
-            }, 300);
-          }, 1200);
-        }, 300);
-      }, revealDelay);
-    };
-
-    if (nextGridSize !== gridSize) {
-      setIsBoardTransitioning(true);
-      scheduleMemoryStep(setUpStage, 260);
-      return;
-    }
-
-    setUpStage();
-  };
-  const start = () => {
-    clearMemoryTimers();
-    setIsControlLeaving(true);
-    setLives(3);
-    scheduleMemoryStep(() => beginStage(1, 720), 180);
-  };
-
-  const retry = () => {
-    clearMemoryTimers();
-    setIsControlLeaving(true);
-    setResultFadeMode("fast");
-    scheduleMemoryStep(() => {
-      setLives(3);
-      beginStage(1, 720);
-    }, 180);
-  };
-  const finishStage = (didWin: boolean) => {
-    setStatus("recap");
-    setResultFadeMode("none");
-
-    if (didWin) {
-      setHighScore((current) => Math.max(current ?? 0, level));
-      scheduleMemoryStep(() => setResultFadeMode("all"), 260);
-      scheduleMemoryStep(() => beginStage(level + 1), 850);
-      return;
-    }
-
-    const nextLives = lives - 1;
-    setLives(nextLives);
-
-    if (nextLives <= 0) {
-      // On game over, let correct tiles dissolve while mistakes return to normal.
-      setStatus("gameover");
-      scheduleMemoryStep(() => setResultFadeMode("all"), 260);
-      return;
-    }
-
-    scheduleMemoryStep(() => setResultFadeMode("all"), 260);
-    scheduleMemoryStep(() => beginStage(level), 850);
-  };
-  const selectCell = (cell: MemoryCell) => {
-    if (status !== "recalling" || includesMemoryCell(selected, cell) || includesMemoryCell(errors, cell)) return;
-
-    if (!includesMemoryCell(pattern, cell)) {
-      const nextErrors = [...errors, cell];
-      setErrors(nextErrors);
-      if (nextErrors.length >= 3) finishStage(false);
-      return;
-    }
-
-    const nextSelected = [...selected, cell];
-    setSelected(nextSelected);
-    if (nextSelected.length === pattern.length) finishStage(true);
-  };
-
-  const isPatternVisible = (cell: MemoryCell) => status === "revealing" && includesMemoryCell(pattern, cell);
-  const canShowResult = status === "recalling" || status === "recap" || status === "gameover";
-  const isSelected = (cell: MemoryCell) => canShowResult && includesMemoryCell(selected, cell);
-  const isError = (cell: MemoryCell) => canShowResult && includesMemoryCell(errors, cell);
-
-  return (
-    <article className="lab-preview__placeholder lab-preview__placeholder--1 lab-visual-memory" aria-label="Visual memory game" onPointerEnter={() => setIsPointerInsideGame(true)} onPointerLeave={() => setIsPointerInsideGame(false)}>
-      <div className="lab-visual-memory__topline">
-        <div className="lab-visual-memory__scoreline">
-          <span className="lab-visual-memory__level" data-fluid-cursor-negative-mask>{"Lvl " + level}</span>
-          {highScore !== null ? <span className="lab-visual-memory__high-score" data-fluid-cursor-negative-mask><SparkIcon size={15} /><span>{highScore}</span></span> : null}
-        </div>
-        <div className="lab-visual-memory__actions">
-          <span className="lab-visual-memory__lives" aria-label={lives + " lives remaining"}>{[0, 1, 2].map((heart) => <HeartIcon key={heart} className={heart >= lives ? "is-lost" : undefined} />)}</span>
-          <button type="button" aria-label="How to play visual memory" data-cursor-tool data-cursor-title="" data-cursor-description="Watch the pattern, then repeat it. Three wrong clicks cost a life. See how far you can get!" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
-        </div>
-      </div>
-      <div id="visual-memory-board" className={`lab-visual-memory__board${isBoardTransitioning ? " is-transitioning" : ""}`} style={{ "--memory-grid": gridSize } as CSSProperties}>
-        {Array.from({ length: gridSize * gridSize }, (_, index) => {
-          const cell = { x: index % gridSize, y: Math.floor(index / gridSize) };
-          const phaseClass = isPatternVisible(cell) ? " is-revealed is-" + revealPhase : "";
-          return <button key={cell.x + "-" + cell.y} type="button" className={"lab-visual-memory__cell" + phaseClass + (isSelected(cell) ? " is-selected" : "") + (isError(cell) ? " is-error" : "") + (resultFadeMode !== "none" ? " is-result-fade-" + resultFadeMode : "")} onClick={() => selectCell(cell)} aria-label={"Tile " + (index + 1)} disabled={status !== "recalling"} />;
-        })}
-        {status === "ready" ? <button type="button" className={`lab-visual-memory__play${isControlLeaving ? " is-leaving" : ""}`} data-fluid-cursor-surface data-fluid-cursor-tight aria-label="Start visual memory game" onClick={start}><PlayIcon size={15} /></button> : null}
-        {status === "gameover" ? <button type="button" className={`lab-visual-memory__retry${isControlLeaving ? " is-leaving" : ""}`} data-fluid-cursor-surface data-fluid-cursor-tight onClick={retry}>Try Again</button> : null}
-      </div>
-    </article>
-  );
-}
 function ServiceStack({ service }: { service: Service }) {
   return (
     <section className="service-stack" aria-label={`The stack for ${service.title}`}>
@@ -312,6 +120,426 @@ export function SkillsSection() {
         ><span className="liquid-button__surface">Learn about my process <ArrowUpRightIcon /></span></Link>
       </div>
     </section>
+  );
+}
+
+function MagicScreenKnobGlyph() {
+  return (
+    <svg className="lab-etch__knob-glyph" viewBox="0 0 100 100" aria-hidden="true">
+      {/* One path owns the stroke and ring: it leaves a single gap to the
+          left of the radial bar, then rotates as one continuous mark. */}
+      <path d="M50 7V50 M50 7A43 43 0 1 1 22 17" />
+    </svg>
+  );
+}
+
+function EtchASketch() {
+  const [strokes, setStrokes] = useState<string[]>([]);
+  const [cursor, setCursor] = useState({ x: 150, y: 80 });
+  const [knobAngle, setKnobAngle] = useState({ x: 0, y: 0 });
+  const [isTurning, setIsTurning] = useState(false);
+  const [isKeyboardDrawing, setIsKeyboardDrawing] = useState(false);
+  const [isScreenHovered, setIsScreenHovered] = useState(false);
+  const [isCursorSuppressed, setIsCursorSuppressed] = useState(false);
+  const [isKnobDragging, setIsKnobDragging] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const cursorRef = useRef({ x: 150, y: 80 });
+  const screenRef = useRef<HTMLDivElement>(null);
+  const strokeVanishCanvasRef = useRef<HTMLCanvasElement>(null);
+  const activeStroke = useRef<string | null>(null);
+  const velocity = useRef({ x: 0, y: 0 });
+  const previousPointer = useRef({ x: 0, y: 0 });
+  const isPointerInside = useRef(false);
+  const activeDrawingKeys = useRef(new Set<string>());
+  const cursorReturnTimer = useRef<number | null>(null);
+  const clearAnimationTimer = useRef<number | null>(null);
+  const strokeVanishFrame = useRef<number | null>(null);
+  const knobDragCleanup = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "magic-screen-cursor-hidden",
+      isCursorSuppressed || isKnobDragging,
+    );
+    return () => document.documentElement.classList.remove("magic-screen-cursor-hidden");
+  }, [isCursorSuppressed, isKnobDragging]);
+
+  useEffect(() => {
+    if (isKeyboardDrawing && isScreenHovered) {
+      if (cursorReturnTimer.current !== null) window.clearTimeout(cursorReturnTimer.current);
+      setIsCursorSuppressed(true);
+      return;
+    }
+    if (!isCursorSuppressed) return;
+    cursorReturnTimer.current = window.setTimeout(() => {
+      cursorReturnTimer.current = null;
+      setIsCursorSuppressed(false);
+    }, 5000);
+    return () => {
+      if (cursorReturnTimer.current !== null) window.clearTimeout(cursorReturnTimer.current);
+      cursorReturnTimer.current = null;
+    };
+  }, [isCursorSuppressed, isKeyboardDrawing, isScreenHovered]);
+
+  useEffect(() => () => {
+    if (cursorReturnTimer.current !== null) window.clearTimeout(cursorReturnTimer.current);
+  }, []);
+
+  useEffect(() => {
+    const revealCursorOnMove = () => setIsCursorSuppressed(false);
+    window.addEventListener("pointermove", revealCursorOnMove, { passive: true });
+    return () => window.removeEventListener("pointermove", revealCursorOnMove);
+  }, []);
+
+  useEffect(() => {
+    if (!isTurning) return;
+    let frame = 0;
+    const draw = () => {
+      const current = cursorRef.current;
+      const next = {
+        x: Math.max(4, Math.min(296, current.x + velocity.current.x)),
+        y: Math.max(4, Math.min(156, current.y + velocity.current.y)),
+      };
+
+      // Once the drawing point reaches an edge, stop that knob rather than
+      // letting its visual angle keep spinning against a clamped coordinate.
+      if (next.x === current.x && velocity.current.x !== 0) velocity.current.x = 0;
+      if (next.y === current.y && velocity.current.y !== 0) velocity.current.y = 0;
+      if (activeStroke.current && (velocity.current.x || velocity.current.y)) {
+        cursorRef.current = next;
+        setCursor(next);
+        setKnobAngle((current) => ({
+          x: current.x + velocity.current.x * 5,
+          y: current.y - velocity.current.y * 5,
+        }));
+        const stroke = `${activeStroke.current} ${next.x.toFixed(1)},${next.y.toFixed(1)}`;
+        activeStroke.current = stroke;
+        setStrokes((current) => [...current.slice(0, -1), stroke]);
+      } else if (!velocity.current.x && !velocity.current.y) {
+        setIsTurning(false);
+      }
+      frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame);
+  }, [isTurning]);
+
+  useEffect(() => {
+    const handleKeyboardDraw = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      // These shortcuts belong to the Magic Screen itself, not to the page.
+      if (!isPointerInside.current) return;
+      if (event.target instanceof HTMLElement && event.target.matches("input, textarea, select, [contenteditable='true']")) return;
+
+      const key = event.key.toLowerCase();
+      const input = key === "a" ? { axis: "x" as const, amount: -3 }
+        : key === "s" ? { axis: "x" as const, amount: 3 }
+          : key === "k" ? { axis: "y" as const, amount: 3 }
+            : key === "l" ? { axis: "y" as const, amount: -3 }
+              : null;
+      if (!input) return;
+
+      event.preventDefault();
+      activeDrawingKeys.current.add(key);
+      setIsKeyboardDrawing(true);
+      const current = cursorRef.current;
+      const next = input.axis === "x"
+        ? { x: Math.max(4, Math.min(296, current.x + input.amount)), y: current.y }
+        : { x: current.x, y: Math.max(4, Math.min(156, current.y + input.amount)) };
+      if (next.x === current.x && next.y === current.y) return;
+
+      cursorRef.current = next;
+      setCursor(next);
+      setKnobAngle((angles) => ({
+        ...angles,
+        [input.axis]: angles[input.axis] + (input.axis === "y" ? -input.amount : input.amount) * 3,
+      }));
+      setStrokes((currentStrokes) => [
+        ...currentStrokes,
+        `${current.x.toFixed(1)},${current.y.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`,
+      ]);
+    };
+
+    const handleKeyboardRelease = (event: KeyboardEvent) => {
+      activeDrawingKeys.current.delete(event.key.toLowerCase());
+      if (activeDrawingKeys.current.size === 0) setIsKeyboardDrawing(false);
+    };
+
+    const clearKeyboardDrawing = () => {
+      activeDrawingKeys.current.clear();
+      setIsKeyboardDrawing(false);
+    };
+
+    window.addEventListener("keydown", handleKeyboardDraw);
+    window.addEventListener("keyup", handleKeyboardRelease);
+    window.addEventListener("blur", clearKeyboardDrawing);
+    return () => {
+      window.removeEventListener("keydown", handleKeyboardDraw);
+      window.removeEventListener("keyup", handleKeyboardRelease);
+      window.removeEventListener("blur", clearKeyboardDrawing);
+    };
+  }, []);
+
+  const stopKnob = () => {
+    const cleanup = knobDragCleanup.current;
+    knobDragCleanup.current = null;
+    cleanup?.();
+    velocity.current = { x: 0, y: 0 };
+    activeStroke.current = null;
+    setIsKnobDragging(false);
+    setIsTurning(false);
+    if (cleanup) {
+      const { x, y } = previousPointer.current;
+      window.requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("portfolio-fluid-cursor-resync", { detail: { x, y } })));
+    }
+  };
+
+  const turnKnob = (axis: "x" | "y", clientX: number, clientY: number) => {
+    const delta = axis === "x" ? clientX - previousPointer.current.x : clientY - previousPointer.current.y;
+    previousPointer.current = { x: clientX, y: clientY };
+    if (!delta) return;
+    // A short deliberate drag should have enough lasting momentum to feel
+    // like a dial, while larger drags still respond immediately.
+    const nextVelocity = Math.sign(delta) * Math.max(0.9, Math.min(2.6, Math.abs(delta) / 7.5));
+    const coordinate = cursorRef.current[axis];
+    const isBlocked = (coordinate <= 4 && nextVelocity < 0) ||
+      (coordinate >= (axis === "x" ? 296 : 156) && nextVelocity > 0);
+    if (isBlocked) {
+      velocity.current[axis] = 0;
+      if (!velocity.current.x && !velocity.current.y) setIsTurning(false);
+      return;
+    }
+    velocity.current[axis] = nextVelocity;
+    setKnobAngle((current) => ({
+      ...current,
+      [axis]: current[axis] + (axis === "y" ? -delta : delta) * 3,
+    }));
+    setIsTurning(true);
+  };
+
+  const beginKnob = (axis: "x" | "y", event: PointerEvent<HTMLButtonElement>) => {
+    // Keep pointer focus from turning into a focus-visible ring. Keyboard
+    // focus is retained for actual Tab navigation.
+    event.preventDefault();
+    stopKnob();
+    setIsKnobDragging(true);
+    const pointerId = event.pointerId;
+    previousPointer.current = { x: event.clientX, y: event.clientY };
+    activeStroke.current = `${cursorRef.current.x},${cursorRef.current.y}`;
+    setStrokes((current) => [...current, activeStroke.current!]);
+
+    // Element-local pointer events get cut off when a cursor layer or the SVG
+    // is crossed. This short-lived, pointer-specific listener keeps the drag
+    // continuous without making any other page movement draggable.
+    const handleMove = (moveEvent: globalThis.PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      moveEvent.preventDefault();
+      turnKnob(axis, moveEvent.clientX, moveEvent.clientY);
+    };
+    const handleEnd = (endEvent: globalThis.PointerEvent) => {
+      if (endEvent.pointerId !== pointerId) return;
+      stopKnob();
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+    };
+    knobDragCleanup.current = cleanup;
+    window.addEventListener("pointermove", handleMove, { passive: false });
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+  };
+
+  useEffect(() => () => {
+    knobDragCleanup.current?.();
+    if (clearAnimationTimer.current !== null) window.clearTimeout(clearAnimationTimer.current);
+    if (strokeVanishFrame.current !== null) window.cancelAnimationFrame(strokeVanishFrame.current);
+  }, []);
+
+  const dissolveStrokes = (lines: string[]) => {
+    const screen = screenRef.current;
+    const canvas = strokeVanishCanvasRef.current;
+    if (!screen || !canvas || lines.length === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+
+    if (strokeVanishFrame.current !== null) window.cancelAnimationFrame(strokeVanishFrame.current);
+    const bounds = screen.getBoundingClientRect();
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(bounds.width * pixelRatio));
+    const height = Math.max(1, Math.round(bounds.height * pixelRatio));
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${bounds.width}px`;
+    canvas.style.height = `${bounds.height}px`;
+
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return false;
+    // Match the SVG's default xMidYMid meet transform exactly. The canvas
+    // overlay must use the same centered viewBox mapping or the line jumps
+    // when the SVG hands off to particles.
+    const lineScale = Math.min(bounds.width / 300, bounds.height / 160);
+    const offsetX = (bounds.width - 300 * lineScale) / 2;
+    const offsetY = (bounds.height - 160 * lineScale) / 2;
+    const stroke = window.getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#bd9cff";
+    context.scale(pixelRatio, pixelRatio);
+    context.strokeStyle = stroke;
+    context.lineWidth = 3.25 * lineScale;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    lines.forEach((line) => {
+      const points = line.trim().split(/\s+/).map((point) => point.split(",").map(Number));
+      if (points.length < 2) return;
+      context.beginPath();
+      context.moveTo(offsetX + points[0][0] * lineScale, offsetY + points[0][1] * lineScale);
+      points.slice(1).forEach(([x, y]) => context.lineTo(offsetX + x * lineScale, offsetY + y * lineScale));
+      context.stroke();
+    });
+    const source = context.getImageData(0, 0, width, height);
+    const snapshot = document.createElement("canvas");
+    snapshot.width = width;
+    snapshot.height = height;
+    snapshot.getContext("2d")?.putImageData(source, 0, 0);
+    const particles: Array<{ x: number; y: number; alpha: number; drift: number; lift: number; releasedAt: number | null }> = [];
+    const sample = Math.max(1, Math.round(pixelRatio));
+    for (let y = 0; y < height; y += sample) {
+      for (let x = 0; x < width; x += sample) {
+        const alpha = source.data[(y * width + x) * 4 + 3];
+        if (alpha < 96 || Math.random() < 0.18) continue;
+        particles.push({
+          x: x / pixelRatio,
+          y: y / pixelRatio,
+          alpha: alpha / 255,
+          drift: 12 + Math.random() * 18,
+          lift: (Math.random() - 0.5) * 16,
+          releasedAt: null,
+        });
+      }
+    }
+    const strokeStart = particles.length ? Math.min(...particles.map((particle) => particle.x)) : 0;
+    const strokeEnd = particles.length ? Math.max(...particles.map((particle) => particle.x)) : 0;
+
+    const startedAt = performance.now();
+    const waveDuration = 540;
+    const particleDuration = 310;
+    const draw = (now: number) => {
+      const waveProgress = Math.min(1, (now - startedAt) / waveDuration);
+      // Sweep only across ink. Starting at the screen edge leaves a visible
+      // pause when a drawing sits in the middle of the display.
+      const sweep = strokeEnd - (strokeEnd - Math.max(0, strokeStart - 6)) * waveProgress;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      context.clearRect(0, 0, bounds.width, bounds.height);
+      // Keep a tiny shared band between the retained stroke and the first
+      // particles. A hard crop at the wave edge can expose one transparent
+      // pixel beside the live ink dot on high-density displays.
+      const overlap = 3;
+      if (sweep > 0) {
+        const retainedWidth = Math.min(bounds.width, sweep + overlap);
+        context.drawImage(snapshot, 0, 0, retainedWidth * pixelRatio, height, 0, 0, retainedWidth, bounds.height);
+      }
+      context.fillStyle = stroke;
+      for (const particle of particles) {
+        if (particle.releasedAt === null && particle.x >= sweep - overlap) particle.releasedAt = now;
+        if (particle.releasedAt === null) continue;
+        const particleProgress = Math.min(1, (now - particle.releasedAt) / particleDuration);
+        if (particleProgress >= 1) continue;
+        context.globalAlpha = particle.alpha * (1 - particleProgress);
+        context.fillRect(particle.x + particleProgress * particle.drift, particle.y + particleProgress * particle.lift, 1.2, 1.2);
+      }
+      context.globalAlpha = 1;
+      const hasActiveParticles = particles.some((particle) => particle.releasedAt === null || now - particle.releasedAt < particleDuration);
+      if (waveProgress < 1 || hasActiveParticles) {
+        strokeVanishFrame.current = window.requestAnimationFrame(draw);
+        return;
+      }
+      strokeVanishFrame.current = null;
+      canvas.width = 0;
+      canvas.height = 0;
+    };
+    // Paint the initial line synchronously, before Clear adds its shake. That
+    // makes the original stroke hand directly into the overlay instead of
+    // visibly shifting for one frame first.
+    draw(startedAt);
+    return true;
+  };
+
+  const clear = () => {
+    dissolveStrokes(strokes);
+    setStrokes([]);
+    stopKnob();
+    setIsClearing(true);
+    document.documentElement.classList.add("magic-screen-clearing");
+    if (clearAnimationTimer.current !== null) window.clearTimeout(clearAnimationTimer.current);
+    clearAnimationTimer.current = window.setTimeout(() => {
+      clearAnimationTimer.current = null;
+      setIsClearing(false);
+      document.documentElement.classList.remove("magic-screen-clearing");
+    }, 1000);
+  };
+
+  const downloadDrawing = () => {
+    const output = document.createElement("canvas");
+    output.width = 1200;
+    output.height = 640;
+    const context = output.getContext("2d");
+    if (!context) return;
+
+    const screen = document.querySelector<HTMLElement>(".lab-etch__canvas");
+    const background = screen ? window.getComputedStyle(screen).backgroundColor : "#171717";
+    const stroke = window.getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+    context.scale(4, 4);
+    context.fillStyle = background;
+    context.fillRect(0, 0, 300, 160);
+    context.strokeStyle = stroke;
+    context.lineWidth = 3.25;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    strokes.forEach((line) => {
+      const points = line.trim().split(/\s+/).map((point) => point.split(",").map(Number));
+      if (points.length < 2) return;
+      context.beginPath();
+      context.moveTo(points[0][0], points[0][1]);
+      points.slice(1).forEach(([x, y]) => context.lineTo(x, y));
+      context.stroke();
+    });
+    context.fillStyle = stroke;
+    context.beginPath();
+    context.arc(cursor.x, cursor.y, 2.25, 0, Math.PI * 2);
+    context.fill();
+
+    const download = document.createElement("a");
+    download.href = output.toDataURL("image/png");
+    download.download = "magic-screen.png";
+    download.click();
+  };
+
+  return (
+    <article className={`lab-preview__placeholder lab-preview__placeholder--1 lab-etch${isClearing ? " is-clearing" : ""}`} aria-label="Magic Screen drawing experiment" onPointerEnter={() => { isPointerInside.current = true; }} onPointerLeave={() => { isPointerInside.current = false; }}>
+      <div className="lab-etch__topline"><strong data-fluid-cursor-negative-mask>Magic screen</strong></div>
+      <div className="lab-etch__screen" ref={screenRef}>
+        <svg
+          className={`lab-etch__canvas${isCursorSuppressed ? " is-cursor-suppressed" : ""}`}
+          viewBox="0 0 300 160"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label="Magic Screen line display"
+          onPointerEnter={() => setIsScreenHovered(true)}
+          onPointerLeave={() => setIsScreenHovered(false)}
+        >
+          {strokes.map((stroke, index) => <polyline key={`${stroke.slice(0, 12)}-${index}`} points={stroke} />)}
+          <circle className="lab-etch__cursor" cx={cursor.x} cy={cursor.y} r="2.25" />
+        </svg>
+        <canvas ref={strokeVanishCanvasRef} className="lab-etch__vanish" aria-hidden="true" />
+      </div>
+      <div className="lab-etch__controls">
+        <button type="button" className="lab-etch__knob lab-etch__knob--horizontal" data-fluid-cursor-negative-mask aria-label="Move the line left or right" style={{ "--knob-angle": `${knobAngle.x}deg` } as CSSProperties} onPointerDown={(event) => beginKnob("x", event)}><MagicScreenKnobGlyph /></button>
+        <div className="lab-etch__utility-controls" aria-label="Magic Screen controls">
+          <button type="button" className="lab-etch__utility-button" aria-label="Download Magic Screen drawing" title="Download Magic Screen drawing" data-cursor-tool data-cursor-title="" data-cursor-description="Download work of art" onClick={downloadDrawing} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><DownloadIcon size={18} /></button>
+          <button type="button" className="lab-etch__utility-button" aria-label="Magic Screen information" title="Magic Screen information" data-cursor-tool data-cursor-title="" data-cursor-description="Draw with the knobs! Drag them or use A/S - left and right, K/L - up and down" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon size={19} /></button>
+          <button type="button" className="lab-etch__clear" onClick={clear} aria-label="Clear drawing" title="Clear drawing" data-cursor-tool data-cursor-title="" data-cursor-description="Clear magic screen" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><TrashIcon size={18} /></button>
+        </div>
+        <button type="button" className="lab-etch__knob lab-etch__knob--vertical" data-fluid-cursor-negative-mask aria-label="Move the line up or down" style={{ "--knob-angle": `${knobAngle.y}deg` } as CSSProperties} onPointerDown={(event) => beginKnob("y", event)}><MagicScreenKnobGlyph /></button>
+      </div>
+    </article>
   );
 }
 
@@ -569,82 +797,35 @@ type SnakeCell = { x: number; y: number };
 type SnakeDirection = "up" | "down" | "left" | "right";
 
 const snakeGridSize = 11;
-const snakeStepMs = 260;
+const snakeStepMs = 220;
 const initialSnake = (): SnakeCell[] => [
+  { x: 5, y: 5 },
+  { x: 4, y: 5 },
   { x: 3, y: 5 },
   { x: 2, y: 5 },
-  { x: 1, y: 5 },
-  { x: 1, y: 6 },
 ];
-
-function snakeTurnClass(snake: SnakeCell[], index: number) {
-  // The head and tail never need a corner: a bend only belongs to a body
-  // square with a segment entering from the tail and another leaving to head.
-  if (index === 0 || index === snake.length - 1) return "";
-  const cell = snake[index];
-  const towardHead = snake[index - 1];
-  const towardTail = snake[index + 1];
-  const arrival = { x: cell.x - towardTail.x, y: cell.y - towardTail.y };
-  const departure = { x: towardHead.x - cell.x, y: towardHead.y - cell.y };
-
-  // Two horizontal or two vertical neighbors mean this is a straight segment.
-  if ((arrival.x !== 0) === (departure.x !== 0)) return "";
-
-  // Round the corner that is forward from the arriving segment and opposite
-  // the segment leaving toward the head. Example: up -> right is top-left.
-  const vertical = arrival.y
-    ? arrival.y < 0 ? "top" : "bottom"
-    : departure.y < 0 ? "bottom" : "top";
-  const horizontal = arrival.x
-    ? arrival.x < 0 ? "left" : "right"
-    : departure.x < 0 ? "right" : "left";
-  return ` is-turn-${vertical}-${horizontal}`;
-}
-
-function snakeTailClass(snake: SnakeCell[], index: number) {
-  if (index !== snake.length - 1 || snake.length < 2) return "";
-  const tail = snake[index];
-  const beforeTail = snake[index - 1];
-  const tailDirection = { x: tail.x - beforeTail.x, y: tail.y - beforeTail.y };
-  if (tailDirection.x < 0) return " is-tail-facing-left";
-  if (tailDirection.x > 0) return " is-tail-facing-right";
-  if (tailDirection.y < 0) return " is-tail-facing-up";
-  return " is-tail-facing-down";
-}
 
 function SnakeGame() {
   const [snake, setSnake] = useState<SnakeCell[]>(initialSnake);
   const [food, setFood] = useState<SnakeCell>({ x: 2, y: 2 });
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [status, setStatus] = useState<"ready" | "playing" | "crashing" | "lost" | "won">("ready");
-  const [isPointerInsideSnake, setIsPointerInsideSnake] = useState(false);
-  const [isControlLeaving, setIsControlLeaving] = useState(false);
-  const [isCrashVertical, setIsCrashVertical] = useState(false);
+  const [status, setStatus] = useState<"ready" | "playing" | "lost" | "won">("ready");
+  const [isCursorHidden, setIsCursorHidden] = useState(false);
   const direction = useRef<SnakeDirection>("right");
   const directionQueue = useRef<SnakeDirection[]>([]);
-  const snakeRef = useRef<SnakeCell[]>(initialSnake());
   const boardActive = useRef(false);
   const foodRef = useRef(food);
-  const controlTimer = useRef<number | null>(null);
-  const crashTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const stored = Number.parseInt(window.localStorage.getItem("portfolio:snake:high-score") || "0", 10);
     if (Number.isFinite(stored)) setHighScore(stored);
   }, []);
 
-  const shouldHideSnakeCursor = isPointerInsideSnake && (isControlLeaving || status === "playing" || status === "crashing");
-
   useEffect(() => {
-    document.documentElement.classList.toggle("snake-cursor-hidden", shouldHideSnakeCursor);
+    document.documentElement.classList.toggle("snake-cursor-hidden", isCursorHidden);
     return () => document.documentElement.classList.remove("snake-cursor-hidden");
-  }, [shouldHideSnakeCursor]);
-
-  useEffect(() => () => {
-    if (controlTimer.current !== null) window.clearTimeout(controlTimer.current);
-    if (crashTimer.current !== null) window.clearTimeout(crashTimer.current);
-  }, []);
+  }, [isCursorHidden]);
 
   useEffect(() => {
     foodRef.current = food;
@@ -661,36 +842,20 @@ function SnakeGame() {
   };
 
   const resetGame = () => {
-    if (crashTimer.current !== null) {
-      window.clearTimeout(crashTimer.current);
-      crashTimer.current = null;
-    }
     const nextSnake = initialSnake();
     const nextFood = createFood(nextSnake);
     direction.current = "right";
     directionQueue.current = [];
-    snakeRef.current = nextSnake;
     setSnake(nextSnake);
     foodRef.current = nextFood;
     setFood(nextFood);
     setScore(0);
     setStatus("playing");
-  };
-
-  const startFromControl = () => {
-    boardActive.current = true;
-    if (controlTimer.current !== null) window.clearTimeout(controlTimer.current);
-    setIsControlLeaving(true);
-    controlTimer.current = window.setTimeout(() => {
-      controlTimer.current = null;
-      resetGame();
-      setIsControlLeaving(false);
-    }, 180);
+    if (boardActive.current) setIsCursorHidden(true);
   };
 
   const requestDirection = (next: SnakeDirection) => {
     const opposite: Record<SnakeDirection, SnakeDirection> = { up: "down", down: "up", left: "right", right: "left" };
-    if (status === "crashing") return;
     if (status !== "playing") {
       resetGame();
       // A fresh snake faces right; starting it left would immediately reverse
@@ -698,13 +863,9 @@ function SnakeGame() {
       if (next !== "left") directionQueue.current = [next];
       return;
     }
-
-    // Validate against the last queued turn, not just the current heading. This
-    // lets fast sequences such as right -> up -> left resolve across ticks.
-    if (directionQueue.current.length >= 3) return;
-    const priorDirection = directionQueue.current.at(-1) ?? direction.current;
-    if (next === priorDirection || opposite[priorDirection] === next) return;
-    directionQueue.current.push(next);
+    const lastDirection = directionQueue.current[directionQueue.current.length - 1] ?? direction.current;
+    if (next === lastDirection || opposite[lastDirection] === next) return;
+    directionQueue.current = [...directionQueue.current, next].slice(-2);
   };
 
   useEffect(() => {
@@ -724,77 +885,65 @@ function SnakeGame() {
 
   useEffect(() => {
     if (status !== "playing") return;
-    const opposite: Record<SnakeDirection, SnakeDirection> = { up: "down", down: "up", left: "right", right: "left" };
-    const delta: Record<SnakeDirection, SnakeCell> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
     const timer = window.setInterval(() => {
-      const current = snakeRef.current;
-      const queuedDirection = directionQueue.current.shift();
-      // A final guard keeps the queue valid even if a key event arrives as a
-      // tick starts. Each accepted turn is still applied on its own tick.
-      if (queuedDirection && opposite[direction.current] !== queuedDirection) {
-        direction.current = queuedDirection;
-      }
-
-      const head = current[0];
-      const nextHead = { x: head.x + delta[direction.current].x, y: head.y + delta[direction.current].y };
-      const hitsWall = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeGridSize || nextHead.y >= snakeGridSize;
-      const isEating = nextHead.x === foodRef.current.x && nextHead.y === foodRef.current.y;
-      const bodyToCheck = isEating ? current : current.slice(0, -1);
-      if (hitsWall || bodyToCheck.some((cell) => cell.x === nextHead.x && cell.y === nextHead.y)) {
-        directionQueue.current = [];
-        setIsCrashVertical(direction.current === "up" || direction.current === "down");
-        setStatus("crashing");
-        const crashDuration = 260 + Math.max(0, current.length - 1) * 12;
-        if (crashTimer.current !== null) window.clearTimeout(crashTimer.current);
-        crashTimer.current = window.setTimeout(() => {
-          crashTimer.current = null;
+      setSnake((current) => {
+        const queuedDirection = directionQueue.current.shift();
+        if (queuedDirection) direction.current = queuedDirection;
+        const head = current[0];
+        const delta: Record<SnakeDirection, SnakeCell> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+        const nextHead = { x: head.x + delta[direction.current].x, y: head.y + delta[direction.current].y };
+        const hitsWall = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeGridSize || nextHead.y >= snakeGridSize;
+        const isEating = nextHead.x === foodRef.current.x && nextHead.y === foodRef.current.y;
+        const bodyToCheck = isEating ? current : current.slice(0, -1);
+        if (hitsWall || bodyToCheck.some((cell) => cell.x === nextHead.x && cell.y === nextHead.y)) {
           setStatus("lost");
-        }, crashDuration);
-        return;
-      }
-
-      const nextSnake = isEating ? [nextHead, ...current] : [nextHead, ...current.slice(0, -1)];
-      snakeRef.current = nextSnake;
-      setSnake(nextSnake);
-      if (!isEating) return;
-
-      const nextScore = nextSnake.length - initialSnake().length;
-      setScore(nextScore);
-      setHighScore((currentHigh) => {
-        const nextHigh = Math.max(currentHigh, nextScore);
-        window.localStorage.setItem("portfolio:snake:high-score", String(nextHigh));
-        return nextHigh;
+          setIsCursorHidden(false);
+          return current;
+        }
+        const nextSnake = [nextHead, ...current];
+        if (!isEating) return nextSnake.slice(0, -1);
+        const nextScore = current.length - initialSnake().length + 1;
+        setScore(nextScore);
+        setHighScore((currentHigh) => {
+          const nextHigh = Math.max(currentHigh, nextScore);
+          window.localStorage.setItem("portfolio:snake:high-score", String(nextHigh));
+          return nextHigh;
+        });
+        if (nextSnake.length === snakeGridSize * snakeGridSize) {
+          setStatus("won");
+          setIsCursorHidden(false);
+          return nextSnake;
+        }
+        const nextFood = createFood(nextSnake);
+        foodRef.current = nextFood;
+        setFood(nextFood);
+        return nextSnake;
       });
-      if (nextSnake.length === snakeGridSize * snakeGridSize) {
-        setStatus("won");
-        return;
-      }
-      const nextFood = createFood(nextSnake);
-      foodRef.current = nextFood;
-      setFood(nextFood);
     }, snakeStepMs);
     return () => window.clearInterval(timer);
   }, [status]);
 
+  const handleBoardClick = () => {
+    boardActive.current = true;
+    if (status !== "playing") resetGame();
+  };
+
   return (
-    <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-snake" aria-label="Snake game" onPointerEnter={() => setIsPointerInsideSnake(true)} onPointerLeave={() => { setIsPointerInsideSnake(false); boardActive.current = false; }}>
+    <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-snake" aria-label="Snake game">
       <div className="lab-snake__topline">
         <span className="lab-snake__score" data-fluid-cursor-negative-mask><i aria-hidden="true" />{String(score).padStart(2, "0")}</span>
         <span className="lab-snake__high-score" data-fluid-cursor-negative-mask><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span>
-        <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself! Use WASD or the arrow keys to move." onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
+        <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself. Use WASD or the arrow keys to move." onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
-      <div className={`lab-snake__board${status === "crashing" ? ` is-crashing${isCrashVertical ? " is-crash-vertical" : ""}` : status === "lost" || status === "won" ? " is-paused" : ""}`} onPointerEnter={() => { boardActive.current = true; }} aria-label={status === "playing" ? "Snake game board" : "Snake game"}>
-        <span className="lab-snake__grid" aria-hidden="true">{Array.from({ length: snakeGridSize * snakeGridSize }, (_, index) => <i key={index} />)}</span>
+      <button type="button" className={`lab-snake__board${status === "lost" || status === "won" ? " is-paused" : ""}`} onClick={handleBoardClick} onPointerEnter={() => { boardActive.current = true; }} onPointerLeave={() => { boardActive.current = false; setIsCursorHidden(false); }} onPointerMove={() => setIsCursorHidden(false)} aria-label={status === "playing" ? "Snake game board" : "Start or restart Snake"}>
         <span className="lab-snake__cells" aria-hidden="true">
-          {snake.map((cell, index) => {
-            const shakeDistance = Math.max(0.015, 0.18 * Math.pow(0.94, index));
-            return <i key={`${cell.x}-${cell.y}-${index}`} className={`lab-snake__segment${index < 4 ? ` is-tone-${index + 1}` : ""}${snakeTurnClass(snake, index)}${snakeTailClass(snake, index)}`} style={{ gridColumn: cell.x + 1, gridRow: cell.y + 1, "--snake-shake-delay": `${index * 12}ms`, "--snake-shake-distance": `${shakeDistance}rem` } as CSSProperties} />;
-          })}
-          <i className="lab-snake__food" style={{ gridColumn: food.x + 1, gridRow: food.y + 1 } as CSSProperties} />
+          {snake.map((cell, index) => <i key={`${cell.x}-${cell.y}-${index}`} className="lab-snake__segment" style={{ "--snake-x": `${((cell.x + 0.5) / snakeGridSize) * 100}%`, "--snake-y": `${((cell.y + 0.5) / snakeGridSize) * 100}%` } as CSSProperties} />)}
+          <i className="lab-snake__food" style={{ "--snake-x": `${((food.x + 0.5) / snakeGridSize) * 100}%`, "--snake-y": `${((food.y + 0.5) / snakeGridSize) * 100}%` } as CSSProperties} />
         </span>
-        {status === "ready" ? <button type="button" className={`lab-visual-memory__play${isControlLeaving ? " is-leaving" : ""}`} data-fluid-cursor-surface data-fluid-cursor-tight aria-label="Start Snake" onClick={startFromControl}><PlayIcon size={15} /></button> : null}
-        {status === "lost" || status === "won" ? <button type="button" className={`lab-visual-memory__retry${isControlLeaving ? " is-leaving" : ""}`} data-fluid-cursor-surface data-fluid-cursor-tight aria-label={status === "won" ? "Restart Snake after winning" : "Try Snake again"} onClick={startFromControl}>{status === "won" ? "YOU WON!" : "Try Again"}</button> : null}
-      </div>
+        {status === "lost" ? <span className="lab-snake__message"><strong>Nice try!</strong><small>Press any movement key or click to restart</small></span> : null}
+        {status === "won" ? <span className="lab-snake__message"><strong>WHOA YOU ACTUALLY WON!</strong><small>Congratulations :0</small></span> : null}
+        {status === "ready" ? <span className="lab-snake__ready">Click or use WASD / arrows</span> : null}
+      </button>
     </article>
   );
 }
@@ -826,20 +975,21 @@ function CalendarPreview() {
 
 export function LabPreview() {
   return (
-    <section className="lab-preview" id="lab&tools" aria-labelledby="lab-preview-heading">
+    <section className="lab-preview" id="lab" aria-labelledby="lab-preview-heading">
       <div className="lab-grid">
         <div className="lab-grid__intro">
           <div className="lab-grid__title-fit">
             <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} />
           </div>
-          <Link className="button button--secondary lab-grid__cta" to="/lab"><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
         </div>
-        <VisualMemoryGame />
+        <Link className="button button--secondary lab-grid__cta" to="/lab"><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
+        <EtchASketch />
         <div className="lab-preview__placeholder lab-preview__placeholder--2" aria-hidden="true"><span className="lab-preview__number">02</span></div>
         <TypeRacer />
-        <SnakeGame />
-        <CalendarPreview />
-        <div className="lab-preview__placeholder lab-preview__placeholder--6" aria-hidden="true"><span className="lab-preview__number">06</span></div>
+        <div className="lab-preview__placeholder-group lab-preview__placeholder-group--bottom">
+          <SnakeGame />
+          <CalendarPreview />
+        </div>
       </div>
     </section>
   );

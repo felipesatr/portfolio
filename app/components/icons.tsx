@@ -8,9 +8,11 @@ import {
   Download,
   FilterAlt,
   FaceId,
+  Heart,
   InfoCircle,
   Language,
   LightBulb,
+  Play,
   Refresh,
   SendDiagonalSolid,
   Sparks,
@@ -81,6 +83,13 @@ export function TrashIcon({ size = 18, className }: IconProps) {
 
 export function InfoCircleIcon({ size = 18, className }: IconProps) {
   return <InfoCircle {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function HeartIcon({ size = 18, className }: IconProps) {
+  return <Heart {...sharedProps} className={className} width={size} height={size} />;
+}
+export function PlayIcon({ size = 18, className }: IconProps) {
+  return <Play {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function DownloadIcon({ size = 18, className }: IconProps) {

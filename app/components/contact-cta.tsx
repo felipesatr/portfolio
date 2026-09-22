@@ -17,7 +17,7 @@ export function ContactCta() {
             <span className="liquid-button__surface">Email placeholder <ArrowUpRightIcon /></span>
           </a>
           <a className="button button--outline-light" href="/resume-placeholder.txt" target="_blank" rel="noreferrer">
-            <span className="liquid-button__surface">Résumé placeholder <ArrowUpRightIcon /></span>
+            <span className="liquid-button__surface">Resume placeholder <ArrowUpRightIcon /></span>
           </a>
           <Link className="text-link text-link--light" to="/contact">All contact details <ArrowUpRightIcon /></Link>
         </div>

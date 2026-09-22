@@ -791,7 +791,6 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   /* Reserve a transform layer before the first pointer event. The marquee
      stays on the compositor instead of being promoted mid-interaction. */
   transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
   contain: paint;
   will-change: transform;
 }
@@ -1072,7 +1071,6 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   box-shadow: none;
   overflow: hidden;
   contain: layout paint style;
-  backface-visibility: hidden;
   transform: translate3d(var(--preview-x), var(--preview-y), 0) scale3d(var(--preview-scale-x), var(--preview-scale-y), 1);
   transform-origin: left top;
   transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1309,11 +1307,57 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   opacity: 1;
 }
 
+.fluid-cursor__knob-mask {
+  position: fixed;
+  z-index: 89;
+  overflow: visible;
+  color: var(--cursor-ink);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.fluid-cursor__knob-mask path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 11;
+}
+
+.fluid-cursor__text-mask {
+  position: fixed;
+  z-index: 89;
+  overflow: hidden;
+  color: var(--cursor-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fluid-cursor__text-mask svg {
+  stroke: currentColor;
+}
+
+.magic-screen-clearing .fluid-cursor__knob-mask {
+  animation: magic-screen-clear 1s ease-in-out both;
+}
+
 .magic-screen-cursor-hidden .fluid-cursor,
 .magic-screen-cursor-hidden .liquid-button-canvas,
+.magic-screen-cursor-hidden .fluid-cursor__knob-mask,
+.magic-screen-cursor-hidden .fluid-cursor__text-mask,
 .type-racer-cursor-hidden .fluid-cursor,
-.type-racer-cursor-hidden .liquid-button-canvas {
+.type-racer-cursor-hidden .liquid-button-canvas,
+.memory-cursor-hidden .fluid-cursor,
+.memory-cursor-hidden .liquid-button-canvas,
+.snake-cursor-hidden .fluid-cursor,
+.snake-cursor-hidden .liquid-button-canvas {
   opacity: 0 !important;
+}
+
+.snake-cursor-hidden .lab-snake,
+.snake-cursor-hidden .lab-snake * {
+  cursor: none !important;
 }
 
 .fluid-cursor--tool-popover {
@@ -1447,27 +1491,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: 100vh;
   opacity: 0;
   pointer-events: none;
+  transition: opacity 140ms var(--ease-out);
 }
 
 .liquid-button-canvas.is-visible {
   opacity: 1;
-}
-
-/* Development-only diagnostic. It is rendered by FluidCursor only in Vite
-   development mode, so visitors will never receive this control. */
-.fluid-cursor-toggle {
-  position: fixed;
-  inset: auto 1rem 1rem auto;
-  z-index: 100;
-  min-block-size: 2.25rem;
-  padding-inline: 0.875rem;
-  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
 }
 
 .button {
@@ -2327,14 +2355,20 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
      the gutter instead of causing neighbouring cards to touch. */
   --lab-card-gap: var(--space-4);
   --lab-half-card-gap: calc(var(--lab-card-gap) / 2);
+  /* Shared square size for the two game boards. */
+  --lab-game-board-size: 17rem;
   --lab-one-row: 0.5;
   --lab-two-row: 0;
-  --lab-top-row-span: 3;
+  /* 01 now reaches H31 before the shared gutter. */
+  --lab-top-row-span: 3.5;
   --lab-two-row-span: 4;
-  --lab-middle-row: 3.5;
+  /* Type Racer follows the H31 Visual Memory edge and its shared gutter. */
+  --lab-middle-row: 4;
   --lab-middle-row-span: 1.5;
   --lab-bottom-row: 4.5;
-  --lab-bottom-row-span: 3;
+  /* The 05 calendar deliberately carries one extra half-square, ending H35.
+     Snake remains the original three rows through its own explicit height. */
+  --lab-bottom-row-span: 3.5;
   --lab-one-column: 4;
   --lab-two-column: 5.5;
   --lab-top-column-span: 1.5;
@@ -2344,9 +2378,9 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --lab-bottom-column-span: 3.5;
   color: var(--text-body);
   background: var(--page);
-  /* H27–H35: the layout is a fixed eight-row desktop test canvas. */
+  /* H27–H36: the layout is a fixed nine-row desktop test canvas. */
   position: relative;
-  min-block-size: calc(8 * var(--grid-row));
+  min-block-size: calc(9 * var(--grid-row));
   padding-block: 0;
   /* Keep the next section two full squares below this interaction canvas. */
   margin-block-end: calc(2 * var(--grid-row));
@@ -2373,7 +2407,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   inline-size: calc((4 * var(--layout-column)) - var(--space-4));
   align-content: start;
   justify-items: start;
-  gap: var(--space-5);
+  gap: 0;
   padding: 0 var(--space-5) var(--space-5) 0;
   border: 0;
 }
@@ -2409,12 +2443,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-grid__cta {
-  position: absolute;
-  inset-block-end: 0;
-  inset-inline-end: 0;
+  position: static;
+  margin-block-start: 1.75rem;
 }
 
-/* H27.5–H30.5 / V7–V8.5. Its right-hand neighbour keeps the same width but
+/* H27.5–H31 / V7–V8.5. Its right-hand neighbour keeps the same width but
    begins at H27 and is one half-square taller. */
 .lab-preview__placeholder--1,
 .lab-preview__placeholder--2 {
@@ -2425,17 +2458,77 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-preview__placeholder--1 {
   inset-block-start: calc(var(--lab-one-row) * var(--grid-row));
   inset-inline-start: calc(var(--lab-one-column) * var(--layout-column));
-  /* Its lower edge shares an H30.5 gutter with Type Racer. */
-  block-size: calc((var(--lab-top-row-span) * var(--grid-row)) - var(--lab-half-card-gap));
+  /* Visual Memory ends exactly on H31; Type Racer's gutter follows below. */
+  block-size: calc(var(--lab-top-row-span) * var(--grid-row));
 }
 
 .lab-preview__placeholder--2 {
   inset-block-start: calc(var(--lab-two-row) * var(--grid-row));
   inset-inline-start: calc((var(--lab-two-column) * var(--layout-column)) + var(--lab-half-card-gap));
-  block-size: calc(var(--lab-two-row-span) * var(--grid-row));
+  /* Reach H31.5, leaving the shared lower gutter clear. */
+  block-size: calc((4.5 * var(--grid-row)) - var(--lab-half-card-gap));
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--soft);
+
 }
 
-/* Old block 04 moves up to H31.5–H34.5 and becomes two equal blocks. */
+.lab-preview__placeholder--2::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: #ff101d;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lab-preview__placeholder--2 > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lab-preview__placeholder--2:hover::before {
+  opacity: 1;
+  transition-duration: 180ms;
+}
+
+.lab-preview__placeholder--2:hover .lab-preview__number { color: #fff; }
+
+.lab-preview__placeholder--6 {
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--soft);
+
+}
+
+.lab-preview__placeholder--6::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: #ffdc32;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lab-preview__placeholder--6 > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lab-preview__placeholder--6:hover::before {
+  opacity: 1;
+  transition-duration: 180ms;
+}
+
+.lab-preview__placeholder--6:hover .lab-preview__number { color: #171717; }
+
+/* Blocks 04 and 05 share this equal, two-card envelope. */
 .lab-preview__placeholder-group--bottom {
   position: absolute;
   inset-block-start: calc(var(--lab-bottom-row) * var(--grid-row));
@@ -2474,11 +2567,364 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .lab-preview__placeholder--3 {
   position: absolute;
-  /* H30.5–H32 / V6.5–V8.5, inset equally to preserve each shared gutter. */
-  inset-block-start: calc((var(--lab-middle-row) * var(--grid-row)) + var(--lab-half-card-gap));
+  /* Begin after the H31 Visual Memory gutter. */
+  inset-block-start: calc((var(--lab-middle-row) * var(--grid-row)) + var(--lab-card-gap));
   inset-inline-start: calc((var(--lab-middle-column) * var(--layout-column)) + var(--lab-half-card-gap));
   inline-size: calc((var(--lab-middle-column-span) * var(--layout-column)) - var(--lab-card-gap));
   block-size: calc((var(--lab-middle-row-span) * var(--grid-row)) - var(--lab-card-gap));
+}
+
+/* Restore 06's desktop grid placement after the shared card base styles. */
+.lab-preview__placeholder--6 {
+  position: absolute;
+  /* Start at H32 minus the shared Lab-card gutter. */
+  inset-block-start: calc((5 * var(--grid-row)) - var(--lab-card-gap));
+  inset-inline-start: 0;
+  inline-size: calc((3.5 * var(--layout-column)) - var(--lab-half-card-gap));
+  /* Preserve the H37.5 lower edge. */
+  block-size: calc((5.5 * var(--grid-row)) + var(--lab-card-gap));
+}
+
+/* 04 begins below 02; 05 follows Type Racer. Each outer measurement uses the
+   same shared gutter so the desktop layout scales without view-specific offsets. */
+.lab-snake {
+  position: absolute;
+  /* Start directly after 02, leaving only the shared card gap. */
+  inset-block-start: calc((4.5 * var(--grid-row)) + var(--lab-half-card-gap));
+  inset-inline-start: calc((var(--lab-two-column) * var(--layout-column)) + var(--lab-half-card-gap));
+  /* Match 02's exact column span and gutter treatment. */
+  inline-size: calc((var(--lab-top-column-span) * var(--layout-column)) - var(--lab-half-card-gap));
+  /* Match Visual Memory's outer height. */
+  block-size: calc(var(--lab-top-row-span) * var(--grid-row));
+}
+
+.lab-calendar {
+  position: absolute;
+  /* Follow Type Racer with the same shared card gap. */
+  inset-block-start: calc(((var(--lab-middle-row) + var(--lab-middle-row-span)) * var(--grid-row)) + var(--lab-card-gap));
+  inset-inline-start: calc((var(--lab-middle-column) * var(--layout-column)) + var(--lab-half-card-gap));
+  inline-size: calc((var(--lab-middle-column-span) * var(--layout-column)) - var(--lab-card-gap));
+  /* End at H36.5 while preserving the shared lower gutter. */
+  block-size: calc((4 * var(--grid-row)) - var(--lab-card-gap));
+}
+
+.lab-visual-memory {
+  /* Keep the real controls in the root stacking layer above the global fluid canvas. */
+  isolation: auto;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  /* Align the top controls with Type Racer's info icon. */
+  padding-block-start: var(--space-3);
+  color: var(--text);
+  background-color: var(--soft);
+
+}
+
+.lab-visual-memory::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: #2b6fff;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lab-visual-memory > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lab-visual-memory:hover::before {
+  opacity: 1;
+  transition-duration: 180ms;
+}
+
+.lab-visual-memory:hover .lab-visual-memory__level,
+.lab-visual-memory:hover .lab-visual-memory__topline button {
+  color: #fff;
+}
+
+.lab-visual-memory__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.lab-visual-memory__scoreline,
+.lab-visual-memory__actions,
+.lab-visual-memory__lives,
+.lab-visual-memory__high-score {
+  display: inline-flex;
+  align-items: center;
+}
+
+.lab-visual-memory__scoreline { gap: var(--space-3); }
+.lab-visual-memory__actions { gap: var(--space-3); }
+
+.lab-visual-memory__level {
+  color: var(--muted);
+  font: 700 1.2rem / 1 var(--font-body);
+}
+
+.lab-visual-memory__high-score {
+  gap: 0.25rem;
+  color: #17c964;
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
+}
+
+.lab-visual-memory__high-score svg {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  stroke-width: 2.4;
+}
+
+.lab-visual-memory__lives {
+  gap: 0.18rem;
+  color: #ff5d68;
+}
+
+.lab-visual-memory__lives svg {
+  inline-size: 0.78rem;
+  block-size: 0.78rem;
+  fill: currentColor;
+  stroke-width: 2.2;
+}
+
+.lab-visual-memory__lives .is-lost {
+  color: #9f3f4b;
+  opacity: 1;
+  animation: memory-heart-loss 300ms ease-in-out both;
+}
+
+.lab-visual-memory__topline button {
+  display: grid;
+  place-items: center;
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lab-visual-memory__topline svg {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  stroke-width: 2.5;
+}
+
+.lab-visual-memory__board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--memory-grid), minmax(0, 1fr));
+  /* Match the bottom inset of Type Racer's input. */
+  align-self: end;
+  justify-self: center;
+  inline-size: min(100%, var(--lab-game-board-size));
+  aspect-ratio: 1;
+  gap: 0.3rem;
+  /* Keep each card's transform work isolated without changing its geometry. */
+  transform-style: flat;
+  /* The board stays beneath the global cursor canvas; only its two controls opt above it. */
+  z-index: auto;
+  opacity: 1;
+  transition: opacity 260ms var(--ease-out);
+}
+
+.lab-visual-memory__board.is-transitioning {
+  opacity: 0;
+  will-change: opacity;
+}
+.lab-visual-memory__cell {
+  position: relative;
+  z-index: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.2rem;
+  contain: layout paint style;
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  background: var(--page);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+/* The white face belongs to the same tile. During a reveal the tile rotates
+   between its two faces, which keeps the animation on the compositor instead
+   of repainting the nine backgrounds every frame. */
+.lab-visual-memory__cell::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  background: #fff;
+  content: "";
+  pointer-events: none;
+  transform: rotateX(180deg) translateZ(0.1px);
+}
+
+.lab-visual-memory:hover .lab-visual-memory__cell {
+  background-color: color-mix(in srgb, var(--page) 72%, var(--soft));
+}
+
+.lab-visual-memory__cell.is-revealed,
+.lab-visual-memory__cell.is-error,
+.lab-visual-memory__cell[class*="is-result-fade-"] {
+  will-change: transform, background-color;
+}
+
+.lab-visual-memory__cell:disabled { cursor: default; }
+.lab-visual-memory__cell.is-revealed {
+  overflow: hidden;
+}
+.lab-visual-memory__cell.is-entering {
+  animation: memory-cell-flip-in 300ms var(--ease-out) both;
+}
+.lab-visual-memory__cell.is-shown { transform: translateZ(0) rotateX(180deg); }
+.lab-visual-memory__cell.is-hiding {
+  animation: memory-cell-flip-out 300ms var(--ease-out) both;
+}.lab-visual-memory__cell.is-selected { background: #fff; }
+.lab-visual-memory__cell.is-error {
+  background-color: #142b45;
+  animation: memory-cell-error 300ms ease-in-out both;
+}
+.lab-visual-memory__cell.is-result-fade-all.is-selected,
+.lab-visual-memory__cell.is-result-fade-fast.is-selected,
+.lab-visual-memory__cell.is-result-fade-white.is-selected {
+  animation: memory-cell-result-fade-white 480ms var(--ease-out) both;
+}
+.lab-visual-memory__cell.is-result-fade-all.is-error,
+.lab-visual-memory__cell.is-result-fade-fast.is-error {
+  animation: memory-cell-result-fade-blue 480ms var(--ease-out) both;
+}
+.lab-visual-memory__cell.is-result-fade-fast.is-selected,
+.lab-visual-memory__cell.is-result-fade-fast.is-error {
+  animation-duration: 120ms;
+}.lab-visual-memory__cell:not(:disabled):hover { transform: translateZ(0) scale(0.94); }
+
+.lab-visual-memory__play {
+  position: absolute;
+  z-index: 89;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  box-sizing: border-box;
+  inline-size: 2.1rem;
+  block-size: 2.1rem;
+  --button-fill: #fff;
+  --button-fill-hover: #f2f2f2;
+  --button-ink: #171717;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #171717;
+  background: #fff;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: background-color 280ms var(--ease-out), opacity 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+
+.lab-visual-memory__play.is-leaving,
+.lab-visual-memory__retry.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.86);
+}
+.lab-visual-memory__play:hover {
+  background: #f2f2f2;
+  transform: translate(-50%, -50%);
+}
+
+.lab-visual-memory__play:focus-visible,
+.lab-visual-memory__retry:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 0.18rem;
+}
+
+.lab-visual-memory__play svg {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  fill: currentColor;
+  stroke-width: 2.5;
+}
+.lab-visual-memory__retry {
+  position: absolute;
+  z-index: 89;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  min-inline-size: 6.5rem;
+  block-size: 2.1rem;
+  appearance: none;
+  box-sizing: border-box;
+  --button-fill: #fff;
+  --button-fill-hover: #f2f2f2;
+  --button-ink: #171717;
+  min-block-size: 2.1rem;
+  padding-inline: 1rem;
+  border: 0;
+  border-radius: 999px;
+  color: #171717;
+  background: #fff;
+  font: 700 calc(var(--type-caption) * 1.24) / 1 var(--font-body);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  animation: memory-retry-arrive 240ms var(--ease-out) both;
+  transition: background-color 280ms var(--ease-out), opacity 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+
+.lab-visual-memory__retry:hover {
+  background: #f2f2f2;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes memory-heart-loss {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  24%, 72% { transform: translateX(-0.12rem) rotate(-8deg); }
+  48% { transform: translateX(0.12rem) rotate(8deg); }
+}
+
+@keyframes memory-retry-arrive {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes memory-cell-error {
+  0%, 100% { transform: translateX(0); }
+  25%, 75% { transform: translateX(-0.12rem); }
+  50% { transform: translateX(0.12rem); }
+}
+@keyframes memory-cell-flip-in {
+  from { transform: translateZ(0) rotateX(0deg); }
+  to { transform: translateZ(0) rotateX(180deg); }
+}
+
+@keyframes memory-cell-flip-out {
+  from { transform: translateZ(0) rotateX(180deg); }
+  to { transform: translateZ(0) rotateX(360deg); }
+}
+@keyframes memory-cell-result-fade-white {
+  from { background-color: #fff; }
+  to { background-color: color-mix(in srgb, var(--page) 72%, var(--soft)); }
+}
+
+@keyframes memory-cell-result-fade-blue {
+  from { background-color: #142b45; }
+  to { background-color: color-mix(in srgb, var(--page) 72%, var(--soft)); }
+}
+.lab-visual-memory button:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
 }
 
 .lab-etch,
@@ -2490,12 +2936,12 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-etch {
+  --fluid-knob-mask-color: var(--soft);
   position: relative;
   isolation: isolate;
   padding-block-start: var(--space-3);
   background-color: var(--soft);
-  box-shadow: 0 0 2.25rem rgb(255 16 29 / 0%);
-  transition: box-shadow 900ms var(--ease-out);
+
 }
 
 .lab-etch::before {
@@ -2516,6 +2962,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-etch:hover {
+  --fluid-knob-mask-color: #ff101d;
   box-shadow: 0 0 2.25rem rgb(255 16 29 / 38%);
   transition-duration: 180ms;
 }
@@ -2555,7 +3002,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border: 0;
   color: var(--muted);
   background: transparent;
-  font: 700 var(--type-caption) / 1 var(--font-body);
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
   cursor: pointer;
 }
 
@@ -2648,6 +3095,22 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   background: #fff;
 }
 
+/* The global focus ring is intentionally strong for page navigation. These
+   compact circular controls retain a quiet keyboard cue, while forced-colors
+   mode receives the full system focus indicator. */
+.lab-etch button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 38%);
+}
+
+@media (forced-colors: active) {
+  .lab-etch button:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+}
+
 .lab-etch__utility-button:first-child svg {
   transform: translateY(-1px);
 }
@@ -2682,14 +3145,33 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   fill: var(--primary);
 }
 
+.lab-etch__screen {
+  position: relative;
+  min-block-size: 0;
+  /* Give only the screen the extra vertical space needed to balance the
+     lower clear-control margin against the screen-to-utility spacing. */
+  margin-block-end: calc(var(--space-2) * -1);
+  overflow: hidden;
+  border-radius: calc(var(--radius-card) - 0.35rem);
+}
+
 .lab-etch__canvas {
+  display: block;
   inline-size: 100%;
+  block-size: 100%;
   min-block-size: 0;
   border: 0;
   border-radius: calc(var(--radius-card) - 0.35rem);
   background: color-mix(in srgb, var(--page) 78%, var(--soft));
   cursor: auto;
   touch-action: none;
+}
+
+.lab-etch__vanish {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
 }
 
 .lab-etch__canvas.is-cursor-suppressed {
@@ -2722,8 +3204,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   gap: 0.45rem;
   padding: var(--space-4);
   background-color: var(--soft);
-  box-shadow: 0 0 2.25rem rgb(255 255 255 / 0%);
-  transition: box-shadow 900ms var(--ease-out);
+
 }
 
 .lab-type-racer::before {
@@ -2731,7 +3212,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   z-index: 0;
   inset: 0;
   border-radius: inherit;
-  background: #fff;
+  background: #3b0a78;
   content: "";
   opacity: 0;
   pointer-events: none;
@@ -2741,11 +3222,6 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-type-racer > * {
   position: relative;
   z-index: 1;
-}
-
-.lab-type-racer:hover {
-  box-shadow: 0 0 2.25rem rgb(255 255 255 / 42%);
-  transition-duration: 180ms;
 }
 
 .lab-type-racer:hover::before {
@@ -2758,7 +3234,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-type-racer:hover .lab-type-racer__info,
 .lab-type-racer:hover .lab-type-racer__restart,
 .lab-type-racer:hover .lab-type-racer__word.is-upcoming {
-  color: #171717;
+  color: #fff;
 }
 
 .lab-type-racer__info {
@@ -2839,7 +3315,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   align-items: center;
   gap: 0.25rem;
   color: #17c964;
-  font: 700 var(--type-caption) / 1 var(--font-body);
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
 }
 
 .lab-type-racer__high-score svg {
@@ -2864,7 +3340,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-type-racer__prompt > span:last-child {
   flex: 0 0 auto;
   color: var(--muted);
-  font: 700 var(--type-caption) / 1 var(--font-body);
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
 }
 
 .lab-type-racer__word {
@@ -2907,10 +3383,362 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   to { color: #17c964; opacity: 1; }
 }
 
-.lab-type-racer input {
+.lab-snake {
+  overflow: hidden;
+  --snake-edge: var(--space-4);
+  display: grid;
+  align-self: start;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  /* Match Visual Memory's top control inset. */
+  padding-block-start: var(--space-3);
+  background: var(--soft);
+
+}
+
+.lab-snake::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: #17c964;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lab-snake > :not(.lab-snake__board) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The board must not create a stacking context: only its real control rises
+   above the fixed liquid canvas, while the grid remains beneath it. */
+.lab-snake__board > .lab-visual-memory__play,
+.lab-snake__board > .lab-visual-memory__retry {
+  z-index: 89;
+}
+
+.lab-snake:hover::before {
+  opacity: 1;
+}
+
+.lab-snake:hover .lab-snake__score,
+.lab-snake:hover .lab-snake__high-score,
+.lab-snake:hover .lab-snake__info {
+  color: #171717;
+}
+
+.lab-snake__topline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-block-size: 1.2rem;
+  padding-inline-end: 1.5rem;
+  color: var(--muted);
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
+}
+
+.lab-snake__score,
+.lab-snake__high-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lab-snake__score {
+  color: var(--muted);
+  font: 700 1.2rem / 1 var(--font-body);
+}
+
+.lab-snake__score i {
+  inline-size: 0.58rem;
+  block-size: 0.58rem;
+  border-radius: 50%;
+  background: #ff101d;
+}
+
+.lab-snake__high-score {
+  margin-inline-start: var(--space-3);
+  color: #17c964;
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
+}
+
+.lab-snake__high-score svg {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  stroke-width: 2.4;
+}
+
+.lab-snake__info {
+  position: absolute;
+  inset-inline-end: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.lab-snake__info svg {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  stroke-width: 2.5;
+}
+
+.lab-snake button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 38%);
+}
+
+@media (forced-colors: active) {
+  .lab-snake button:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+}
+
+.lab-snake__board {
+  position: relative;
+  justify-self: center;
+  /* Match the bottom inset of Type Racer's input. */
   align-self: end;
+  inline-size: min(100%, var(--lab-game-board-size));
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius-card) - 0.5rem);
+  background-color: var(--soft);
+  overflow: hidden;
+  cursor: default;
+}
+
+.lab-snake__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  grid-template-rows: repeat(11, minmax(0, 1fr));
+  gap: 1px;
+  pointer-events: none;
+}
+
+.lab-snake__grid i {
+  background: var(--page);
+}
+
+.lab-snake__cells {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  grid-template-rows: repeat(11, minmax(0, 1fr));
+  gap: 1px;
+  transition: filter 240ms var(--ease-out);
+}
+
+.lab-snake__segment,
+.lab-snake__food {
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.lab-snake__segment {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.lab-snake__segment {
+  border-radius: 0.18rem;
+  background: #c9f7a5;
+}
+
+/* The first four cells bridge evenly from the head colour to the established
+   body colour. Cell five and every following cell retain #c9f7a5. */
+.lab-snake__segment.is-tone-1 { background: #70e085; }
+.lab-snake__segment.is-tone-2 { background: #86e68d; }
+.lab-snake__segment.is-tone-3 { background: #9cec95; }
+.lab-snake__segment.is-tone-4 { background: #b3f19d; }
+
+/* Each bend rounds only the outside corner opposite the turn. The class is
+   calculated from the adjacent segments, so the curve moves down the body
+   naturally and vanishes when the tail leaves it. */
+.lab-snake__segment.is-turn-top-left { border-top-left-radius: 0.62rem; }
+.lab-snake__segment.is-turn-top-right { border-top-right-radius: 0.62rem; }
+.lab-snake__segment.is-turn-bottom-right { border-bottom-right-radius: 0.62rem; }
+.lab-snake__segment.is-turn-bottom-left { border-bottom-left-radius: 0.62rem; }
+
+/* The tail cap always points away from the segment in front of it. */
+.lab-snake__segment.is-tail-facing-left { border-radius: 999px 0.18rem 0.18rem 999px; }
+.lab-snake__segment.is-tail-facing-right { border-radius: 0.18rem 999px 999px 0.18rem; }
+.lab-snake__segment.is-tail-facing-up { border-radius: 999px 999px 0.18rem 0.18rem; }
+.lab-snake__segment.is-tail-facing-down { border-radius: 0.18rem 0.18rem 999px 999px; }
+
+/* A collision ripples from the head through the body before the board blurs.
+   Each later segment receives a smaller motion and a short stagger. */
+.lab-snake__board.is-crashing .lab-snake__segment {
+  animation: snake-collision-shake 260ms ease-in-out both;
+  animation-delay: var(--snake-shake-delay);
+}
+
+.lab-snake__board.is-crashing.is-crash-vertical .lab-snake__segment {
+  animation-name: snake-collision-shake-vertical;
+}
+
+@keyframes snake-collision-shake {
+  0%, 100% { transform: translateX(0); }
+  25%, 75% { transform: translateX(calc(var(--snake-shake-distance) * -1)); }
+  50% { transform: translateX(var(--snake-shake-distance)); }
+}
+
+@keyframes snake-collision-shake-vertical {
+  0%, 100% { transform: translateY(0); }
+  25%, 75% { transform: translateY(calc(var(--snake-shake-distance) * -1)); }
+  50% { transform: translateY(var(--snake-shake-distance)); }
+}
+
+.lab-snake__food {
+  place-self: center;
+  inline-size: 62%;
+  block-size: 62%;
+  border-radius: 50%;
+  background: #ff101d;
+  box-shadow: 0 0.24rem 0.8rem rgb(255 16 29 / 36%);
+}
+
+.lab-snake__board.is-paused .lab-snake__cells { filter: blur(0.35rem); }
+
+.lab-snake__message,
+.lab-snake__ready {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.4rem;
+  padding: var(--space-4);
+  color: var(--text);
+  text-align: center;
+}
+
+.lab-snake__message strong {
+  font: 700 1.05rem / 1.05 var(--font-body);
+}
+
+.lab-snake__message small,
+.lab-snake__ready {
+  color: var(--muted);
+  font: 600 var(--type-caption) / 1.3 var(--font-body);
+}
+
+.lab-snake__ready { opacity: 0.72; }
+
+.lab-calendar {
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--text);
+  background-color: var(--soft);
+
+}
+
+.lab-calendar::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lab-calendar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lab-calendar:hover::before {
+  opacity: 1;
+  transition-duration: 180ms;
+}
+
+.lab-calendar__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.lab-calendar__header strong,
+.lab-calendar__header span {
+  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lab-calendar__header span,
+.lab-calendar__weekdays,
+.lab-calendar__dates .is-muted {
+  color: var(--muted);
+}
+
+.lab-calendar__weekdays,
+.lab-calendar__dates {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  text-align: center;
+}
+
+.lab-calendar__weekdays {
+  font: 700 0.58rem / 1 var(--font-body);
+}
+
+.lab-calendar__dates {
+  align-content: space-between;
+  gap: 0.18rem;
+  font: 600 var(--type-caption) / 1 var(--font-body);
+}
+
+.lab-calendar__dates span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.lab-calendar__dates .is-today {
+  border-radius: 50%;
+  color: var(--page);
+  background: #ff101d;
+}
+.lab-calendar:hover .lab-calendar__header strong,
+.lab-calendar:hover .lab-calendar__header span,
+.lab-calendar:hover .lab-calendar__weekdays,
+.lab-calendar:hover .lab-calendar__dates span:not(.is-today) {
+  color: #171717;
+}
+
+.lab-type-racer__input-wrap {
+  align-self: end;
+  position: relative;
   inline-size: 100%;
   min-inline-size: 0;
+}
+
+.lab-type-racer__input-wrap input {
+  display: block;
+  inline-size: 100%;
   min-block-size: 2.5rem;
   padding: 0.65rem 0.75rem;
   border: 0;
@@ -2920,9 +3748,30 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   font: 500 var(--type-small) / 1.1 var(--font-body);
 }
 
+.lab-type-racer__input-wrap input::placeholder {
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out);
+}
+
+.lab-type-racer__input-wrap.is-placeholder-visible input::placeholder {
+  opacity: 1;
+}
+
+.lab-type-racer__input-wrap.is-vanishing input::placeholder {
+  opacity: 0;
+  transition: none;
+}
+
+.lab-type-racer__vanish {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
 /* Keep the text field quiet on pointer focus; keyboard users retain the
    browser's focus cue through the parent interaction and label. */
-.lab-type-racer input:focus-visible {
+.lab-type-racer__input-wrap input:focus-visible {
   outline: 0;
   outline-offset: 0;
 }
@@ -4224,7 +5073,10 @@ h6 { font-size: var(--type-h6) !important; }
   .lab-preview__placeholder-group,
   .lab-preview__placeholder--3,
   .lab-preview__placeholder--4,
-  .lab-preview__placeholder--5 {
+  .lab-preview__placeholder--5,
+  .lab-preview__placeholder--6,
+  .lab-snake,
+  .lab-calendar {
     position: static;
     inline-size: auto;
     block-size: auto;
@@ -4263,6 +5115,9 @@ h6 { font-size: var(--type-h6) !important; }
   .lab-preview__placeholder--3 { order: 3; }
   .lab-preview__placeholder--2 { order: 4; }
   .lab-preview__placeholder-group { order: 5; }
+  .lab-snake { order: 5; }
+  .lab-calendar { order: 6; }
+  .lab-preview__placeholder--6 { order: 7; }
 
   .lab-preview__placeholder-group {
     grid-template-columns: 1fr;
@@ -4672,4 +5527,12 @@ h6 { font-size: var(--type-h6) !important; }
   .fluid-cursor {
     display: none;
   }
+}
+
+/* Snake reuses the exact Memory controls, including their quiet keyboard-only focus treatment. */
+.lab-snake .lab-visual-memory__play:focus-visible,
+.lab-snake .lab-visual-memory__retry:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 0.18rem;
+  box-shadow: none;
 }

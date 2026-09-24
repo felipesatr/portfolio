@@ -1,8 +1,10 @@
 import { Link } from "react-router";
+import { createPortal, flushSync } from "react-dom";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import type { Object3D } from "three";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
-import { ArrowUpRightIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
 import { RevealTitle, SoftBlurText } from "./motion-reveal";
 import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
 
@@ -83,6 +85,642 @@ function includesMemoryCell(cells: MemoryCell[], cell: MemoryCell) {
   return cells.some((item) => item.x === cell.x && item.y === cell.y);
 }
 
+function DrawingPad() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingPointer = useRef<number | null>(null);
+  const previousPoint = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resize = () => {
+      const bounds = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const previous = document.createElement("canvas");
+      previous.width = canvas.width;
+      previous.height = canvas.height;
+      previous.getContext("2d")?.drawImage(canvas, 0, 0);
+      canvas.width = Math.max(1, Math.round(bounds.width * dpr));
+      canvas.height = Math.max(1, Math.round(bounds.height * dpr));
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.lineWidth = 2.25;
+      context.strokeStyle = "#e8e8e8";
+      if (previous.width && previous.height) {
+        context.drawImage(previous, 0, 0, previous.width, previous.height, 0, 0, bounds.width, bounds.height);
+      }
+    };
+
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    return () => {
+      observer.disconnect();
+      document.documentElement.classList.remove("draw-cursor-hidden");
+    };
+  }, []);
+
+  const pointFromEvent = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  };
+
+  const endStroke = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (drawingPointer.current !== event.pointerId) return;
+    drawingPointer.current = null;
+    previousPoint.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
+  return (
+    <article className="lab-preview__placeholder lab-preview__placeholder--2 lab-draw" aria-label="Drawing pad">
+      <span className="lab-preview__number">02</span>
+      <canvas
+        ref={canvasRef}
+        className="lab-draw__canvas"
+        aria-label="Draw here with your pointer"
+        onPointerEnter={() => document.documentElement.classList.add("draw-cursor-hidden")}
+        onPointerLeave={() => document.documentElement.classList.remove("draw-cursor-hidden")}
+        onPointerDown={(event) => {
+          const point = pointFromEvent(event);
+          drawingPointer.current = event.pointerId;
+          previousPoint.current = point;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (drawingPointer.current !== event.pointerId || !previousPoint.current) return;
+          const point = pointFromEvent(event);
+          const context = event.currentTarget.getContext("2d");
+          if (!context) return;
+          context.beginPath();
+          context.moveTo(previousPoint.current.x, previousPoint.current.y);
+          context.lineTo(point.x, point.y);
+          context.stroke();
+          previousPoint.current = point;
+        }}
+        onPointerUp={endStroke}
+        onPointerCancel={endStroke}
+      />
+      <div className="lab-draw__controls" aria-label="Drawing controls coming soon">
+        <span className="lab-draw__placeholders" aria-hidden="true"><i /><i /><i /></span>
+        <button type="button" className="lab-draw__info" aria-label="About this drawing pad" data-cursor-tool data-cursor-title="" data-cursor-description="A simple freehand canvas. More drawing controls are coming soon." onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
+      </div>
+    </article>
+  );
+}
+
+type CarFrameAnchor = {
+  rect: DOMRect;
+  cornerRadius: string;
+  distance: number;
+};
+
+type CarTransitionController = {
+  capture: () => CarFrameAnchor;
+  expand: (anchor: CarFrameAnchor, onComplete: () => void) => void;
+  collapse: (anchor: CarFrameAnchor, onComplete: () => void) => void;
+  finishCollapse: () => void;
+};
+
+function CarShowcase() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef(false);
+  const expandTimer = useRef<number | null>(null);
+  const expansionSettlingRef = useRef(false);
+  const transitionControllerRef = useRef<CarTransitionController | null>(null);
+  const cardAnchorRef = useRef<CarFrameAnchor | null>(null);
+  const [isPointerInsideCar, setIsPointerInsideCar] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isCameraTransitioning, setIsCameraTransitioning] = useState(false);
+
+  const setExpanded = (nextExpanded: boolean) => {
+    expandedRef.current = nextExpanded;
+    setIsExpanded(nextExpanded);
+  };
+
+  const closeExpanded = () => {
+    if (expandTimer.current !== null) {
+      window.clearTimeout(expandTimer.current);
+      expandTimer.current = null;
+      expansionSettlingRef.current = false;
+      setIsExpanding(false);
+      return;
+    }
+    if (!expandedRef.current) return;
+    const controller = transitionControllerRef.current;
+    const anchor = cardAnchorRef.current;
+    if (!controller || !anchor) return;
+    setIsCameraTransitioning(true);
+    controller.collapse(anchor, () => {
+      flushSync(() => {
+        setExpanded(false);
+        setIsCameraTransitioning(false);
+      });
+      controller.finishCollapse();
+    });
+  };
+
+  const beginExpand = () => {
+    if (isExpanding || isExpanded) return;
+    expansionSettlingRef.current = true;
+    setIsExpanding(true);
+    expandTimer.current = window.setTimeout(() => {
+      expandTimer.current = null;
+      const controller = transitionControllerRef.current;
+      if (!controller) {
+        expansionSettlingRef.current = false;
+        setIsExpanding(false);
+        return;
+      }
+      const anchor = controller.capture();
+      cardAnchorRef.current = anchor;
+      expansionSettlingRef.current = false;
+      flushSync(() => {
+        setIsExpanding(false);
+        setExpanded(true);
+        setIsCameraTransitioning(true);
+      });
+      controller.expand(anchor, () => setIsCameraTransitioning(false));
+    }, 340);
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("car-cursor-hidden", isPointerInsideCar);
+    return () => document.documentElement.classList.remove("car-cursor-hidden");
+  }, [isPointerInsideCar]);
+
+  useEffect(() => {
+    document.body.classList.toggle("car-showcase-expanded", isExpanding || isExpanded);
+    return () => document.body.classList.remove("car-showcase-expanded");
+  }, [isExpanding, isExpanded]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeExpanded();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      if (expandTimer.current !== null) window.clearTimeout(expandTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let teardown = () => {};
+
+    void (async () => {
+      const [{ GLTFLoader }, THREE] = await Promise.all([
+        import("three/addons/loaders/GLTFLoader.js"),
+        import("three"),
+      ]);
+      const stage = stageRef.current;
+      if (!stage || disposed) return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      renderer.domElement.className = "lab-car__canvas";
+      stage.appendChild(renderer.domElement);
+
+      const carGroup = new THREE.Group();
+      scene.add(carGroup);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x303030, 2.4));
+      const keyLight = new THREE.DirectionalLight(0xffffff, 4.2);
+      keyLight.position.set(4, 6, 5);
+      scene.add(keyLight);
+      const rimLight = new THREE.DirectionalLight(0xffdc32, 1.1);
+      rimLight.position.set(-5, 2, -4);
+      scene.add(rimLight);
+
+      const defaultYaw = -0.55;
+      const defaultPitch = 0.08;
+      const defaultCameraDistance = 5.85;
+      const closeZoomThreshold = 4.1;
+      let yaw = defaultYaw;
+      let pitch = defaultPitch;
+      let pointerId: number | null = null;
+      let previousPointer = { x: 0, y: 0 };
+      let animationFrame = 0;
+      let isVisible = false;
+      let isIntersecting = false;
+      let rotationSpeed = 0;
+      let isReturningToDefault = false;
+      let isZoomReturning = false;
+      let cameraDistance = defaultCameraDistance;
+      let cameraTargetDistance = cameraDistance;
+      let loadedModel: Object3D | null = null;
+      let hasStartedRendering = false;
+      let lastRenderWidth = 0;
+      let lastRenderHeight = 0;
+      let lastPixelRatio = 0;
+      let lastFrameTime = 0;
+      let viewOffsetX = 0;
+      let viewOffsetY = 0;
+      let clipReveal: Animation | null = null;
+      let framing: {
+        kind: "expand" | "collapse";
+        startedAt: number;
+        duration: number;
+        fromZoom: number;
+        toZoom: number;
+        fromOffsetX: number;
+        toOffsetX: number;
+        fromOffsetY: number;
+        toOffsetY: number;
+        fromDistance: number;
+        toDistance: number;
+        fromPitch: number;
+        toPitch: number;
+        onComplete: () => void;
+      } | null = null;
+
+      const applyProjection = () => {
+        if (Math.abs(viewOffsetX) > 0.001 || Math.abs(viewOffsetY) > 0.001) {
+          camera.setViewOffset(lastRenderWidth, lastRenderHeight, viewOffsetX, viewOffsetY, lastRenderWidth, lastRenderHeight);
+        } else if (camera.view?.enabled) {
+          camera.clearViewOffset();
+        } else {
+          camera.updateProjectionMatrix();
+        }
+      };
+
+      const expandedCenterOffsetX = (distance: number) => {
+        const railWidth = document.querySelector<HTMLElement>(".desktop-rail")?.getBoundingClientRect().width ?? 0;
+        if (!loadedModel || !lastRenderWidth) return -railWidth / 2;
+
+        const previousZoom = camera.zoom;
+        const previousZ = camera.position.z;
+        const previousOffsetX = viewOffsetX;
+        const previousOffsetY = viewOffsetY;
+        const previousPitch = carGroup.rotation.x;
+        camera.zoom = 1;
+        camera.position.z = distance;
+        camera.updateMatrixWorld(true);
+        carGroup.rotation.x = defaultPitch;
+        carGroup.updateMatrixWorld(true);
+        const projectedModelCenterX = (offset: number) => {
+          viewOffsetX = offset;
+          viewOffsetY = 0;
+          applyProjection();
+          camera.updateMatrixWorld(true);
+          carGroup.updateMatrixWorld(true);
+          const center = new THREE.Vector3(0, 0, 0).applyMatrix4(carGroup.matrixWorld).project(camera);
+          return (center.x + 1) * lastRenderWidth / 2;
+        };
+        const baseX = projectedModelCenterX(0);
+        const shiftedX = projectedModelCenterX(100);
+        const slope = (shiftedX - baseX) / 100;
+        const gridLines = Array.from(document.querySelectorAll<HTMLElement>(".layout-grid__vertical-line"));
+        const stageBounds = stage.getBoundingClientRect();
+        const visibleGridLines = gridLines.filter((line) => line.getClientRects().length > 0);
+        const secondGridLine = visibleGridLines.find((line) => line.querySelector("span")?.textContent?.trim() === "V2");
+        const innerRightGridLine = visibleGridLines.at(-2);
+        const secondGridX = secondGridLine?.getBoundingClientRect().left;
+        const innerRightGridX = innerRightGridLine?.getBoundingClientRect().left;
+        const targetX = Number.isFinite(secondGridX) && Number.isFinite(innerRightGridX)
+          ? ((secondGridX! + innerRightGridX!) / 2) - stageBounds.left
+          : lastRenderWidth * (13 / 24);
+        const offset = Math.abs(slope) > 0.01 ? (targetX - baseX) / slope : -railWidth / 2;
+
+        camera.zoom = previousZoom;
+        camera.position.z = previousZ;
+        camera.updateMatrixWorld(true);
+        carGroup.rotation.x = previousPitch;
+        carGroup.updateMatrixWorld(true);
+        viewOffsetX = previousOffsetX;
+        viewOffsetY = previousOffsetY;
+        applyProjection();
+        return Math.max(-lastRenderWidth / 3, Math.min(lastRenderWidth / 3, offset));
+      };
+
+      const paint = () => {
+        camera.position.z = cameraDistance;
+        carGroup.rotation.set(pitch, yaw, 0);
+        renderer.render(scene, camera);
+      };
+
+      const resize = () => {
+        const bounds = stage.getBoundingClientRect();
+        if (bounds.width < 2 || bounds.height < 2) return false;
+        const width = Math.round(bounds.width);
+        const height = Math.round(bounds.height);
+        const preferredPixelRatio = expandedRef.current
+          ? Math.min(window.devicePixelRatio || 1, 2)
+          : Math.min(window.devicePixelRatio || 1, 1.25);
+        const pixelBudget = expandedRef.current ? 4_200_000 : 1_800_000;
+        const pixelRatio = Math.min(preferredPixelRatio, Math.sqrt(pixelBudget / (width * height)));
+        if (width === lastRenderWidth && height === lastRenderHeight && Math.abs(pixelRatio - lastPixelRatio) < 0.001) return false;
+        lastRenderWidth = width;
+        lastRenderHeight = height;
+        lastPixelRatio = pixelRatio;
+        camera.aspect = width / height;
+        applyProjection();
+        // setPixelRatio() calls setSize() internally in this Three.js version.
+        // This writes the drawing buffer only once for the new stage geometry.
+        renderer.setDrawingBufferSize(width, height, pixelRatio);
+        return true;
+      };
+
+      const interpolate = (from: number, to: number, progress: number) => from + (to - from) * progress;
+      const clearClipReveal = () => {
+        clipReveal?.cancel();
+        clipReveal = null;
+        renderer.domElement.style.removeProperty("clip-path");
+      };
+      const controller: CarTransitionController = {
+        capture: () => {
+          const rect = stage.getBoundingClientRect();
+          return { rect, cornerRadius: getComputedStyle(stage).borderTopLeftRadius, distance: cameraDistance };
+        },
+        expand: (anchor, onComplete) => {
+          framing = null;
+          isZoomReturning = false;
+          isReturningToDefault = false;
+          const bounds = stage.getBoundingClientRect();
+          const startClip = `inset(${Math.max(0, anchor.rect.top - bounds.top)}px ${Math.max(0, bounds.right - anchor.rect.right)}px ${Math.max(0, bounds.bottom - anchor.rect.bottom)}px ${Math.max(0, anchor.rect.left - bounds.left)}px round ${anchor.cornerRadius})`;
+          renderer.domElement.style.clipPath = startClip;
+          resize();
+          camera.zoom = anchor.rect.height / bounds.height;
+          viewOffsetX = bounds.width / 2 - (anchor.rect.left + anchor.rect.width / 2 - bounds.left);
+          viewOffsetY = bounds.height / 2 - (anchor.rect.top + anchor.rect.height / 2 - bounds.top);
+          cameraDistance = anchor.distance;
+          cameraTargetDistance = cameraDistance;
+          applyProjection();
+          paint();
+          const reveal = renderer.domElement.animate(
+            [{ clipPath: startClip }, { clipPath: "inset(0px 0px 0px 0px round 0px)" }],
+            { duration: 700, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
+          );
+          clipReveal = reveal;
+          reveal.onfinish = () => {
+            if (clipReveal !== reveal) return;
+            clearClipReveal();
+          };
+          framing = {
+            kind: "expand", startedAt: performance.now(), duration: 1500,
+            fromZoom: camera.zoom, toZoom: 1,
+            fromOffsetX: viewOffsetX, toOffsetX: expandedCenterOffsetX(Math.max(4.55, anchor.distance * 0.8)),
+            fromOffsetY: viewOffsetY, toOffsetY: 0,
+            fromDistance: cameraDistance, toDistance: Math.max(4.55, anchor.distance * 0.8),
+            fromPitch: pitch, toPitch: defaultPitch, onComplete,
+          };
+          isVisible = !document.hidden;
+          if (isVisible) startRendering();
+        },
+        collapse: (anchor, onComplete) => {
+          clearClipReveal();
+          const bounds = stage.getBoundingClientRect();
+          framing = {
+            kind: "collapse", startedAt: performance.now(), duration: 1450,
+            fromZoom: camera.zoom, toZoom: anchor.rect.height / bounds.height,
+            fromOffsetX: viewOffsetX, toOffsetX: bounds.width / 2 - (anchor.rect.left + anchor.rect.width / 2 - bounds.left),
+            fromOffsetY: viewOffsetY, toOffsetY: bounds.height / 2 - (anchor.rect.top + anchor.rect.height / 2 - bounds.top),
+            fromDistance: cameraDistance, toDistance: anchor.distance,
+            fromPitch: pitch, toPitch: defaultPitch, onComplete,
+          };
+          isZoomReturning = false;
+          isReturningToDefault = false;
+        },
+        finishCollapse: () => {
+          framing = null;
+          camera.zoom = 1;
+          viewOffsetX = 0;
+          viewOffsetY = 0;
+          cameraDistance = anchorDistance();
+          cameraTargetDistance = cameraDistance;
+          resize();
+          applyProjection();
+          paint();
+        },
+      };
+      const anchorDistance = () => cardAnchorRef.current?.distance ?? defaultCameraDistance;
+      transitionControllerRef.current = controller;
+
+      const render = (time: number) => {
+        if (!isVisible) {
+          animationFrame = 0;
+          return;
+        }
+        const frameElapsed = lastFrameTime ? Math.max(time - lastFrameTime, 0) : 16.667;
+        const elapsed = Math.min(frameElapsed, 50);
+        const rotationElapsed = Math.min(frameElapsed, 120);
+        lastFrameTime = time;
+        if (framing) {
+          const motion = framing;
+          const progress = Math.min(1, Math.max(0, (time - motion.startedAt) / motion.duration));
+          const eased = progress * progress * (3 - 2 * progress);
+          camera.zoom = interpolate(motion.fromZoom, motion.toZoom, eased);
+          viewOffsetX = interpolate(motion.fromOffsetX, motion.toOffsetX, eased);
+          viewOffsetY = interpolate(motion.fromOffsetY, motion.toOffsetY, eased);
+          cameraDistance = interpolate(motion.fromDistance, motion.toDistance, eased);
+          cameraTargetDistance = cameraDistance;
+          pitch = interpolate(motion.fromPitch, motion.toPitch, eased);
+          if (motion.kind === "expand") {
+            rotationSpeed = interpolate(rotationSpeed, 0.0026, 1 - Math.exp(-elapsed / 650));
+          } else {
+            rotationSpeed *= Math.exp(-elapsed / 280);
+          }
+          yaw += rotationSpeed * rotationElapsed / 16.667;
+          applyProjection();
+          paint();
+          if (progress >= 1) {
+            framing = null;
+            motion.onComplete();
+          }
+        } else {
+          if (expansionSettlingRef.current) {
+            rotationSpeed *= Math.exp(-elapsed / 260);
+            yaw += rotationSpeed * rotationElapsed / 16.667;
+            pitch = interpolate(pitch, defaultPitch, 1 - Math.exp(-elapsed / 170));
+          } else if (pointerId === null) {
+            if (isReturningToDefault) {
+              pitch = interpolate(pitch, defaultPitch, 1 - Math.exp(-elapsed / 900));
+              if (Math.abs(defaultPitch - pitch) < 0.001) {
+                pitch = defaultPitch;
+                isReturningToDefault = false;
+              }
+            }
+            rotationSpeed = interpolate(rotationSpeed, 0.0026, 1 - Math.exp(-elapsed / 320));
+            yaw += rotationSpeed * rotationElapsed / 16.667;
+          }
+          if (isZoomReturning) {
+            cameraTargetDistance = interpolate(cameraTargetDistance, defaultCameraDistance, 1 - Math.exp(-elapsed / 1400));
+            if (Math.abs(defaultCameraDistance - cameraTargetDistance) < 0.01) {
+              cameraTargetDistance = defaultCameraDistance;
+              isZoomReturning = false;
+            }
+          }
+          cameraDistance = interpolate(cameraDistance, cameraTargetDistance, 1 - Math.exp(-elapsed / 90));
+          paint();
+        }
+        animationFrame = window.requestAnimationFrame(render);
+      };
+
+      const startRendering = () => {
+        if (animationFrame) return;
+        if (!hasStartedRendering) {
+          yaw = defaultYaw;
+          pitch = defaultPitch;
+          rotationSpeed = 0;
+          hasStartedRendering = true;
+        }
+        lastFrameTime = 0;
+        animationFrame = window.requestAnimationFrame(render);
+      };
+
+      const stopRendering = () => {
+        if (animationFrame) window.cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      };
+
+      const onPointerDown = (event: PointerEvent) => {
+        if (framing || expansionSettlingRef.current) return;
+        pointerId = event.pointerId;
+        rotationSpeed = 0;
+        isReturningToDefault = false;
+        previousPointer = { x: event.clientX, y: event.clientY };
+        renderer.domElement.setPointerCapture(event.pointerId);
+        renderer.domElement.classList.add("is-dragging");
+      };
+      const onPointerMove = (event: PointerEvent) => {
+        if (pointerId !== event.pointerId) return;
+        yaw += (event.clientX - previousPointer.x) * 0.012;
+        pitch = Math.max(-0.32, Math.min(0.28, pitch + (event.clientY - previousPointer.y) * 0.006));
+        previousPointer = { x: event.clientX, y: event.clientY };
+      };
+      const onPointerEnd = (event: PointerEvent) => {
+        if (pointerId !== event.pointerId) return;
+        pointerId = null;
+        isReturningToDefault = true;
+        renderer.domElement.releasePointerCapture(event.pointerId);
+        renderer.domElement.classList.remove("is-dragging");
+      };
+      const onWheel = (event: WheelEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (framing || expansionSettlingRef.current) return;
+        const delta = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY;
+        isZoomReturning = false;
+        cameraTargetDistance = Math.max(3.2, Math.min(defaultCameraDistance, cameraTargetDistance + delta * 0.006));
+      };
+      const onCanvasLeave = () => {
+        if (pointerId === null && cameraTargetDistance <= closeZoomThreshold && !expandedRef.current) isZoomReturning = true;
+      };
+      renderer.domElement.addEventListener("pointerdown", onPointerDown);
+      renderer.domElement.addEventListener("pointermove", onPointerMove);
+      renderer.domElement.addEventListener("pointerup", onPointerEnd);
+      renderer.domElement.addEventListener("pointercancel", onPointerEnd);
+      renderer.domElement.addEventListener("pointerleave", onCanvasLeave);
+      renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+
+      const observer = new ResizeObserver(() => {
+        if (resize() && !animationFrame) paint();
+      });
+      observer.observe(stage);
+      const syncRenderVisibility = () => {
+        isVisible = !document.hidden && (expandedRef.current || isIntersecting);
+        if (isVisible) startRendering();
+        else stopRendering();
+      };
+      const visibilityObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        isIntersecting = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.12);
+        syncRenderVisibility();
+      }, { threshold: [0, 0.12] });
+      visibilityObserver.observe(stage);
+      document.addEventListener("visibilitychange", syncRenderVisibility);
+      camera.position.set(0, 0.45, cameraDistance);
+      camera.lookAt(0, 0, 0);
+      resize();
+      paint();
+
+      new GLTFLoader().load("/models/1962-ferrari-250-gto.glb", (gltf) => {
+        if (disposed) return;
+        loadedModel = gltf.scene;
+        const bounds = new THREE.Box3().setFromObject(loadedModel);
+        const centre = bounds.getCenter(new THREE.Vector3());
+        const size = bounds.getSize(new THREE.Vector3());
+        const scale = 4.55 / Math.max(size.x, size.y, size.z);
+        loadedModel.position.sub(centre);
+        loadedModel.scale.setScalar(scale);
+        loadedModel.position.y += 0.08;
+        carGroup.add(loadedModel);
+        if (isVisible) paint();
+      });
+
+      teardown = () => {
+        if (transitionControllerRef.current === controller) transitionControllerRef.current = null;
+        clearClipReveal();
+        window.cancelAnimationFrame(animationFrame);
+        observer.disconnect();
+        visibilityObserver.disconnect();
+        document.removeEventListener("visibilitychange", syncRenderVisibility);
+        renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+        renderer.domElement.removeEventListener("pointermove", onPointerMove);
+        renderer.domElement.removeEventListener("pointerup", onPointerEnd);
+        renderer.domElement.removeEventListener("pointercancel", onPointerEnd);
+        renderer.domElement.removeEventListener("pointerleave", onCanvasLeave);
+        renderer.domElement.removeEventListener("wheel", onWheel);
+        loadedModel?.traverse((object: Object3D) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => material.dispose());
+        });
+        renderer.dispose();
+        renderer.domElement.remove();
+      };
+    })();
+
+    return () => {
+      disposed = true;
+      teardown();
+    };
+  }, []);
+
+  return (
+    <>
+    <article className={`lab-preview__placeholder lab-preview__placeholder--6 lab-car${isExpanding ? " is-expanding" : ""}${isExpanded ? " is-expanded" : ""}${isCameraTransitioning ? " is-camera-transitioning" : ""}`} aria-label="Interactive Ferrari 250 GTO showcase">
+      <div ref={stageRef} className="lab-car__stage" aria-label="Rotate the Ferrari 250 GTO by dragging" onPointerEnter={() => setIsPointerInsideCar(true)} onPointerLeave={() => setIsPointerInsideCar(false)}>
+        <button type="button" className="lab-car__expand" aria-label="Expand 3D showcase" onClick={beginExpand}><ExpandIcon size={17} /></button>
+        <p className="lab-car__credit">
+          <a href="https://skfb.ly/pMsTp" target="_blank" rel="noreferrer">“1962 Ferrari 250 GTO”</a> by Dave Love, SketchFab, licensed under <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>.
+        </p>
+      </div>
+      <div className="lab-car__controls">
+        <div className="lab-car__actions" aria-label="Car gallery controls">
+          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Previous car"><ArrowLeftIcon size={15} /></button>
+          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Next car"><ArrowRightIcon size={15} /></button>
+        </div>
+        <button type="button" className="lab-car__info" aria-label="About this 3D showcase" data-cursor-tool data-cursor-title="" data-cursor-description="Here’s a showcase of some of my all-time favorite cars, with details about each one! Scroll to zoom in or out, and drag to rotate the model" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
+      </div>
+    </article>
+    {isExpanded && typeof document !== "undefined" ? createPortal(
+      <div className={`lab-car__expanded-overlay${isCameraTransitioning ? " is-camera-transitioning" : ""}`}>
+        <p className="lab-car__description">Car details coming soon.</p>
+        <div className="lab-car__expanded-ui">
+          <div className="lab-car__expanded-left">
+            <button type="button" className="lab-car__back" aria-label="Return to page" onClick={closeExpanded}><NavArrowLeftIcon size={34} /></button>
+            <span className="lab-car__back-label" aria-hidden="true">HOMEPAGE</span>
+          </div>
+          <div className="lab-car__expanded-nav" aria-label="Car gallery controls">
+            <button type="button" className="lab-car__action" aria-label="Previous car"><ArrowLeftIcon size={24} /></button>
+            <button type="button" className="lab-car__action" aria-label="Next car"><ArrowRightIcon size={24} /></button>
+          </div>
+        </div>
+      </div>, document.body) : null}
+    </>
+  );
+}
 function VisualMemoryGame() {
   const [level, setLevel] = useState(1);
   const [gridSize, setGridSize] = useState(3);
@@ -781,7 +1419,7 @@ function SnakeGame() {
       <div className="lab-snake__topline">
         <span className="lab-snake__score" data-fluid-cursor-negative-mask><i aria-hidden="true" />{String(score).padStart(2, "0")}</span>
         <span className="lab-snake__high-score" data-fluid-cursor-negative-mask><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span>
-        <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself! Use WASD or the arrow keys to move." onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
+        <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself! Use WASD or the arrow keys to move" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
       <div className={`lab-snake__board${status === "crashing" ? ` is-crashing${isCrashVertical ? " is-crash-vertical" : ""}` : status === "lost" || status === "won" ? " is-paused" : ""}`} onPointerEnter={() => { boardActive.current = true; }} aria-label={status === "playing" ? "Snake game board" : "Snake game"}>
         <span className="lab-snake__grid" aria-hidden="true">{Array.from({ length: snakeGridSize * snakeGridSize }, (_, index) => <i key={index} />)}</span>
@@ -835,11 +1473,11 @@ export function LabPreview() {
           <Link className="button button--secondary lab-grid__cta" to="/lab"><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
         </div>
         <VisualMemoryGame />
-        <div className="lab-preview__placeholder lab-preview__placeholder--2" aria-hidden="true"><span className="lab-preview__number">02</span></div>
+        <DrawingPad />
         <TypeRacer />
         <SnakeGame />
         <CalendarPreview />
-        <div className="lab-preview__placeholder lab-preview__placeholder--6" aria-hidden="true"><span className="lab-preview__number">06</span></div>
+        <CarShowcase />
       </div>
     </section>
   );

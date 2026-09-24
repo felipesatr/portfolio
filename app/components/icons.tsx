@@ -1,17 +1,20 @@
 import {
   ArrowDown,
   ArrowLeft,
+  ArrowLeftCircle,
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
   CodeBrackets,
   Download,
+  Expand,
   FilterAlt,
   FaceId,
   Heart,
   InfoCircle,
   Language,
   LightBulb,
+  NavArrowLeft,
   Play,
   Refresh,
   SendDiagonalSolid,
@@ -51,6 +54,18 @@ export function ArrowLeftIcon({ size = 18, className }: IconProps) {
 
 export function ArrowRightIcon({ size = 18, className }: IconProps) {
   return <ArrowRight {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function ArrowLeftCircleIcon({ size = 18, className }: IconProps) {
+  return <ArrowLeftCircle {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function NavArrowLeftIcon({ size = 18, className }: IconProps) {
+  return <NavArrowLeft {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function ExpandIcon({ size = 18, className }: IconProps) {
+  return <Expand {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function GridIcon({ size = 18, className }: IconProps) {

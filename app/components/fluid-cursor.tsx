@@ -27,6 +27,7 @@ const fragmentSource = `
   uniform float u_target_reveal;
   uniform float u_target_filled;
   uniform float u_target_neutral;
+  uniform float u_target_dark;
   uniform vec2 u_target_half_size;
   uniform float u_target_corner_radius;
   uniform float u_target_secondary;
@@ -37,6 +38,7 @@ const fragmentSource = `
   uniform vec3 u_secondary_color;
   uniform vec3 u_secondary_hover_color;
   uniform vec3 u_neutral_target_color;
+  uniform vec3 u_dark_target_color;
 
   vec2 safeNormalize(vec2 value, vec2 fallback) {
     float valueLength = length(value);
@@ -292,6 +294,7 @@ const fragmentSource = `
       u_target_hover
     );
     targetInk = mix(targetInk, u_neutral_target_color, u_target_neutral);
+    targetInk = mix(targetInk, u_dark_target_color, u_target_dark);
     vec3 ink = mix(cursorInk, targetInk, targetColorWeight);
     vec3 premultipliedInk = ink * alpha;
     gl_FragColor = vec4(premultipliedInk, alpha);
@@ -310,6 +313,7 @@ interface LiquidTarget {
   ty: number;
   isOutline: boolean;
   isNeutralMerge: boolean;
+  isDarkMerge: boolean;
   cornerRadius: number;
   isSecondary: boolean;
   hoverProgress: number;
@@ -336,6 +340,7 @@ interface ThemeColors {
   secondary: Rgb;
   secondaryHover: Rgb;
   neutralTarget: Rgb;
+  darkTarget: Rgb;
 }
 
 function hexToRgb(value: string, fallback: Rgb): Rgb {
@@ -425,13 +430,14 @@ export function FluidCursor() {
       const page = hexToRgb(styles.getPropertyValue("--page"), [1, 1, 1]);
       const soft = hexToRgb(styles.getPropertyValue("--soft"), [0.94, 0.94, 0.94]);
       return {
-        cursor: hexToRgb(styles.getPropertyValue("--cursor"), [0.09, 0.09, 0.09]),
+        cursor: hexToRgb(styles.getPropertyValue("--text"), [0.91, 0.91, 0.91]),
         primary: hexToRgb(styles.getPropertyValue("--primary"), [0.412, 0.282, 0.91]),
         primaryHover: hexToRgb(styles.getPropertyValue("--primary-hover"), [0.337, 0.212, 0.784]),
         secondary: hexToRgb(styles.getPropertyValue("--secondary"), [0.89, 0.2, 0.2]),
         secondaryHover: hexToRgb(styles.getPropertyValue("--secondary-hover"), [0.749, 0.141, 0.157]),
-        // Neutral liquid stays white; the physical control owns its grey hover fade.
-        neutralTarget: hexToRgb("#ffffff", [1, 1, 1]),
+        // Play and retry fluid shares the same white token as the display titles.
+        neutralTarget: hexToRgb(styles.getPropertyValue("--text"), [0.91, 0.91, 0.91]),
+        darkTarget: page,
       };
     };
 
@@ -486,6 +492,7 @@ export function FluidCursor() {
     let lastPointerMoveAt = 0;
     let settledFrames = 0;
     let magneticTranslationSuspended = false;
+    let isScrolling = false;
     let lastScrollX = window.scrollX;
     let lastScrollY = window.scrollY;
     let themeColors = readThemeColors();
@@ -508,6 +515,7 @@ export function FluidCursor() {
       const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, [data-fluid-cursor-surface]"))
         .map((element) => {
           const isNeutralMerge = element.hasAttribute("data-fluid-cursor-surface");
+          const isDarkMerge = element.hasAttribute("data-fluid-cursor-dark-surface");
           const surface = isNeutralMerge
             ? element
             : element.querySelector<HTMLElement>(".liquid-button__surface");
@@ -524,6 +532,7 @@ export function FluidCursor() {
             ty: 0,
             isOutline: element.classList.contains("button--outline") || isNeutralMerge,
             isNeutralMerge,
+            isDarkMerge,
             cornerRadius: Number.parseFloat(window.getComputedStyle(element).borderTopLeftRadius) || 0,
             isSecondary: element.classList.contains("button--secondary") || element.classList.contains("button--red"),
             hoverProgress: 0,
@@ -757,7 +766,7 @@ export function FluidCursor() {
     };
 
     const setActiveTool = (nextTool: HTMLElement) => {
-      if (nextTool === activeTool) return;
+      if (isScrolling || nextTool === activeTool) return;
 
       const isChangingTool = activeTool !== null;
       window.clearTimeout(toolLeaveTimer);
@@ -833,7 +842,16 @@ export function FluidCursor() {
       }
     };
 
+    const clearLiquidFrame = () => {
+      if (!gl) return;
+      gl.disable(gl.SCISSOR_TEST);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.enable(gl.SCISSOR_TEST);
+      previousDrawBounds = null;
+    };
+
     const showLiquidRenderer = () => {
+      const wasRendering = liquidWasRendering;
       liquidWasRendering = true;
       // The markup stays painted during the headline-only state. Do not let a
       // queued pointer event expose the canvas before it is allowed to draw.
@@ -842,6 +860,10 @@ export function FluidCursor() {
         showFallbackAtPointer();
         return;
       }
+      // Entering a liquid field is a direct one-frame swap, not an opacity
+      // crossfade. A crossfade leaves the previous cursor silhouette behind.
+      if (!wasRendering) clearLiquidFrame();
+      fallback.classList.add("fluid-cursor--liquid-handoff");
       fallback.classList.remove("fluid-cursor--visible");
       canvas.classList.add("is-visible");
     };
@@ -985,10 +1007,10 @@ export function FluidCursor() {
       setUniform3("u_secondary_color", themeColors.secondary);
       setUniform3("u_secondary_hover_color", themeColors.secondaryHover);
       setUniform3("u_neutral_target_color", themeColors.neutralTarget);
+      setUniform3("u_dark_target_color", themeColors.darkTarget);
       if (activeTarget) {
         // Retry enters with a scale animation. Keep neutral targets measured so
         // their liquid capsule always reaches the final DOM button width.
-        if (activeTarget.isNeutralMerge) activeTarget.rect = activeTarget.element.getBoundingClientRect();
         // The surface is translated from the button's cached layout box.
         // Reconstruct its rendered bounds instead of forcing a layout read
         // after transform writes on every animation frame.
@@ -1062,7 +1084,10 @@ export function FluidCursor() {
           activeTarget.surface.style.setProperty("--liquid-ink-y", `${revealOriginY - rect.top}px`);
           activeTarget.surface.style.setProperty("--liquid-ink-radius", `${fullReach}px`);
         }
-        activeTarget.element.toggleAttribute("data-liquid-absorbed", activeTarget.isNeutralMerge && absorption > 0.985);
+        const shouldAbsorb = activeTarget.isNeutralMerge && absorption > 0.985;
+        if (activeTarget.element.hasAttribute("data-liquid-absorbed") !== shouldAbsorb) {
+          activeTarget.element.toggleAttribute("data-liquid-absorbed", shouldAbsorb);
+        }
         setUniform1("u_target_active", 1);
         setUniform2("u_target_center", centerX, centerY);
         setUniform2("u_projection_center", skeletonX, skeletonY);
@@ -1073,6 +1098,7 @@ export function FluidCursor() {
         setUniform1("u_target_reveal", revealProgress);
         setUniform1("u_target_filled", activeTarget.isOutline ? 0 : 1);
         setUniform1("u_target_neutral", activeTarget.isNeutralMerge ? 1 : 0);
+        setUniform1("u_target_dark", activeTarget.isDarkMerge ? 1 : 0);
         setUniform2("u_target_half_size", halfWidth, halfHeight);
         setUniform1("u_target_corner_radius", cornerRadius);
         setUniform1("u_target_secondary", activeTarget.isSecondary ? 1 : 0);
@@ -1088,13 +1114,16 @@ export function FluidCursor() {
         setUniform1("u_target_reveal", 0);
         setUniform1("u_target_filled", 0);
         setUniform1("u_target_neutral", 0);
+        setUniform1("u_target_dark", 0);
         setUniform2("u_target_half_size", 0, 0);
         setUniform1("u_target_corner_radius", 0);
         setUniform1("u_target_secondary", 0);
         setUniform1("u_target_hover", 0);
       }
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      activeTarget?.element.setAttribute("data-liquid-rendered", "true");
+      if (activeTarget && !activeTarget.element.hasAttribute("data-liquid-rendered")) {
+        activeTarget.element.setAttribute("data-liquid-rendered", "true");
+      }
       previousDrawBounds = currentDrawBounds;
     };
 
@@ -1114,7 +1143,10 @@ export function FluidCursor() {
         activeTarget?.element.removeAttribute("data-liquid-active");
         activeTarget?.element.removeAttribute("data-liquid-rendered");
         activeTarget?.element.removeAttribute("data-liquid-absorbed");
-        nextTarget?.element.setAttribute("data-liquid-active", "true");
+        if (nextTarget) {
+          nextTarget.rect = nextTarget.element.getBoundingClientRect();
+          nextTarget.element.setAttribute("data-liquid-active", "true");
+        }
         activeTarget = nextTarget;
       }
       targets.forEach((target) => {
@@ -1331,13 +1363,18 @@ export function FluidCursor() {
         draw();
       } else {
         const exitingLiquid = liquidWasRendering;
-        if (exitingLiquid) fallback.style.transition = "none";
+        if (exitingLiquid) {
+          // Clear before hiding so an old scissored frame can never reappear
+          // on the next proximity entry.
+          clearLiquidFrame();
+          fallback.classList.add("fluid-cursor--liquid-handoff");
+        }
         syncNegativeMask(cursor.x, cursor.y);
         fallback.classList.add("fluid-cursor--visible");
         fallback.style.transform = `translate3d(${cursor.x}px, ${cursor.y}px, 0) translate(-50%, -50%) rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch * 0.52})`;
         canvas?.classList.remove("is-visible");
         liquidWasRendering = false;
-        if (exitingLiquid) window.requestAnimationFrame(() => fallback.style.removeProperty("transition"));
+        if (exitingLiquid) window.requestAnimationFrame(() => fallback.classList.remove("fluid-cursor--liquid-handoff"));
       }
       const cursorMoving = Math.abs(cursor.vx) + Math.abs(cursor.vy) +
         Math.abs(pointer.x - cursor.x) + Math.abs(pointer.y - cursor.y) > 0.025;
@@ -1464,6 +1501,7 @@ export function FluidCursor() {
       scheduleMeasurement(true);
     };
     const handleScroll = () => {
+      isScrolling = true;
       clearToolCursor();
       const currentScrollX = window.scrollX;
       const currentScrollY = window.scrollY;
@@ -1501,6 +1539,7 @@ export function FluidCursor() {
       }
       window.clearTimeout(scrollIdleTimer);
       scrollIdleTimer = window.setTimeout(() => {
+        isScrolling = false;
         magneticTranslationSuspended = false;
         measureTargets();
         startLoop();

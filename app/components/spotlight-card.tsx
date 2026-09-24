@@ -14,16 +14,30 @@ export function SpotlightGrid({
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    let frame = 0;
+    let x = 0;
+    let y = 0;
+    const updateSpotlight = () => {
+      frame = 0;
+      grid.style.setProperty("--x", x.toFixed(2));
+      grid.style.setProperty("--y", y.toFixed(2));
+    };
     const syncPointer = (event: PointerEvent) => {
-      const grid = gridRef.current;
-      if (!grid || event.pointerType === "touch") return;
-
-      grid.style.setProperty("--x", event.clientX.toFixed(2));
-      grid.style.setProperty("--y", event.clientY.toFixed(2));
+      if (event.pointerType === "touch") return;
+      x = event.clientX;
+      y = event.clientY;
+      if (!frame) frame = window.requestAnimationFrame(updateSpotlight);
     };
 
-    document.addEventListener("pointermove", syncPointer, { passive: true });
-    return () => document.removeEventListener("pointermove", syncPointer);
+    grid.addEventListener("pointerenter", syncPointer, { passive: true });
+    grid.addEventListener("pointermove", syncPointer, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      grid.removeEventListener("pointerenter", syncPointer);
+      grid.removeEventListener("pointermove", syncPointer);
+    };
   }, []);
 
   return (

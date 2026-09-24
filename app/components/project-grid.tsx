@@ -23,9 +23,15 @@ interface ProjectPreviewState {
 function ProjectArtwork({ project, index }: { project: Project; index: number }) {
   return (
     <div className={`project-art project-art--${(index % 5) + 1}`} role="img" aria-label={project.alt}>
-      <span className="project-art__shape project-art__shape--one" />
-      <span className="project-art__shape project-art__shape--two" />
-      <span className="project-art__label">Project image {String(index + 1).padStart(2, "0")}</span>
+      {project.placeholder ? (
+        <img className="project-art__image" src="/images/project-placeholder.png" alt="" />
+      ) : (
+        <>
+          <span className="project-art__shape project-art__shape--one" />
+          <span className="project-art__shape project-art__shape--two" />
+          <span className="project-art__label">Project image {String(index + 1).padStart(2, "0")}</span>
+        </>
+      )}
     </div>
   );
 }

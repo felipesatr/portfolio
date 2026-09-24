@@ -186,7 +186,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
    fill so it cannot cover the deforming pill rendered beneath it. */
 .liquid-webgl-ready .button:not(.button--outline)[data-liquid-rendered="true"] .liquid-button__surface {
   background: transparent;
-  transition-delay: 120ms;
+  transition-delay: 0ms;
 }
 
 .outlined-link {
@@ -668,6 +668,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .projects-section--home-marquee {
+  /* Set to 0rem to restore the original five-row scroller. */
+  --home-marquee-extra-height: var(--grid-row);
   inline-size: calc(10 * var(--layout-column));
   margin-inline-start: calc(-1.5 * var(--layout-column));
   padding-block-start: 0;
@@ -726,8 +728,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .projects-section--home-marquee .project-marquee__viewport {
-  /* Exactly five grid rows; card proportions leave room for their tag row. */
-  block-size: calc(5 * var(--grid-row));
+  /* Six grid rows, including the artwork and its tag row. */
+  block-size: calc(5 * var(--grid-row) + var(--home-marquee-extra-height));
 }
 
 .projects-section--home-marquee .project-marquee {
@@ -807,6 +809,18 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   aspect-ratio: var(--project-card-ratio);
 }
 
+@media (min-width: 42.001rem) {
+  .projects-section--home-marquee .project-card--variable .project-art {
+    box-sizing: content-box;
+    padding-block-end: var(--home-marquee-extra-height);
+  }
+
+  .projects-section--home-marquee .project-art__image {
+    position: absolute;
+    inset: 0;
+  }
+}
+
 .project-card--shape-1 { --project-card-width: min(18cqw, 23rem); --project-card-ratio: 0.85; }
 .project-card--shape-2 { --project-card-width: min(27cqw, 31rem); --project-card-ratio: 1.6; }
 .project-card--shape-3 { --project-card-width: min(22cqw, 27rem); --project-card-ratio: 1.13; }
@@ -844,6 +858,13 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border-radius: var(--radius-card);
   background: var(--soft-strong);
   overflow: hidden;
+}
+
+.project-art__image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .project-art__shape {
@@ -1288,7 +1309,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: 1.35rem;
   border-radius: 50%;
   color: var(--cursor-ink);
-  background: var(--cursor);
+  background: var(--text);
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
@@ -1342,6 +1363,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   animation: magic-screen-clear 1s ease-in-out both;
 }
 
+/* Keep the car-canvas cursor fade separate from the tool popup. Tool popovers
+   own their transform transition so their first morph can animate normally. */
+.fluid-cursor:where(:not(.fluid-cursor--tool-popover, .fluid-cursor--tool-morph)) {
+  transition: opacity 180ms var(--ease-out);
+}
 .magic-screen-cursor-hidden .fluid-cursor,
 .magic-screen-cursor-hidden .liquid-button-canvas,
 .magic-screen-cursor-hidden .fluid-cursor__knob-mask,
@@ -1351,7 +1377,9 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .memory-cursor-hidden .fluid-cursor,
 .memory-cursor-hidden .liquid-button-canvas,
 .snake-cursor-hidden .fluid-cursor,
-.snake-cursor-hidden .liquid-button-canvas {
+.snake-cursor-hidden .liquid-button-canvas,
+.car-cursor-hidden .fluid-cursor,
+.car-cursor-hidden .liquid-button-canvas {
   opacity: 0 !important;
 }
 
@@ -1389,6 +1417,9 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
     opacity 100ms linear;
 }
 
+.fluid-cursor--liquid-handoff {
+  transition: opacity 0ms linear !important;
+}
 .fluid-cursor--tool-morph {
   /* One rAF timeline owns geometry while the cursor spring owns movement. */
   transition: transform 0ms linear;
@@ -1491,7 +1522,6 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: 100vh;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 140ms var(--ease-out);
 }
 
 .liquid-button-canvas.is-visible {
@@ -2378,11 +2408,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --lab-bottom-column-span: 3.5;
   color: var(--text-body);
   background: var(--page);
-  /* H27–H36: the layout is a fixed nine-row desktop test canvas. */
+  /* Contain the car card through H37.5 so the following margin starts at its edge. */
   position: relative;
-  min-block-size: calc(9 * var(--grid-row));
+  min-block-size: calc(10.5 * var(--grid-row));
   padding-block: 0;
-  /* Keep the next section two full squares below this interaction canvas. */
+  /* Keep Career two full squares below the car card. */
   margin-block-end: calc(2 * var(--grid-row));
 }
 
@@ -2444,7 +2474,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .lab-grid__cta {
   position: static;
-  margin-block-start: 1.75rem;
+  /* Match the visible 38px gap from the What I do cards to its centered CTA. */
+  margin-block-start: 2.375rem;
 }
 
 /* H27.5–H31 / V7–V8.5. Its right-hand neighbour keeps the same width but
@@ -2498,7 +2529,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-preview__placeholder--2:hover .lab-preview__number { color: #fff; }
 
 .lab-preview__placeholder--6 {
-  isolation: isolate;
+  isolation: auto;
   overflow: hidden;
   background-color: var(--soft);
 
@@ -2527,6 +2558,445 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-preview__placeholder--6:hover .lab-preview__number { color: #171717; }
+
+/* 02: a tablet-like, freehand canvas. The dotted field uses only grid vertices
+   so it reads as a Wacom-style drawing area rather than a ruled background. */
+.lab-draw,
+.lab-car {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  padding-block-start: calc(var(--space-4) + var(--type-caption) + var(--space-3));
+  padding-block-end: calc(var(--space-4) + var(--space-3));
+}
+
+.lab-car {
+  /* 06 has no number label, so its 3D stage uses the card's normal top inset.
+     Its single controls row does not need the extra lower gutter used by 02. */
+  padding-block-start: var(--space-4);
+  padding-block-end: var(--space-4);
+}
+.lab-draw__canvas,
+.lab-car__stage {
+  min-block-size: 0;
+  inline-size: 100%;
+  border-radius: calc(var(--radius-card) - 0.5rem);
+  background-color: var(--page);
+}
+
+.lab-draw__canvas {
+  display: block;
+  block-size: 100%;
+  cursor: crosshair;
+  touch-action: none;
+  background-image: radial-gradient(circle, var(--soft) 1px, transparent 1.1px);
+  background-position: 0.65rem 0.65rem;
+  background-size: 1.3rem 1.3rem;
+}
+
+.lab-draw__controls,
+.lab-car__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 1.2rem;
+}
+
+.lab-car__controls {
+  min-block-size: 2.1rem;
+}
+
+.lab-draw__placeholders {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.lab-draw__placeholders i {
+  display: block;
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--page) 72%, var(--soft));
+}
+
+.lab-car__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.lab-car__action {
+  display: grid;
+  place-items: center;
+  inline-size: 2.1rem;
+  block-size: 2.1rem;
+  --button-fill: var(--text);
+  --button-fill-hover: var(--text);
+  --button-ink: var(--page);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--page);
+  background: var(--text);
+  cursor: pointer;
+  transition: color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+.lab-car__action svg {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  stroke-width: 3.2;
+}
+
+.lab-draw__info,
+.lab-car__info {
+  display: grid;
+  place-items: center;
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.lab-draw__info svg,
+.lab-car__info svg {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  stroke-width: 2.5;
+}
+
+.lab-draw:hover .lab-draw__info { color: #fff; }
+.lab-draw:hover .lab-draw__placeholders i { background: #fff; }
+
+/* 06: the renderer stays local to the portfolio. Its canvas and attribution
+   are layered inside the stage, never in an external embedded viewer. */
+.lab-car__stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--page);
+}
+
+.lab-car__canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.lab-car__canvas.is-dragging { cursor: grabbing; }
+
+.lab-car__expand {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0.55rem;
+  inset-inline-end: 0.55rem;
+  display: grid;
+  place-items: center;
+  inline-size: 1.35rem;
+  block-size: 1.35rem;
+  padding: 0;
+  border: 0;
+  color: color-mix(in srgb, #e8e8e8 30%, transparent);
+  background: transparent;
+  cursor: pointer;
+  transform: translateZ(0) scale(1);
+  will-change: transform;
+  transition: color 220ms var(--ease-out), transform 220ms var(--ease-out);
+}
+
+.lab-car__expand:hover,
+.lab-car__expand:focus-visible {
+  color: color-mix(in srgb, #e8e8e8 52%, transparent);
+  transform: translateZ(0) scale(1.1);
+}
+
+.lab-car__expand:focus-visible {
+  outline: 1px solid color-mix(in srgb, #e8e8e8 62%, transparent);
+  outline-offset: 0.14rem;
+}
+
+.lab-car__credit {
+  position: absolute;
+  z-index: 1;
+  inset-inline-start: 0.65rem;
+  inset-block-end: 0.55rem;
+  max-inline-size: calc(100% - 1.3rem);
+  margin: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, #e8e8e8 45%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 180ms var(--ease-out);
+}
+
+.lab-car__credit:hover {
+  color: color-mix(in srgb, #e8e8e8 68%, transparent);
+}
+
+.lab-car__credit a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, currentColor 58%, transparent);
+  text-underline-offset: 0.12em;
+}
+
+.lab-car:hover .lab-car__info { color: #171717; }
+.lab-car:hover .lab-car__action {
+  --button-fill: var(--page);
+  --button-fill-hover: var(--page);
+  --button-ink: var(--text);
+  color: var(--text);
+  background: var(--page);
+}
+
+.lab-car.is-expanding {
+  background: transparent;
+}
+
+.lab-car.is-expanding::before {
+  opacity: 0 !important;
+  transition-duration: 440ms !important;
+}
+
+.lab-car.is-expanding .lab-car__credit {
+  opacity: 0;
+  filter: blur(0.5rem);
+  transition: color 180ms var(--ease-out), opacity 320ms var(--ease-out), filter 320ms var(--ease-out);
+}
+.lab-car.is-expanding .lab-car__controls {
+  opacity: 0;
+  filter: blur(0.5rem);
+  transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out);
+}
+
+.lab-car__expanded-ui {
+  position: absolute;
+  z-index: 3;
+  inset-inline: clamp(1.5rem, 3vw, 3.5rem);
+  inset-inline-start: 12.5vw;
+  inset-block-end: clamp(1.5rem, 3vw, 3.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  filter: blur(0.5rem);
+  pointer-events: none;
+  transition: opacity 300ms var(--ease-out), filter 300ms var(--ease-out);
+}
+
+.lab-car__expanded-left,
+.lab-car__expanded-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.lab-car__back {
+  display: grid;
+  place-items: center;
+  inline-size: 3.1rem;
+  block-size: 3.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+  background: transparent;
+  cursor: pointer;
+  transition: color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+.lab-car__back svg {
+  inline-size: 2.15rem;
+  block-size: 2.15rem;
+  stroke-width: 3.2;
+}
+
+.lab-car__back:hover,
+.lab-car__back:focus-visible {
+  color: var(--text);
+  background: transparent;
+}
+
+.lab-car__back:focus-visible {
+  outline: 1px solid color-mix(in srgb, #e8e8e8 62%, transparent);
+  outline-offset: 0.14rem;
+}
+
+.lab-car__back-label {
+  color: var(--text);
+  font: 700 0.75rem / 1 var(--font-body);
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-out);
+}
+
+.lab-car__back:hover + .lab-car__back-label,
+.lab-car__back:focus-visible + .lab-car__back-label {
+  opacity: 1;
+}
+
+body.car-showcase-expanded {
+  overflow: hidden;
+}
+
+body.car-showcase-expanded .layout-grid-overlay {
+  z-index: 150;
+}
+
+.lab-car__expanded-overlay {
+  position: fixed;
+  z-index: 140;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-page > :not(.lab-preview),
+.lab-grid > :not(.lab-car) {
+  filter: blur(0);
+  transition: opacity 420ms var(--ease-out), filter 420ms var(--ease-out);
+}
+
+body.car-showcase-expanded .home-page > :not(.lab-preview),
+body.car-showcase-expanded .lab-grid > :not(.lab-car) {
+  opacity: 0;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.lab-car.is-expanded {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  inline-size: auto;
+  block-size: auto;
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: var(--page);
+}
+
+.lab-car.is-expanded .lab-car__credit {
+  z-index: 4;
+  inset-block-start: clamp(1.5rem, 3vw, 3.5rem);
+  inset-block-end: auto;
+  inset-inline-start: auto;
+  inset-inline-end: clamp(1.5rem, 3vw, 3.5rem);
+  opacity: 0;
+  color: color-mix(in srgb, #e8e8e8 48%, transparent);
+  font-size: 0.75rem;
+  font-weight: 650;
+  filter: blur(0.5rem);
+  transition: color 180ms var(--ease-out), opacity 300ms var(--ease-out), filter 300ms var(--ease-out);
+}
+
+.lab-car.is-expanded .lab-car__credit:hover {
+  color: color-mix(in srgb, #e8e8e8 72%, transparent);
+}
+
+.lab-car__description {
+  position: absolute;
+  z-index: 4;
+  inset-block-start: clamp(1.5rem, 3vw, 3.5rem);
+  inset-inline-start: 12.5vw;
+  max-inline-size: min(30rem, calc(100vw - var(--rail-width) - 12rem));
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  filter: blur(0.5rem);
+  pointer-events: none;
+  transition: color 180ms var(--ease-out), opacity 300ms var(--ease-out), filter 300ms var(--ease-out);
+}
+
+.lab-car__description:hover {
+  color: var(--text);
+}
+
+.lab-car__expanded-overlay:not(.is-camera-transitioning) .lab-car__description {
+  opacity: 1;
+  filter: none;
+  pointer-events: auto;
+}
+
+.lab-car__expanded-overlay .lab-car__expanded-nav .lab-car__action {
+  inline-size: 2.8rem;
+  block-size: 2.8rem;
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+  background: transparent;
+}
+
+.lab-car__expanded-overlay .lab-car__expanded-nav .lab-car__action svg {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+
+.lab-car__expanded-overlay .lab-car__expanded-nav .lab-car__action:hover,
+.lab-car__expanded-overlay .lab-car__expanded-nav .lab-car__action:focus-visible {
+  color: var(--text);
+  background: transparent;
+}
+.lab-car.is-expanded .lab-car__stage {
+  border-radius: 0;
+}
+
+.lab-car.is-expanded .lab-car__controls,
+.lab-car.is-expanded .lab-car__expand {
+  display: none;
+}
+
+.lab-car.is-expanded:not(.is-camera-transitioning) .lab-car__credit {
+  opacity: 1;
+  filter: none;
+}
+
+.lab-car__expanded-overlay:not(.is-camera-transitioning) .lab-car__expanded-ui {
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+/* Fade only the transparent 3D canvas, never the empty page background. */
+@media (min-width: 80.001rem) {
+  body.car-showcase-expanded .desktop-rail {
+    z-index: 120;
+    background: transparent;
+  }
+
+  .lab-car.is-expanded .lab-car__canvas {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 clamp(19rem, 26vw, 27rem));
+    mask-image: linear-gradient(to right, transparent 0, #000 clamp(19rem, 26vw, 27rem));
+  }
+}
+
+@media (max-width: 80rem) {
+  .lab-car.is-expanded {
+    inset-inline-start: 0;
+  }
+
+  .lab-car__expanded-ui {
+    inset-inline-start: clamp(1.5rem, 3vw, 3.5rem);
+  }
+
+  .lab-car__description {
+    inset-inline-start: clamp(1.5rem, 3vw, 3.5rem);
+    max-inline-size: calc(50vw - 2rem);
+  }
+}
 
 /* Blocks 04 and 05 share this equal, two-card envelope. */
 .lab-preview__placeholder-group--bottom {
@@ -2822,15 +3292,15 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   box-sizing: border-box;
   inline-size: 2.1rem;
   block-size: 2.1rem;
-  --button-fill: #fff;
-  --button-fill-hover: #f2f2f2;
-  --button-ink: #171717;
+  --button-fill: var(--text);
+  --button-fill-hover: var(--text);
+  --button-ink: var(--page);
   aspect-ratio: 1;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: #171717;
-  background: #fff;
+  color: var(--page);
+  background: var(--text);
   cursor: pointer;
   transform: translate(-50%, -50%);
   transition: background-color 280ms var(--ease-out), opacity 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
@@ -2868,15 +3338,15 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: 2.1rem;
   appearance: none;
   box-sizing: border-box;
-  --button-fill: #fff;
-  --button-fill-hover: #f2f2f2;
-  --button-ink: #171717;
+  --button-fill: var(--text);
+  --button-fill-hover: var(--text);
+  --button-ink: var(--page);
   min-block-size: 2.1rem;
   padding-inline: 1rem;
   border: 0;
   border-radius: 999px;
-  color: #171717;
-  background: #fff;
+  color: var(--page);
+  background: var(--text);
   font: 700 calc(var(--type-caption) * 1.24) / 1 var(--font-body);
   cursor: pointer;
   transform: translate(-50%, -50%);
@@ -3650,6 +4120,10 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   color: var(--text);
   background-color: var(--soft);
 
+}
+
+[data-theme="dark"] .lab-calendar {
+  background-color: #1c1c1e;
 }
 
 .lab-calendar::before {
@@ -5535,4 +6009,22 @@ h6 { font-size: var(--type-h6) !important; }
   outline: 2px solid #fff;
   outline-offset: 0.18rem;
   box-shadow: none;
+}
+.draw-cursor-hidden .fluid-cursor,
+.draw-cursor-hidden .liquid-button-canvas {
+  opacity: 0 !important;
+}
+/* 06 uses the same liquid layering contract as the working game controls. */
+.lab-preview__placeholder--6 > .lab-car__controls {
+  position: relative;
+  z-index: 89;
+}
+
+.lab-car__action:hover {
+  --button-fill-hover: color-mix(in srgb, var(--page) 86%, var(--soft));
+  background: color-mix(in srgb, var(--page) 86%, var(--soft));
+}
+
+.lab-car:hover .lab-car__action:hover {
+  background: color-mix(in srgb, var(--page) 86%, var(--soft));
 }

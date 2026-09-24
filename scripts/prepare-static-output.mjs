@@ -1,9 +1,35 @@
-import { copyFile, readdir, writeFile } from "node:fs/promises";
+import { copyFile, cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const outputDirectory = fileURLToPath(new globalThis.URL("../build/client/", import.meta.url));
-const canonicalOrigin = "https://portfolio.example";
+const canonicalOrigin = "https://felipesatr.github.io/portfolio";
+const pagesBasePath = globalThis.process.env.PORTFOLIO_BASE_PATH;
+
+async function rewriteAssetPaths(directory, basePath) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolutePath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await rewriteAssetPaths(absolutePath, basePath);
+    } else if (entry.isFile() && /\.(?:html|js|data)$/.test(entry.name)) {
+      const original = await readFile(absolutePath, "utf8");
+      const updated = original.replaceAll("/assets/", `${basePath}assets/`);
+      if (updated !== original) await writeFile(absolutePath, updated, "utf8");
+    }
+  }
+}
+
+if (pagesBasePath) {
+  if (pagesBasePath !== "/portfolio/") throw new Error("Unexpected Pages base path");
+  // React Router currently nests prerendered files under its basename. Pages
+  // expects index.html at the root of the uploaded artifact instead.
+  const nestedOutput = join(outputDirectory, "portfolio");
+  for (const entry of await readdir(nestedOutput)) {
+    await cp(join(nestedOutput, entry), join(outputDirectory, entry), { recursive: true, force: true });
+  }
+  await rm(nestedOutput, { recursive: true });
+  await rewriteAssetPaths(outputDirectory, pagesBasePath);
+}
 
 async function collectHtml(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -18,7 +44,7 @@ async function collectHtml(directory) {
   return files;
 }
 
-const fallback = join(outputDirectory, "__spa-fallback.html");
+const fallback = join(outputDirectory, pagesBasePath ? "index.html" : "__spa-fallback.html");
 await copyFile(fallback, join(outputDirectory, "404.html"));
 
 const htmlFiles = await collectHtml(outputDirectory);

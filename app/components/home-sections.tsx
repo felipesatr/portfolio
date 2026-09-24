@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react
 import type { Object3D } from "three";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
+import { publicAsset } from "~/lib/public-asset";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
 import { RevealTitle, SoftBlurText } from "./motion-reveal";
 import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
@@ -643,7 +644,7 @@ function CarShowcase() {
       resize();
       paint();
 
-      new GLTFLoader().load("/models/1962-ferrari-250-gto.glb", (gltf) => {
+      new GLTFLoader().load(publicAsset("models/1962-ferrari-250-gto.glb"), (gltf) => {
         if (disposed) return;
         loadedModel = gltf.scene;
         const bounds = new THREE.Box3().setFromObject(loadedModel);
@@ -1488,7 +1489,7 @@ export function ExperienceSection() {
     <section className="experience-section" id="experience" aria-labelledby="experience-heading">
       <div className="experience-section__intro">
         <RevealTitle id="experience-heading" lines={["Career"]} />
-        <a className="button button--secondary" href="/resume-placeholder.txt" target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
+        <a className="button button--secondary" href={publicAsset("resume-placeholder.txt")} target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
       </div>
       <ol className="experience-list experience-list--index">
         {experience.map((item) => (

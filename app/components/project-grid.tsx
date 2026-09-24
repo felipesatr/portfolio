@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { createPortal } from "react-dom";
 import { projectTags, type Project } from "~/content/types";
 import { useProjectFilter, type ProjectFilter } from "~/hooks/use-project-filter";
+import { publicAsset } from "~/lib/public-asset";
 import { ArrowUpRightIcon, FilterIcon } from "./icons";
 import { RevealText, RevealTitle } from "./motion-reveal";
 
@@ -24,7 +25,7 @@ function ProjectArtwork({ project, index }: { project: Project; index: number })
   return (
     <div className={`project-art project-art--${(index % 5) + 1}`} role="img" aria-label={project.alt}>
       {project.placeholder ? (
-        <img className="project-art__image" src="/images/project-placeholder.png" alt="" />
+        <img className="project-art__image" src={publicAsset("images/project-placeholder.png")} alt="" />
       ) : (
         <>
           <span className="project-art__shape project-art__shape--one" />

@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { siteContent } from "~/content/site";
+import { publicAsset } from "~/lib/public-asset";
 import { ArrowUpRightIcon } from "./icons";
 import { RevealText, RevealTitle } from "./motion-reveal";
 
@@ -16,7 +17,7 @@ export function ContactCta() {
           <a className="button button--light" href={`mailto:${siteContent.email}`}>
             <span className="liquid-button__surface">Email placeholder <ArrowUpRightIcon /></span>
           </a>
-          <a className="button button--outline-light" href="/resume-placeholder.txt" target="_blank" rel="noreferrer">
+          <a className="button button--outline-light" href={publicAsset("resume-placeholder.txt")} target="_blank" rel="noreferrer">
             <span className="liquid-button__surface">Resume placeholder <ArrowUpRightIcon /></span>
           </a>
           <Link className="text-link text-link--light" to="/contact">All contact details <ArrowUpRightIcon /></Link>

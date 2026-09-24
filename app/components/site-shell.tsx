@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import { siteContent } from "~/content/site";
+import { publicAsset } from "~/lib/public-asset";
 import { LayoutGridOverlay, LayoutGridToggle } from "./layout-grid-overlay";
 import { ScrollToTop } from "./scroll-to-top";
 import { SiteScrollbar } from "./site-scrollbar";
@@ -31,7 +32,7 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
           {item.label}
         </NavLink>
       ))}
-      <a className="nav-link" href="/resume-placeholder.txt" target="_blank" rel="noreferrer">
+      <a className="nav-link" href={publicAsset("resume-placeholder.txt")} target="_blank" rel="noreferrer">
         Resume <span className="visually-hidden">placeholder, opens in a new tab</span>
       </a>
       {showSocials ? (

@@ -1,0 +1,46 @@
+name: Deploy portfolio to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build for project Pages URL
+        run: npm run build
+        env:
+          PORTFOLIO_BASE_PATH: /portfolio/
+          VITE_PORTFOLIO_BASE_PATH: /portfolio/
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/client
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4

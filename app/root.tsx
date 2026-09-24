@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { SiteShell } from "./components/site-shell";
+import { publicAsset } from "./lib/public-asset";
 import "./styles/reset.css";
 import "./styles/tokens.css";
 import "./styles/typography.css";
@@ -80,7 +81,7 @@ const earlyPreferenceScript = `
 const figtreeStylesheet = "https://fonts.googleapis.com/css2?family=Figtree:wght@400&display=swap";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "icon", href: publicAsset("favicon.svg"), type: "image/svg+xml" },
   { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cal+Sans:wght@400&display=swap" },
   { rel: "stylesheet", href: figtreeStylesheet },
 ];

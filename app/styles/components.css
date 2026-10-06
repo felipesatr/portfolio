@@ -16,9 +16,10 @@
 }
 
 .button {
-  --button-fill: var(--primary);
-  --button-fill-hover: var(--primary-hover);
-  --button-ink: var(--primary-ink);
+  --button-fill: var(--cta, var(--primary));
+  --button-fill-hover: var(--cta-hover, var(--primary-hover));
+  --button-fill-active: var(--cta-active, var(--button-fill-hover));
+  --button-ink: var(--cta-ink, var(--primary-ink));
   position: relative;
   inline-size: fit-content;
   max-inline-size: min(100%, calc(1.5 * var(--layout-column)));
@@ -62,13 +63,26 @@
   background: transparent;
 }
 
-.button--secondary,
 .button--red {
   --button-fill: var(--secondary);
   --button-fill-hover: var(--secondary-hover);
+  --button-fill-active: var(--secondary-active, var(--button-fill-hover));
   --button-ink: var(--secondary-ink);
   color: var(--secondary-ink);
   background: transparent;
+}
+
+/* The hero's Let's talk button stays legible on every theme fill. */
+.button--red {
+  --button-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
+  color: #ffffff;
+}
+
+:root[data-theme="dark-cyan"] .button--red {
+  --button-ink: #190482;
+  --secondary-active-ink: #190482;
+  color: #190482;
 }
 
 /* The button and its liquid counterpart use the same pressed/engulfed role.
@@ -85,17 +99,30 @@
   background: var(--button-fill);
 }
 
+.button:not(.button--outline):active .liquid-button__surface,
+.liquid-webgl-ready .button:not(.button--outline):active .liquid-button__surface {
+  background: var(--button-fill-active);
+}
+
+.button:not(.button--outline):active .liquid-button__surface {
+  color: var(--cta-active-ink, var(--button-ink)) !important;
+}
+
+.button--red:not(.button--outline):active .liquid-button__surface {
+  color: var(--secondary-active-ink, var(--secondary-ink)) !important;
+}
+
 html:not(.liquid-webgl-ready) .liquid-button__surface {
   transition: background-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .button--outline {
-  color: var(--primary);
+  color: var(--cta, var(--primary));
 }
 
 .button--outline .liquid-button__surface {
-  border: 1px solid var(--primary);
-  color: var(--primary) !important;
+  border: 1px solid var(--cta, var(--primary));
+  color: var(--cta, var(--primary)) !important;
   background: transparent;
   overflow: hidden;
 }
@@ -110,7 +137,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .button--outline .liquid-button__label--ink {
   position: absolute;
   inset: 0;
-  color: var(--primary-ink);
+  color: var(--cta-ink, var(--primary-ink));
   opacity: 0;
   pointer-events: none;
   -webkit-mask-image: radial-gradient(
@@ -134,9 +161,14 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
    the dedicated CTA cursor interaction is active. */
 .button--outline:hover .liquid-button__surface,
 .button--outline:focus-visible .liquid-button__surface {
-  border-color: var(--primary);
-  color: var(--primary) !important;
+  border-color: var(--cta-outline-hover, var(--primary));
+  color: var(--cta-outline-hover, var(--primary)) !important;
   background: transparent;
+}
+
+.button--outline:active .liquid-button__surface {
+  border-color: var(--cta-outline-active, var(--primary));
+  color: var(--cta-outline-active, var(--primary)) !important;
 }
 
 .hero-about-button .liquid-button__surface {
@@ -304,7 +336,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .theme-control--expanded .theme-slider-panel {
-  block-size: 10rem;
+  block-size: var(--theme-panel-expanded-size, 10rem);
   border-color: var(--text);
   opacity: 1;
   pointer-events: auto;
@@ -366,6 +398,10 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .theme-control--expanded .theme-slider-panel__ticks i:nth-child(3) { transition-delay: 70ms; }
 .theme-control--expanded .theme-slider-panel__ticks i:nth-child(4) { transition-delay: 105ms; }
 .theme-control--expanded .theme-slider-panel__ticks i:nth-child(5) { transition-delay: 140ms; }
+.theme-control--expanded .theme-slider-panel__ticks i:nth-child(6) { transition-delay: 175ms; }
+.theme-control--expanded .theme-slider-panel__ticks i:nth-child(7) { transition-delay: 210ms; }
+.theme-control--expanded .theme-slider-panel__ticks i:nth-child(8) { transition-delay: 245ms; }
+.theme-control--expanded .theme-slider-panel__ticks i:nth-child(9) { transition-delay: 280ms; }
 
 .theme-slider-panel__ticks i.is-active {
   opacity: 1;
@@ -576,7 +612,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   color: var(--muted);
   background: transparent;
   font-size: 1rem;
-  font-weight: 730;
+  font-weight: 800;
   letter-spacing: 0.015em;
   cursor: pointer;
 }
@@ -1348,15 +1384,119 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .fluid-cursor__text-mask {
   position: fixed;
+  inset: 0;
   z-index: 89;
+  inline-size: 100vw;
+  block-size: 100vh;
   overflow: hidden;
   color: var(--cursor-ink);
   opacity: 0;
   pointer-events: none;
 }
 
+.fluid-cursor__text-mask-run {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  overflow: visible;
+  color: var(--cursor-ink) !important;
+  background: transparent;
+  transform: none;
+  animation: none;
+  transition: none;
+}
+
 .fluid-cursor__text-mask svg {
   stroke: currentColor;
+}
+
+/* Keep every native-ink run on one glyph-rasterization path. A solid clipped
+   fill is visually identical to its currentColor, but avoids Chromium
+   switching from normal text antialiasing to clipped-text antialiasing only
+   when the cursor arrives. */
+[data-fluid-cursor-native-paint] {
+  -webkit-text-fill-color: transparent !important;
+  background-image: linear-gradient(currentColor 0 0) !important;
+  background-attachment: scroll !important;
+  background-origin: border-box !important;
+  background-position: 0 0 !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+
+/* Recolour the original glyphs under the orb instead of drawing a second text
+   copy. Each run receives cursor coordinates relative to its own paint box;
+   only the clipped fill changes while the glyph rasterization stays constant. */
+[data-fluid-cursor-live-ink] {
+  position: var(--fluid-cursor-native-position, relative) !important;
+  z-index: 89 !important;
+  -webkit-text-fill-color: transparent !important;
+  background-image: radial-gradient(
+    ellipse var(--fluid-cursor-native-radius-x) var(--fluid-cursor-native-radius-y)
+      at var(--fluid-cursor-native-x) var(--fluid-cursor-native-y),
+    var(--cursor-ink) 0 calc(100% - 0.5px),
+    var(--fluid-cursor-native-color) calc(100% + 0.5px)
+  ) !important;
+  background-attachment: scroll !important;
+  background-origin: border-box !important;
+  background-position: 0 0 !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+
+/* Display glyphs may overhang their font's nominal inline box. Because these
+   words now use clipped-text rendering at rest as well as on hover, keep the
+   expanded paint area in both states. Equal negative margins preserve the
+   authored position, width, baseline, and wrapping. */
+.reveal-title__word-inner[data-fluid-cursor-native-paint] {
+  padding: 0.16em !important;
+  margin: -0.16em !important;
+}
+
+/* These label groups normally sit in deliberately low stacking contexts.
+   Lift their existing transparent container only while its real text is being
+   recoloured, so the cursor remains underneath the glyphs without a clone. */
+.hero-audience.is-fluid-cursor-ink-layer {
+  z-index: 89;
+}
+
+/* Lab cards keep their coloured hover plane at z-index 0 and their content at
+   z-index 1. Temporarily raise only the transparent row that owns the active
+   real-text run. The card itself stays below the cursor, so its opaque surface
+   never covers the orb. */
+.lab-preview :is(
+  .lab-visual-memory__topline,
+  .lab-type-racer__high-score,
+  .lab-type-racer__prompt,
+  .lab-snake__topline
+).is-fluid-cursor-ink-layer {
+  z-index: 89;
+}
+
+/* Type Racer was the only masked Lab card that still established an isolated
+   stacking context. Open that context only during native glyph recolouring;
+   its background and ::before plane remain in their authored paint order. */
+.lab-type-racer.is-fluid-cursor-ink-card {
+  isolation: auto;
+}
+
+[data-fluid-cursor-mask-clone],
+[data-fluid-cursor-mask-clone] * {
+  pointer-events: none !important;
+}
+
+[data-fluid-cursor-mask-clone]::before,
+[data-fluid-cursor-mask-clone]::after,
+[data-fluid-cursor-mask-clone] *::before,
+[data-fluid-cursor-mask-clone] *::after {
+  content: none !important;
 }
 
 .magic-screen-clearing .fluid-cursor__knob-mask {
@@ -1395,7 +1535,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: var(--fluid-tool-height, 5.125rem);
   padding: 0.75rem 0.85rem;
   border-radius: 0.85rem;
-  box-shadow: 0 0.5rem 1.4rem color-mix(in srgb, var(--cursor) 26%, transparent);
+  box-shadow: none;
   transition:
     transform 380ms var(--ease-out),
     inline-size 380ms var(--ease-out),
@@ -1421,10 +1561,9 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   transition: opacity 0ms linear !important;
 }
 .fluid-cursor--tool-morph {
-  /* One rAF timeline owns geometry while the cursor spring owns movement. */
+  /* Geometry and normal cursor physics share one requestAnimationFrame loop. */
   transition: transform 0ms linear;
 }
-
 .fluid-cursor__tool-copy {
   display: grid;
   gap: 0.25rem;
@@ -2044,10 +2183,72 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .spotlight-grid {
   --x: -1000;
   --y: -1000;
-  --spotlight-base: 253;
-  --spotlight-hue: var(--spotlight-base);
+  --spotlight-hue: 253;
+  --spotlight-saturation: 100%;
+  --spotlight-core-lightness: 74%;
+  --spotlight-edge-lightness: 54%;
+  --spotlight-card-core-lightness: 78%;
+  --spotlight-card-edge-lightness: 62%;
+  --service-border-spotlight-size: var(--spotlight-size);
+  --service-border-spotlight-saturation: var(--spotlight-saturation);
+  --service-backglow-alpha: 0.24;
+  --spotlight-glow-lightness: 60%;
   --spotlight-size: 200px;
-  --spotlight-border-size: 3px;
+  /* A two-pixel track keeps the highlight visually continuous around curves. */
+  --spotlight-border-size: 2px;
+}
+
+/* Keep the What I do proximity glow in each theme's color family. Violet
+   (theme 1) intentionally keeps its original hue and saturation. */
+:root[data-theme="dark-monochrome"] .spotlight-grid {
+  --spotlight-hue: 0;
+  --spotlight-core-lightness: 49%;
+  --spotlight-edge-lightness: 36%;
+  --spotlight-card-core-lightness: 52%;
+  --spotlight-card-edge-lightness: 38%;
+  --spotlight-glow-lightness: 40%;
+}
+:root[data-theme="dark-cyan"] .spotlight-grid {
+  --spotlight-hue: 214;
+  --spotlight-saturation: 82%;
+  --service-border-spotlight-size: 260px;
+  --service-border-spotlight-saturation: 100%;
+  --spotlight-card-core-lightness: 88%;
+  --spotlight-card-edge-lightness: 72%;
+}
+:root[data-theme="dark-berry"] .spotlight-grid { --spotlight-hue: 338; --spotlight-saturation: 82%; }
+:root[data-theme="dark"] .spotlight-grid {
+  --spotlight-hue: 266;
+  --service-border-spotlight-size: 260px;
+  --service-border-spotlight-saturation: 100%;
+  --spotlight-card-core-lightness: 88%;
+  --spotlight-card-edge-lightness: 72%;
+}
+:root[data-theme="warm"] .spotlight-grid { --spotlight-hue: 14; --spotlight-saturation: 78%; }
+:root[data-theme="light"] .spotlight-grid { --spotlight-hue: 202; --spotlight-saturation: 32%; }
+:root[data-theme="cool"] .spotlight-grid { --spotlight-hue: 179; --spotlight-saturation: 62%; }
+:root[data-theme="contrast"] .spotlight-grid { --spotlight-hue: 0; --spotlight-saturation: 0%; }
+
+:root:is([data-theme="warm"], [data-theme="light"], [data-theme="cool"], [data-theme="contrast"]) .spotlight-grid {
+  --service-backglow-alpha: 0.28;
+}
+
+:root[data-theme="dark-cyan"] .service-summary-grid {
+  --service-card-bg: #371adb;
+  --service-card-ink: #ffffff;
+  --service-card-muted: #c2d9ff;
+}
+
+:root[data-theme="dark-cyan"] .lab-preview {
+  --service-card-bg: #371adb;
+}
+
+:root[data-theme="dark"] .service-summary-grid {
+  --service-card-bg: #2a006a;
+}
+
+:root[data-theme="dark"] .lab-preview {
+  --service-card-bg: #2a006a;
 }
 
 /* Keep the existing soft-reveal treatment, but let each What I do card
@@ -2085,7 +2286,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   position: relative;
   isolation: isolate;
   overflow: visible;
-  border: var(--spotlight-border-size) solid var(--line);
+  border: var(--spotlight-border-size) solid transparent;
   border-radius: var(--radius-card);
   background: transparent;
 }
@@ -2098,35 +2299,35 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .spotlight-card::before {
   z-index: 2;
-  /* The pseudo border's outer edge exactly overlays the card's real border:
-     its containing block begins at the padding edge, so offset by the border
-     width rather than drawing a second, inset outline. */
+  /* The absolute containing block begins at the padding edge; the negative
+     inset brings the outer edge back to the card's outer rounded edge. */
   inset: calc(var(--spotlight-border-size) * -1);
-  border: var(--spotlight-border-size) solid transparent;
+  border: 0;
   border-radius: var(--radius-card);
   background-image:
     radial-gradient(
       calc(var(--spotlight-size) * 0.32) calc(var(--spotlight-size) * 0.32) at
       calc(var(--x) * 1px) calc(var(--y) * 1px),
-      hsl(var(--spotlight-hue) 100% 74% / 1),
+      hsl(var(--spotlight-hue) var(--spotlight-saturation) var(--spotlight-core-lightness) / 1),
       transparent 100%
     ),
     radial-gradient(
       calc(var(--spotlight-size) * 0.84) calc(var(--spotlight-size) * 0.84) at
       calc(var(--x) * 1px) calc(var(--y) * 1px),
-      hsl(var(--spotlight-hue) 100% 54% / 1),
+      hsl(var(--spotlight-hue) var(--spotlight-saturation) var(--spotlight-edge-lightness) / 1),
       transparent 100%
     );
   background-attachment: fixed;
   background-position: 50% 50%;
   background-repeat: no-repeat;
-  background-size: calc(100% + (2 * var(--spotlight-border-size))) calc(100% + (2 * var(--spotlight-border-size)));
+  background-size: 100% 100%;
   filter: brightness(1.45);
+  padding: var(--spotlight-border-size);
   mask:
-    linear-gradient(transparent, transparent),
-    linear-gradient(white, white);
-  mask-clip: padding-box, border-box;
-  mask-composite: intersect;
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
 .spotlight-card__face {
@@ -2136,6 +2337,37 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border-radius: calc(var(--radius-card) - var(--spotlight-border-size));
   background: var(--page);
   pointer-events: none;
+}
+
+/* Give the curved antialiasing the extra half pixel it needs to read as
+   strongly as the straight sides of this native rounded gradient border. */
+.service-summary-card.spotlight-card {
+  border-width: 2.5px;
+  color: var(--service-card-ink, var(--text));
+  background-image:
+    linear-gradient(var(--service-card-bg, var(--soft)) 0 0),
+    radial-gradient(
+      calc(var(--service-border-spotlight-size) * 0.32) calc(var(--service-border-spotlight-size) * 0.32) at
+      calc(var(--x) * 1px) calc(var(--y) * 1px),
+      hsl(var(--spotlight-hue) var(--service-border-spotlight-saturation) var(--spotlight-card-core-lightness)),
+      transparent 100%
+    ),
+    radial-gradient(
+      calc(var(--service-border-spotlight-size) * 0.84) calc(var(--service-border-spotlight-size) * 0.84) at
+      calc(var(--x) * 1px) calc(var(--y) * 1px),
+      hsl(var(--spotlight-hue) var(--service-border-spotlight-saturation) var(--spotlight-card-edge-lightness)),
+      transparent 100%
+    );
+  background-origin: padding-box, border-box, border-box;
+  background-clip: padding-box, border-box, border-box;
+  background-attachment: scroll, fixed, fixed;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.service-summary-card.spotlight-card::before {
+  display: none;
 }
 
 .spotlight-card:hover {
@@ -2160,17 +2392,58 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   content: "";
   inset: -0.45rem;
   border: 0.45rem solid transparent;
-  border-radius: calc(var(--radius-card) + 0.45rem);
+  border-radius: calc(var(--radius-card) + 1.45rem);
   background-image: radial-gradient(
     calc(var(--spotlight-size) * 0.55) calc(var(--spotlight-size) * 0.55) at
     calc(var(--x) * 1px) calc(var(--y) * 1px),
-    hsl(var(--spotlight-hue) 100% 60% / 1),
+    hsl(var(--spotlight-hue) var(--spotlight-saturation) var(--spotlight-glow-lightness) / 1),
     transparent 100%
   );
   background-attachment: fixed;
   background-position: 50% 50%;
   background-repeat: no-repeat;
   background-size: calc(100% + 0.9rem) calc(100% + 0.9rem);
+  padding: 0.45rem;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.spotlight-card:hover .spotlight-card__glow {
+  opacity: 0.82;
+}
+
+/* Diffuse a second radial border layer behind the card face. This follows the
+   nested [data-glow] layer from the reference; the card's border glow is separate. */
+.service-summary-card .spotlight-card__glow {
+  display: block;
+  z-index: -1;
+  inset: 0;
+  opacity: 0.62;
+  will-change: filter;
+  filter: blur(calc(var(--spotlight-border-size) * 10));
+  background: none;
+  border: 0;
+}
+
+.service-summary-card .spotlight-card__glow::before {
+  display: block;
+  inset: -10px;
+  border: 10px solid transparent;
+  border-radius: calc(var(--radius-card) + 10px);
+  padding: 0;
+  background-image: radial-gradient(
+    calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at
+    calc(var(--x) * 1px) calc(var(--y) * 1px),
+    hsl(var(--spotlight-hue) var(--spotlight-saturation) var(--spotlight-glow-lightness) / var(--service-backglow-alpha)),
+    transparent 100%
+  );
+  background-size: calc(100% + 20px) calc(100% + 20px);
+  background-attachment: fixed;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
   mask:
     linear-gradient(transparent, transparent),
     linear-gradient(white, white);
@@ -2178,8 +2451,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   mask-composite: intersect;
 }
 
-.spotlight-card:hover .spotlight-card__glow {
-  opacity: 0.82;
+.service-summary-card .spotlight-card__face {
+  display: block;
+  inset: 2.5px;
+  border-radius: calc(var(--radius-card) - 2.5px);
+  background: var(--service-card-bg, var(--soft));
 }
 
 .spotlight-card > :not(.spotlight-card__glow, .spotlight-card__face) {
@@ -2198,6 +2474,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .service-summary-card__icon svg {
   inline-size: var(--control-height);
   block-size: var(--control-height);
+  stroke-width: 1.8;
+  color: var(--service-card-ink, var(--text));
 }
 
 .service-explorer__icon {
@@ -2218,7 +2496,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .service-summary-card > p {
   margin: 0;
-  color: var(--muted);
+  color: var(--service-card-ink, var(--text));
   font-size: var(--type-small);
   line-height: 1.45;
 }
@@ -2232,7 +2510,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .service-stack h6 {
   margin: 0;
-  color: var(--muted);
+  color: var(--service-card-muted, var(--muted));
   font-family: var(--font-body);
   font-size: 0.72rem !important;
   font-weight: 700;
@@ -2253,8 +2531,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  inline-size: 1.8rem;
-  block-size: 1.8rem;
+  inline-size: 28px;
+  block-size: 28px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -2288,14 +2566,201 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   place-items: center;
   inline-size: 100%;
   block-size: 100%;
-  border: 1px solid color-mix(in srgb, var(--stack-tool-color) 46%, var(--line));
+  border: 0;
   border-radius: inherit;
   color: #fff;
   background: linear-gradient(145deg, color-mix(in srgb, var(--stack-tool-color) 85%, white), var(--stack-tool-color));
-  box-shadow: 0 0.12rem 0.35rem color-mix(in srgb, var(--stack-tool-color) 25%, transparent);
+  box-shadow: none;
   font: 800 0.52rem/1 var(--font-sans);
   letter-spacing: -0.03em;
   transition: transform 180ms var(--ease-out);
+}
+
+.service-stack__logo {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  display: block;
+  object-fit: contain;
+  flex: 0 0 auto;
+  transform-origin: center;
+  image-rendering: auto;
+}
+
+.service-stack__logo--invert {
+  filter: brightness(0) invert(1);
+}
+
+.service-stack__logo--padded {
+  position: absolute;
+  inset: 0;
+  width: 78%;
+  height: 78%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--padded-medium {
+  width: 84%;
+  height: 84%;
+  place-self: center;
+}
+
+.service-stack__logo--centered-padded,
+.service-stack__logo--centered-medium {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+  object-position: 50% 50%;
+  margin: auto;
+}
+
+.service-stack__logo--centered-padded {
+  width: 82%;
+  height: 82%;
+}
+
+.service-stack__logo--centered-medium {
+  width: 84%;
+  height: 84%;
+}
+
+.service-stack__logo--framer-padded {
+  width: 58%;
+  height: 58%;
+  position: absolute;
+  inset: 0;
+  object-position: center;
+  margin: auto;
+}
+
+.service-stack__logo--webflow-padded {
+  width: 72%;
+  height: 72%;
+  position: absolute;
+  inset: 0;
+  object-position: center;
+  margin: auto;
+}
+
+.service-stack__logo--wordpress-padded {
+  width: 80%;
+  height: 80%;
+  position: absolute;
+  inset: 0;
+  object-position: center;
+  margin: auto;
+}
+
+.service-stack__logo--claude-padded {
+  position: absolute;
+  inset: 0;
+  width: 68%;
+  height: 68%;
+  object-position: center;
+  margin: auto;
+}
+
+.service-stack__logo--brand-inset {
+  width: 74%;
+  height: 74%;
+  place-self: center;
+}
+
+.service-stack__logo--brand-centered,
+.service-stack__logo--google-sheets-rotated {
+  position: absolute;
+  inset: 0;
+  width: 74%;
+  height: 74%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--brand-centered-small {
+  position: absolute;
+  inset: 0;
+  width: 68%;
+  height: 68%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--figma-padded {
+  position: absolute;
+  inset: 0;
+  width: 68%;
+  height: 68%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--obsidian-padded {
+  position: absolute;
+  inset: 0;
+  width: 64%;
+  height: 64%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--brand-centered-medium,
+.service-stack__logo--brand-centered-tight {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.service-stack__logo--brand-centered-medium {
+  width: 70%;
+  height: 70%;
+}
+
+.service-stack__logo--brand-centered-tight {
+  width: 62%;
+  height: 62%;
+}
+
+.service-stack__logo--google-sheets-rotated {
+  width: 78%;
+  height: 78%;
+  transform: rotate(180deg);
+}
+
+.service-stack__logo--white-mark {
+  filter: brightness(0) invert(1);
+}
+
+.service-stack__tile--logo {
+  position: relative;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0;
+  overflow: hidden;
+}
+
+.service-stack__tile--logo.service-stack__tile--framed {
+  padding: 0.1rem;
+  border: 0;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--stack-tool-color) 85%, white), var(--stack-tool-color));
+  box-shadow: none;
+}
+
+.service-stack__tile--logo.service-stack__tile--solid {
+  background: var(--stack-tool-color);
+}
+
+.service-summary-card .service-stack h6,
+.service-summary-card .service-stack__tile {
+  color: var(--service-card-ink, var(--text));
 }
 
 .service-tags {
@@ -2406,6 +2871,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --lab-middle-column-span: 2;
   --lab-bottom-column: 0;
   --lab-bottom-column-span: 3.5;
+  /* Match the neutral plane of the What I do cards in every theme. */
+  --lab-card-neutral: var(--service-card-bg, var(--soft));
   color: var(--text-body);
   background: var(--page);
   /* Contain the car card through H37.5 so the following margin starts at its edge. */
@@ -2862,7 +3329,8 @@ body.car-showcase-expanded .layout-grid-overlay {
 
 .home-page > :not(.lab-preview),
 .lab-grid > :not(.lab-car) {
-  filter: blur(0);
+  /* A zero-radius filter still traps child buttons below the fixed liquid canvas. */
+  filter: none;
   transition: opacity 420ms var(--ease-out), filter 420ms var(--ease-out);
 }
 
@@ -4122,10 +4590,6 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 
 }
 
-[data-theme="dark"] .lab-calendar {
-  background-color: #1c1c1e;
-}
-
 .lab-calendar::before {
   position: absolute;
   z-index: 0;
@@ -4146,6 +4610,12 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 .lab-calendar:hover::before {
   opacity: 1;
   transition-duration: 180ms;
+}
+
+/* These rules appear after each individual game card's setup, so all six
+   outer Lab cards resolve to the same neutral as What I do in every theme. */
+.lab-preview :is(.lab-preview__placeholder, .lab-snake, .lab-calendar) {
+  background-color: var(--lab-card-neutral);
 }
 
 .lab-calendar__header {

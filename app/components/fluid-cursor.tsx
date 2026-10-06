@@ -32,11 +32,14 @@ const fragmentSource = `
   uniform float u_target_corner_radius;
   uniform float u_target_secondary;
   uniform float u_target_hover;
+  uniform float u_target_pressed;
   uniform vec3 u_cursor_color;
   uniform vec3 u_primary_color;
   uniform vec3 u_primary_hover_color;
+  uniform vec3 u_primary_active_color;
   uniform vec3 u_secondary_color;
   uniform vec3 u_secondary_hover_color;
+  uniform vec3 u_secondary_active_color;
   uniform vec3 u_neutral_target_color;
   uniform vec3 u_dark_target_color;
 
@@ -257,11 +260,11 @@ const fragmentSource = `
          the radial colour behaviour cannot. */
       float cursorMinimum = min(u_cursor_radii.x, u_cursor_radii.y);
       float bridgeApproach = smoothstep(0.62, 0.995, colorNearFactor);
-      float colourProgress = pow(bridgeApproach, 3.4);
+      float colourProgress = pow(bridgeApproach, 2.7);
       float easedColourProgress = smoothstep(0.0, 1.0, colourProgress);
-      float shellDepth = mix(0.7, cursorMinimum * 1.45, easedColourProgress);
+      float shellDepth = mix(0.7, cursorMinimum * 1.75, easedColourProgress);
       float shellFeather = cursorMinimum * 0.72;
-      float shellVisibility = smoothstep(0.0, 0.06, colourProgress);
+      float shellVisibility = smoothstep(0.0, 0.18, colourProgress);
       float cursorShell = smoothstep(
         -shellDepth - shellFeather,
         -shellDepth + shellFeather,
@@ -292,6 +295,11 @@ const fragmentSource = `
       mix(u_primary_color, u_secondary_color, u_target_secondary),
       mix(u_primary_hover_color, u_secondary_hover_color, u_target_secondary),
       u_target_hover
+    );
+    targetInk = mix(
+      targetInk,
+      mix(u_primary_active_color, u_secondary_active_color, u_target_secondary),
+      u_target_pressed
     );
     targetInk = mix(targetInk, u_neutral_target_color, u_target_neutral);
     targetInk = mix(targetInk, u_dark_target_color, u_target_dark);
@@ -337,8 +345,10 @@ interface ThemeColors {
   cursor: Rgb;
   primary: Rgb;
   primaryHover: Rgb;
+  primaryActive: Rgb;
   secondary: Rgb;
   secondaryHover: Rgb;
+  secondaryActive: Rgb;
   neutralTarget: Rgb;
   darkTarget: Rgb;
 }
@@ -351,15 +361,6 @@ function hexToRgb(value: string, fallback: Rgb): Rgb {
     Number.parseInt(hex.slice(0, 2), 16) / 255,
     Number.parseInt(hex.slice(2, 4), 16) / 255,
     Number.parseInt(hex.slice(4, 6), 16) / 255,
-  ];
-}
-
-function mixRgb(first: Rgb, second: Rgb, secondWeight: number): Rgb {
-  const firstWeight = 1 - secondWeight;
-  return [
-    first[0] * firstWeight + second[0] * secondWeight,
-    first[1] * firstWeight + second[1] * secondWeight,
-    first[2] * firstWeight + second[2] * secondWeight,
   ];
 }
 
@@ -422,19 +423,27 @@ export function FluidCursor() {
     const toolDescription = toolDescriptionRef.current;
     if (!canvas || !fallbackCursor || !knobMask || !knobMaskClip || !knobMaskPath || !textMask || !toolTitle || !toolDescription) return;
     const fallback = fallbackCursor;
+    // Older versions positioned one reflowing clone over the full source
+    // element. Clear those dimensions before using the viewport paint layer.
+    textMask.style.removeProperty("left");
+    textMask.style.removeProperty("top");
+    textMask.style.removeProperty("width");
+    textMask.style.removeProperty("height");
+    textMask.style.removeProperty("transform");
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const readThemeColors = (): ThemeColors => {
       const styles = window.getComputedStyle(document.documentElement);
       const page = hexToRgb(styles.getPropertyValue("--page"), [1, 1, 1]);
-      const soft = hexToRgb(styles.getPropertyValue("--soft"), [0.94, 0.94, 0.94]);
       return {
         cursor: hexToRgb(styles.getPropertyValue("--text"), [0.91, 0.91, 0.91]),
-        primary: hexToRgb(styles.getPropertyValue("--primary"), [0.412, 0.282, 0.91]),
-        primaryHover: hexToRgb(styles.getPropertyValue("--primary-hover"), [0.337, 0.212, 0.784]),
+        primary: hexToRgb(styles.getPropertyValue("--cta"), hexToRgb(styles.getPropertyValue("--primary"), [0.412, 0.282, 0.91])),
+        primaryHover: hexToRgb(styles.getPropertyValue("--cta-hover"), hexToRgb(styles.getPropertyValue("--primary-hover"), [0.337, 0.212, 0.784])),
+        primaryActive: hexToRgb(styles.getPropertyValue("--cta-active"), hexToRgb(styles.getPropertyValue("--primary-active"), [0.337, 0.212, 0.784])),
         secondary: hexToRgb(styles.getPropertyValue("--secondary"), [0.89, 0.2, 0.2]),
         secondaryHover: hexToRgb(styles.getPropertyValue("--secondary-hover"), [0.749, 0.141, 0.157]),
+        secondaryActive: hexToRgb(styles.getPropertyValue("--secondary-active"), [0.749, 0.141, 0.157]),
         // Play and retry fluid shares the same white token as the display titles.
         neutralTarget: hexToRgb(styles.getPropertyValue("--text"), [0.91, 0.91, 0.91]),
         darkTarget: page,
@@ -449,12 +458,18 @@ export function FluidCursor() {
     // near a CTA. This avoids stopping and restarting between adjacent frames.
     const cursorIdleGrace = 220;
     const settledFrameLimit = 12;
-    const scrollSettleDelay = 120;
+    const scrollSettleDelay = 220;
+    const toolMorphDuration = 180;
     const pointer = { x: 0, y: 0, active: false };
     const cursor = { x: 0, y: 0, vx: 0, vy: 0, initialized: false };
     let targets: LiquidTarget[] = [];
     let negativeMaskTargets: NegativeMaskTarget[] = [];
     let textMaskSource: HTMLElement | null = null;
+    let textMaskSignature = "";
+    let nativeInkSource: HTMLElement | null = null;
+    let nativeInkRuns: HTMLElement[] = [];
+    let nativePaintRuns = new Set<HTMLElement>();
+    let nativeInkLayerHosts: HTMLElement[] = [];
     let activeTarget: LiquidTarget | null = null;
     let activeTool: HTMLElement | null = null;
     let gl: WebGLRenderingContext | null = null;
@@ -477,7 +492,6 @@ export function FluidCursor() {
     let scrollIdleTimer = 0;
     let toolLeaveTimer = 0;
     let toolMorphing = false;
-    let toolMorphDuration = 145;
     let toolMorphProgress = 0;
     let toolMorphLastTime = 0;
     let toolMorphStartWidth = 0;
@@ -485,10 +499,11 @@ export function FluidCursor() {
     let toolMorphStartRadius = 0;
     let toolMorphNearSquareSize = 0;
     let toolMorphLargeBallSize = 0;
-    let toolExitPace = 0;
     let toolCopyTimer = 0;
     let toolCopyFrame = 0;
+    let toolEntryFrame = 0;
     let toolEntryTimer = 0;
+    let pendingToolActivation = false;
     let lastPointerMoveAt = 0;
     let settledFrames = 0;
     let magneticTranslationSuspended = false;
@@ -513,6 +528,10 @@ export function FluidCursor() {
       // Destination CTAs and a few explicitly marked neutral surfaces can use
       // the liquid field. Ordinary controls remain native.
       const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, [data-fluid-cursor-surface]"))
+        // The negative-ink overlay contains visual clones. They must never be
+        // rediscovered as real interactive targets or they can disturb the
+        // liquid-button state while the overlay is being refreshed.
+        .filter((element) => !textMask.contains(element))
         .map((element) => {
           const isNeutralMerge = element.hasAttribute("data-fluid-cursor-surface");
           const isDarkMerge = element.hasAttribute("data-fluid-cursor-dark-surface");
@@ -534,7 +553,9 @@ export function FluidCursor() {
             isNeutralMerge,
             isDarkMerge,
             cornerRadius: Number.parseFloat(window.getComputedStyle(element).borderTopLeftRadius) || 0,
-            isSecondary: element.classList.contains("button--secondary") || element.classList.contains("button--red"),
+            // Every regular button shares the Learn more primary role. Only
+            // Let's talk opts into the secondary colour role.
+            isSecondary: element.classList.contains("button--red"),
             hoverProgress: 0,
           };
         })
@@ -556,8 +577,50 @@ export function FluidCursor() {
         target.rect = target.element.getBoundingClientRect();
         targetResizeObserver?.observe(target.surface);
       });
-      negativeMaskTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-fluid-cursor-negative-mask]"))
+      const previousNegativeElements = new Set(negativeMaskTargets.map(({ element }) => element));
+      const negativeMaskSelector = [
+        "[data-fluid-cursor-negative-mask]",
+        "[data-fluid-cursor-native-ink]",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        ".section-index",
+      ].join(", ");
+      const nextNegativeMaskTargets = Array.from(document.querySelectorAll<HTMLElement>(negativeMaskSelector))
+        .filter((element) => {
+          if (textMask.contains(element)) return false;
+          if (element.matches("button, .button")) return false;
+          if (
+            element.hasAttribute("data-fluid-cursor-negative-mask") ||
+            element.hasAttribute("data-fluid-cursor-native-ink")
+          ) return true;
+          return !element.closest("button, .button");
+        })
         .map((element) => ({ element, rect: element.getBoundingClientRect() }));
+      const nextNegativeElements = new Set(nextNegativeMaskTargets.map(({ element }) => element));
+      previousNegativeElements.forEach((element) => {
+        if (!nextNegativeElements.has(element)) targetResizeObserver?.unobserve(element);
+      });
+      negativeMaskTargets = nextNegativeMaskTargets;
+      negativeMaskTargets.forEach(({ element }) => targetResizeObserver?.observe(element));
+
+      // Keep native-ink targets on the same background-clipped text rendering
+      // path both at rest and under the cursor. Chromium antialiases normal
+      // color text and background-clipped text differently; switching between
+      // those paths made the letters appear to change weight on hover.
+      const nextNativePaintRuns = new Set<HTMLElement>();
+      negativeMaskTargets.forEach(({ element }) => {
+        if (!usesNativeTextInk(element)) return;
+        nativeTextPaintRunsFor(element).forEach((run) => nextNativePaintRuns.add(run));
+      });
+      nativePaintRuns.forEach((run) => {
+        if (!nextNativePaintRuns.has(run)) run.removeAttribute("data-fluid-cursor-native-paint");
+      });
+      nextNativePaintRuns.forEach((run) => run.setAttribute("data-fluid-cursor-native-paint", ""));
+      nativePaintRuns = nextNativePaintRuns;
     };
 
     const measureTargets = () => {
@@ -583,14 +646,141 @@ export function FluidCursor() {
       return distanceToRect(x, y, renderedRectFor(target)) <= activationRangeFor(target);
     });
 
-    const syncNegativeMask = (x: number, y: number) => {
+    const textPaintRunsFor = (element: HTMLElement) => {
+      const animatedRuns = Array.from(element.querySelectorAll<HTMLElement>(
+        ".reveal-title__word-inner, .hero-code-indent",
+      )).filter((run) => run.textContent?.trim());
+      return animatedRuns.length > 0 ? animatedRuns : [element];
+    };
+
+    const usesNativeTextInk = (element: HTMLElement) => (
+      element.hasAttribute("data-fluid-cursor-native-ink") ||
+      element.matches("h1, h2, h3, h4, h5, h6, .section-index")
+    );
+
+    const nativeTextPaintRunsFor = (element: HTMLElement) => {
+      const animatedRuns = Array.from(element.querySelectorAll<HTMLElement>(
+        ".reveal-title__word-inner, .hero-code-indent",
+      )).filter((run) => run.textContent?.trim());
+      if (animatedRuns.length > 0) return animatedRuns;
+
+      const candidates = [element, ...Array.from(element.querySelectorAll<HTMLElement>("*"))];
+      return candidates.filter((candidate) => Array.from(candidate.childNodes).some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+      ));
+    };
+
+    const clearNativeTextInk = () => {
+      nativeInkRuns.forEach((run) => {
+        run.removeAttribute("data-fluid-cursor-live-ink");
+        run.style.removeProperty("--fluid-cursor-native-color");
+        run.style.removeProperty("--fluid-cursor-native-x");
+        run.style.removeProperty("--fluid-cursor-native-y");
+        run.style.removeProperty("--fluid-cursor-native-radius-x");
+        run.style.removeProperty("--fluid-cursor-native-radius-y");
+        run.style.removeProperty("--fluid-cursor-native-position");
+      });
+      nativeInkRuns = [];
+      nativeInkSource = null;
+      nativeInkLayerHosts.forEach((host) => {
+        host.classList.remove("is-fluid-cursor-ink-layer");
+        host.classList.remove("is-fluid-cursor-ink-card");
+      });
+      nativeInkLayerHosts = [];
+    };
+
+    const syncNativeTextInk = (
+      element: HTMLElement,
+      x: number,
+      y: number,
+      elongation: number,
+    ) => {
+      if (nativeInkSource !== element) {
+        clearNativeTextInk();
+        nativeInkSource = element;
+        nativeInkRuns = nativeTextPaintRunsFor(element);
+        nativeInkRuns.forEach((run) => {
+          const runStyle = window.getComputedStyle(run);
+          run.style.setProperty("--fluid-cursor-native-color", runStyle.color);
+          if (runStyle.position !== "static") {
+            run.style.setProperty("--fluid-cursor-native-position", runStyle.position);
+          }
+          run.setAttribute("data-fluid-cursor-live-ink", "");
+        });
+        const layerHosts = new Set<HTMLElement>();
+        const pageLayerHost = element.closest<HTMLElement>(".desktop-rail, .hero-audience");
+        if (pageLayerHost) {
+          pageLayerHost.classList.add("is-fluid-cursor-ink-layer");
+          layerHosts.add(pageLayerHost);
+        }
+
+        // Lab labels sit inside local z-index layers used to keep their card
+        // content above each coloured ::before surface. Lift that transparent
+        // content row while the real glyphs are being recoloured. Type Racer
+        // also needs its card isolation opened so the glyph can reach the
+        // global layer above the fixed cursor canvas.
+        const labContentLayer = element.closest<HTMLElement>(
+          ".lab-visual-memory__topline, .lab-type-racer__high-score, .lab-type-racer__prompt, .lab-snake__topline",
+        );
+        if (labContentLayer) {
+          labContentLayer.classList.add("is-fluid-cursor-ink-layer");
+          layerHosts.add(labContentLayer);
+        }
+        const labCard = element.closest<HTMLElement>(".lab-visual-memory, .lab-type-racer, .lab-snake");
+        if (labCard) {
+          labCard.classList.add("is-fluid-cursor-ink-card");
+          layerHosts.add(labCard);
+        }
+        nativeInkLayerHosts = Array.from(layerHosts);
+      }
+
+      const radius = cursorRadius * 1.04;
+      const radiusX = `${radius * (1 + elongation)}px`;
+      const radiusY = `${radius * (1 - elongation * 0.52)}px`;
+      // Chromium paints a background-clipped gradient in each text run's
+      // local box even when background-attachment is fixed. Read every box
+      // first, then write, so the gradient follows the cursor without causing
+      // alternating layout reads and style recalculations.
+      const runRects = nativeInkRuns.map((run) => ({ run, rect: run.getBoundingClientRect() }));
+      runRects.forEach(({ run, rect }) => {
+        run.style.setProperty("--fluid-cursor-native-x", `${x - rect.left}px`);
+        run.style.setProperty("--fluid-cursor-native-y", `${y - rect.top}px`);
+        run.style.setProperty("--fluid-cursor-native-radius-x", radiusX);
+        run.style.setProperty("--fluid-cursor-native-radius-y", radiusY);
+      });
+    };
+
+    const cursorClipPolygon = (x: number, y: number, rotation: number, elongation: number) => {
+      const radius = cursorRadius * 1.04;
+      const radiusX = radius * (1 + elongation);
+      const radiusY = radius * (1 - elongation * 0.52);
+      const cosine = Math.cos(rotation);
+      const sine = Math.sin(rotation);
+      const points = Array.from({ length: 32 }, (_, index) => {
+        const theta = (index / 32) * Math.PI * 2;
+        const localX = Math.cos(theta) * radiusX;
+        const localY = Math.sin(theta) * radiusY;
+        const pointX = x + localX * cosine - localY * sine;
+        const pointY = y + localX * sine + localY * cosine;
+        return `${pointX.toFixed(2)}px ${pointY.toFixed(2)}px`;
+      });
+      return `polygon(${points.join(", ")})`;
+    };
+
+    const syncNegativeMask = (x: number, y: number, rotation = 0, elongation = 0) => {
       // Several text targets can overlap the orb at once (for example, the
       // Type Racer timer above the first words). Resolve that overlap by
       // proximity, not DOM order, so the text directly under the orb wins.
       let target: NegativeMaskTarget | null = null;
       let closestDistance = Number.POSITIVE_INFINITY;
       for (const candidate of negativeMaskTargets) {
-        const { element, rect } = candidate;
+        const { element } = candidate;
+        // Titles and navigation enter through transforms during the page
+        // reveal. ResizeObserver does not report positional transform changes,
+        // so cached rectangles can point at a completely different label.
+        // Read the live painted box before resolving the closest mask target.
+        const rect = element.getBoundingClientRect();
+        candidate.rect = rect;
         let distance: number;
         if (!element.classList.contains("lab-etch__knob")) {
           distance = distanceToRect(x, y, rect);
@@ -607,46 +797,75 @@ export function FluidCursor() {
         }
       }
       if (!target) {
+        clearNativeTextInk();
         knobMask.style.opacity = "0";
         textMask.style.opacity = "0";
-        textMaskSource = null;
         return;
       }
       if (!target.element.classList.contains("lab-etch__knob")) {
         knobMask.style.opacity = "0";
-        if (textMaskSource !== target.element || textMask.textContent !== target.element.textContent) {
-          const clone = target.element.cloneNode(true) as HTMLElement;
-          const sourceStyle = window.getComputedStyle(target.element);
-          clone.removeAttribute("data-fluid-cursor-negative-mask");
-          clone.style.setProperty("position", "static");
-          clone.style.setProperty("inset", "auto");
-          clone.style.setProperty("display", sourceStyle.display);
-          clone.style.setProperty("font", sourceStyle.font);
-          clone.style.setProperty("letter-spacing", sourceStyle.letterSpacing);
-          clone.style.setProperty("word-spacing", sourceStyle.wordSpacing);
-          clone.style.setProperty("line-height", sourceStyle.lineHeight);
-          clone.style.setProperty("text-transform", sourceStyle.textTransform);
-          clone.style.setProperty("white-space", sourceStyle.whiteSpace);
-          clone.style.setProperty("text-align", sourceStyle.textAlign);
-          clone.style.setProperty("transform", "none");
-          clone.style.setProperty("animation", "none");
-          clone.style.setProperty("margin", "0");
-          clone.style.setProperty("color", "var(--cursor-ink)", "important");
-          clone.querySelectorAll<HTMLElement>("*").forEach((child) => child.style.setProperty("color", "var(--cursor-ink)", "important"));
-          textMask.replaceChildren(clone);
-          textMaskSource = target.element;
+        if (usesNativeTextInk(target.element)) {
+          textMask.style.opacity = "0";
+          syncNativeTextInk(target.element, x, y, elongation);
+          return;
         }
-        textMask.style.left = `${target.rect.left}px`;
-        textMask.style.top = `${target.rect.top}px`;
-        textMask.style.width = `${target.rect.width}px`;
-        textMask.style.height = `${target.rect.height}px`;
-        textMask.style.transform = "none";
-        textMask.style.clipPath = `circle(${cursorRadius * 1.04}px at ${x - target.rect.left}px ${y - target.rect.top}px)`;
+        clearNativeTextInk();
+        const paintRuns = textPaintRunsFor(target.element).map((source) => ({
+          source,
+          rect: source.getBoundingClientRect(),
+        }));
+        const sourceSignature = paintRuns.map(({ source, rect }) => [
+          source.textContent ?? "",
+          source.className,
+          source.getAttribute("style") ?? "",
+          rect.left.toFixed(3),
+          rect.top.toFixed(3),
+          rect.width.toFixed(3),
+          rect.height.toFixed(3),
+        ].join("|")).join("||");
+        if (textMaskSource !== target.element || textMaskSignature !== sourceSignature) {
+          const fragment = document.createDocumentFragment();
+          paintRuns.forEach(({ source, rect }) => {
+            const sourceStyle = window.getComputedStyle(source);
+            const run = document.createElement("span");
+            run.className = "fluid-cursor__text-mask-run";
+            run.textContent = source.textContent;
+            run.style.left = `${rect.left}px`;
+            run.style.top = `${rect.top}px`;
+            run.style.width = `${rect.width}px`;
+            run.style.height = `${rect.height}px`;
+            run.style.font = sourceStyle.font;
+            run.style.fontFamily = sourceStyle.fontFamily;
+            run.style.fontSize = sourceStyle.fontSize;
+            run.style.fontStyle = sourceStyle.fontStyle;
+            run.style.fontWeight = sourceStyle.fontWeight;
+            run.style.fontStretch = sourceStyle.fontStretch;
+            run.style.letterSpacing = sourceStyle.letterSpacing;
+            run.style.wordSpacing = sourceStyle.wordSpacing;
+            run.style.lineHeight = sourceStyle.lineHeight;
+            run.style.textAlign = sourceStyle.textAlign;
+            run.style.textTransform = sourceStyle.textTransform;
+            run.style.whiteSpace = sourceStyle.whiteSpace;
+            run.style.direction = sourceStyle.direction;
+            run.style.writingMode = sourceStyle.writingMode;
+            run.style.opacity = sourceStyle.opacity;
+            run.style.setProperty("font-kerning", sourceStyle.getPropertyValue("font-kerning"));
+            run.style.setProperty("font-feature-settings", sourceStyle.getPropertyValue("font-feature-settings"));
+            run.style.setProperty("font-variation-settings", sourceStyle.getPropertyValue("font-variation-settings"));
+            run.style.setProperty("font-optical-sizing", sourceStyle.getPropertyValue("font-optical-sizing"));
+            run.style.setProperty("text-rendering", sourceStyle.getPropertyValue("text-rendering"));
+            fragment.append(run);
+          });
+          textMask.replaceChildren(fragment);
+          textMaskSource = target.element;
+          textMaskSignature = sourceSignature;
+        }
+        textMask.style.clipPath = cursorClipPolygon(x, y, rotation, elongation);
         textMask.style.opacity = "1";
         return;
       }
+      clearNativeTextInk();
       textMask.style.opacity = "0";
-      textMaskSource = null;
       const angle = Number.parseFloat(window.getComputedStyle(target.element).getPropertyValue("--knob-angle")) || 0;
       const maskX = ((x - target.rect.left) / target.rect.width) * 100;
       const maskY = ((y - target.rect.top) / target.rect.height) * 100;
@@ -675,7 +894,7 @@ export function FluidCursor() {
 
     const showFallbackAtCursor = (rotation = 0, elongation = 0) => {
       canvas.classList.remove("is-visible");
-      syncNegativeMask(cursor.x, cursor.y);
+      syncNegativeMask(cursor.x, cursor.y, rotation, elongation);
       fallback.style.transform = `translate3d(${cursor.x}px, ${cursor.y}px, 0) translate(-50%, -50%) rotate(${rotation}rad) scale(${1 + elongation}, ${1 - elongation * 0.52})`;
       fallback.classList.add("fluid-cursor--visible");
     };
@@ -689,16 +908,10 @@ export function FluidCursor() {
       fallback.style.removeProperty("border-radius");
       fallback.style.removeProperty("padding");
       fallback.style.removeProperty("box-shadow");
+      // Preserve the final morph frame's position, velocity, rotation, and
+      // stretch. The ordinary cursor loop continues from this exact state;
+      // snapping to the pointer here would break the physics handoff.
       startLoop();
-    };
-
-    // A nearby exit keeps the full timeline. A far-away pointer speeds up the
-    // same continuous animation and spring instead of swapping phases.
-    const updateToolExitPace = (distance: number) => {
-      const nextPace = clamp((distance - 72) / 520, 0, 1);
-      if (nextPace <= toolExitPace + 0.02) return;
-
-      toolExitPace = nextPace;
     };
 
     const setToolCopy = (title: string, description: string, isChangingTool: boolean) => {
@@ -730,47 +943,86 @@ export function FluidCursor() {
       }, 90);
     };
 
+    const releaseLiquidTargets = () => {
+      activeTarget = null;
+      liquidWasRendering = false;
+      canvas.classList.remove("is-visible");
+      targets.forEach((target) => {
+        target.element.removeAttribute("data-liquid-active");
+        target.element.removeAttribute("data-liquid-rendered");
+        target.element.removeAttribute("data-liquid-absorbed");
+        target.x = 0;
+        target.y = 0;
+        target.vx = 0;
+        target.vy = 0;
+        target.tx = 0;
+        target.ty = 0;
+        target.surface.style.removeProperty("transform");
+        target.surface.style.removeProperty("--liquid-ink-x");
+        target.surface.style.removeProperty("--liquid-ink-y");
+        target.surface.style.removeProperty("--liquid-ink-radius");
+      });
+    };
+
     const clearToolCursor = () => {
       if (!activeTool && !fallback.classList.contains("fluid-cursor--tool-popover") && !toolMorphing) return;
+      if (toolMorphing) return;
       activeTool = null;
       window.clearTimeout(toolLeaveTimer);
       window.clearTimeout(toolCopyTimer);
       window.cancelAnimationFrame(toolCopyFrame);
+      window.cancelAnimationFrame(toolEntryFrame);
+      // Read the live tooltip geometry before removing its class. Reading it
+      // afterward collapses to the ordinary 21px cursor first, making the
+      // reverse animation appear instant because it has no rectangle to lose.
       const currentRect = fallback.getBoundingClientRect();
-      toolMorphDuration = 145;
+      const currentStyle = window.getComputedStyle(fallback);
+      const currentRadius = currentStyle.borderRadius;
+      const currentPadding = currentStyle.padding;
+      // Pin the exact live popup geometry. The next frame changes only to the
+      // standard cursor values, so this is literally the entry transition in
+      // reverse rather than a separate, approximate exit animation.
+      fallback.style.inlineSize = `${currentRect.width}px`;
+      fallback.style.blockSize = `${currentRect.height}px`;
+      fallback.style.borderRadius = currentRadius;
+      fallback.style.padding = currentPadding;
+      fallback.style.boxShadow = "none";
+      fallback.classList.remove("fluid-cursor--tool-popover", "fluid-cursor--tool-text-ready", "fluid-cursor--tool-copy-changing", "fluid-cursor--tool-copy-entering", "fluid-cursor--tool-entering");
+      fallback.style.removeProperty("--fluid-tool-width");
+      fallback.style.removeProperty("--fluid-tool-height");
       toolMorphProgress = 0;
       toolMorphLastTime = performance.now();
       toolMorphStartWidth = currentRect.width;
       toolMorphStartHeight = currentRect.height;
-      toolMorphStartRadius = Number.parseFloat(window.getComputedStyle(fallback).borderRadius) || 13.6;
+      toolMorphStartRadius = Number.parseFloat(currentRadius) || 13.6;
       toolMorphNearSquareSize = currentRect.height * 0.95;
       toolMorphLargeBallSize = toolMorphNearSquareSize * 0.95;
-      toolExitPace = 0;
-      fallback.classList.remove("fluid-cursor--tool-popover", "fluid-cursor--tool-text-ready", "fluid-cursor--tool-copy-changing", "fluid-cursor--tool-copy-entering", "fluid-cursor--tool-entering");
-      fallback.classList.add("fluid-cursor--tool-morph");
       toolMorphing = true;
-      fallback.style.removeProperty("--fluid-tool-width");
-      fallback.style.removeProperty("--fluid-tool-height");
-      fallback.style.inlineSize = `${toolMorphStartWidth}px`;
-      fallback.style.blockSize = `${toolMorphStartHeight}px`;
-      fallback.style.borderRadius = `${toolMorphStartRadius}px`;
+      fallback.classList.add("fluid-cursor--tool-morph");
       if (pointer.active) {
         cursor.x = currentRect.left + currentRect.width / 2;
         cursor.y = currentRect.top + currentRect.height / 2;
         cursor.vx = 0;
         cursor.vy = 0;
         showFallbackAtCursor();
-        updateToolExitPace(Math.hypot(pointer.x - cursor.x, pointer.y - cursor.y));
+        startLoop();
+      } else {
+        finishToolMorph();
       }
-      startLoop();
     };
 
     const setActiveTool = (nextTool: HTMLElement) => {
       if (isScrolling || nextTool === activeTool) return;
 
+      pendingToolActivation = false;
       const isChangingTool = activeTool !== null;
       window.clearTimeout(toolLeaveTimer);
       window.clearTimeout(toolEntryTimer);
+      window.cancelAnimationFrame(toolEntryFrame);
+      // A tooltip takes over the fallback cursor. Release the liquid button
+      // before hiding its canvas so a fast button-to-tool handoff cannot leave
+      // that button transparent.
+      releaseLiquidTargets();
       toolMorphing = false;
       fallback.classList.remove("fluid-cursor--tool-morph", "fluid-cursor--tool-text-ready", "fluid-cursor--tool-entering");
       fallback.style.removeProperty("inline-size");
@@ -805,22 +1057,38 @@ export function FluidCursor() {
       fallback.style.setProperty("--fluid-tool-width", `${width}px`);
       fallback.style.setProperty("--fluid-tool-height", `${height}px`);
 
+      const applyToolPopover = () => {
+        if (activeTool !== nextTool) return;
+        fallback.classList.add("fluid-cursor--tool-popover", "fluid-cursor--visible");
+        fallback.style.transform = placeLeft
+          ? `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-100%, -50%)`
+          : placeAbove
+          ? `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-50%, -100%)`
+          : `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-50%, 0)`;
+        canvas.classList.remove("is-visible");
+      };
+
       // The standard cursor can be stretched and rotated while moving. Before
-      // its first tool morph, normalize it to a genuine circle so the shape
-      // interpolates evenly instead of corkscrewing into the rectangle.
+      // its first tool morph, give the fallback one painted frame as a real
+      // ball. That makes a liquid-button-to-tool handoff visibly morph instead
+      // of replacing the mouse with an already-expanded tooltip.
       if (!isChangingTool) {
+        cursor.x = pointer.x;
+        cursor.y = pointer.y;
+        cursor.vx = 0;
+        cursor.vy = 0;
+        fallback.classList.add("fluid-cursor--visible", "fluid-cursor--liquid-handoff");
         fallback.style.transform = `translate3d(${cursor.x}px, ${cursor.y}px, 0) translate(-50%, -50%)`;
         fallback.getBoundingClientRect();
-        fallback.classList.add("fluid-cursor--tool-entering");
-        toolEntryTimer = window.setTimeout(() => fallback.classList.remove("fluid-cursor--tool-entering"), 460);
+        toolEntryFrame = window.requestAnimationFrame(() => {
+          fallback.classList.remove("fluid-cursor--liquid-handoff");
+          fallback.classList.add("fluid-cursor--tool-entering");
+          applyToolPopover();
+          toolEntryTimer = window.setTimeout(() => fallback.classList.remove("fluid-cursor--tool-entering"), 460);
+        });
+        return;
       }
-      fallback.classList.add("fluid-cursor--tool-popover", "fluid-cursor--visible");
-      fallback.style.transform = placeLeft
-        ? `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-100%, -50%)`
-        : placeAbove
-        ? `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-50%, -100%)`
-        : `translate3d(${anchorX}px, ${anchorY}px, 0) translate(-50%, 0)`;
-      canvas.classList.remove("is-visible");
+      applyToolPopover();
     };
 
     const scheduleToolClear = () => {
@@ -840,6 +1108,19 @@ export function FluidCursor() {
       if (tool === activeTool) {
         scheduleToolClear();
       }
+    };
+
+    const activateToolUnderPointer = () => {
+      if (isScrolling || !pointer.active) return;
+      // The tooltip under a stopped scroll begins only after its prior exit
+      // finishes. Otherwise the new popup replaces a shrinking rectangle and
+      // reads as a snap instead of a second, normal cursor-to-tooltip morph.
+      if (toolMorphing) {
+        pendingToolActivation = true;
+        return;
+      }
+      const tool = document.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-cursor-tool]");
+      if (tool?.matches(":hover")) setActiveTool(tool);
     };
 
     const clearLiquidFrame = () => {
@@ -1000,12 +1281,14 @@ export function FluidCursor() {
       setUniform2("u_cursor", cursor.x, cursor.y);
       setUniform2("u_cursor_radii", cursorRadius * (1 + stretch), cursorRadius * (1 - stretch * 0.52));
       setUniform2("u_cursor_direction", directionX, directionY);
-      syncNegativeMask(cursor.x, cursor.y);
+      syncNegativeMask(cursor.x, cursor.y, angle, stretch);
       setUniform3("u_cursor_color", themeColors.cursor);
       setUniform3("u_primary_color", themeColors.primary);
       setUniform3("u_primary_hover_color", themeColors.primaryHover);
+      setUniform3("u_primary_active_color", themeColors.primaryActive);
       setUniform3("u_secondary_color", themeColors.secondary);
       setUniform3("u_secondary_hover_color", themeColors.secondaryHover);
+      setUniform3("u_secondary_active_color", themeColors.secondaryActive);
       setUniform3("u_neutral_target_color", themeColors.neutralTarget);
       setUniform3("u_dark_target_color", themeColors.darkTarget);
       if (activeTarget) {
@@ -1103,6 +1386,7 @@ export function FluidCursor() {
         setUniform1("u_target_corner_radius", cornerRadius);
         setUniform1("u_target_secondary", activeTarget.isSecondary ? 1 : 0);
         setUniform1("u_target_hover", activeTarget.hoverProgress);
+        setUniform1("u_target_pressed", !activeTarget.isOutline && activeTarget.element.matches(":active") ? 1 : 0);
       } else {
         setUniform1("u_target_active", 0);
         setUniform2("u_target_center", 0, 0);
@@ -1119,6 +1403,7 @@ export function FluidCursor() {
         setUniform1("u_target_corner_radius", 0);
         setUniform1("u_target_secondary", 0);
         setUniform1("u_target_hover", 0);
+        setUniform1("u_target_pressed", 0);
       }
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       if (activeTarget && !activeTarget.element.hasAttribute("data-liquid-rendered")) {
@@ -1223,7 +1508,7 @@ export function FluidCursor() {
           directionX = cursor.vx / speed;
           directionY = cursor.vy / speed;
         }
-        syncNegativeMask(cursor.x, cursor.y);
+        syncNegativeMask(cursor.x, cursor.y, angle, stretch);
         fallback.classList.add("fluid-cursor--visible");
         fallback.style.transform = `translate3d(${cursor.x}px, ${cursor.y}px, 0) translate(-50%, -50%) rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch * 0.52})`;
         frame = window.requestAnimationFrame(render);
@@ -1239,35 +1524,25 @@ export function FluidCursor() {
       }
       if (toolMorphing) {
         canvas?.classList.remove("is-visible");
-        const distance = Math.hypot(pointer.x - cursor.x, pointer.y - cursor.y);
-        updateToolExitPace(distance);
-        const pace = clamp((distance - 72) / 520, 0, 1);
-        const stiffness = 0.12 + pace * 0.3;
-        const damping = 0.7 + pace * 0.06;
-        cursor.vx = (cursor.vx + (pointer.x - cursor.x) * stiffness) * damping;
-        cursor.vy = (cursor.vy + (pointer.y - cursor.y) * stiffness) * damping;
+        // Use the same spring and velocity deformation as the normal cursor.
+        // The shape follows one continuous rectangle -> square -> ball curve;
+        // there is no extra end acceleration or staged pause.
+        cursor.vx = (cursor.vx + (pointer.x - cursor.x) * 0.12) * 0.7;
+        cursor.vy = (cursor.vy + (pointer.y - cursor.y) * 0.12) * 0.7;
         cursor.x += cursor.vx;
         cursor.y += cursor.vy;
 
         const now = performance.now();
         const deltaTime = Math.min(Math.max(now - toolMorphLastTime, 0), 32);
         toolMorphLastTime = now;
-        toolMorphProgress = clamp(
-          toolMorphProgress + (deltaTime / toolMorphDuration) * (1 + toolExitPace * 1.45),
-          0,
-          1,
-        );
+        toolMorphProgress = clamp(toolMorphProgress + deltaTime / toolMorphDuration, 0, 1);
 
-        // One cubic geometry curve replaces sequential rectangle/square/ball
-        // phases. The two 5%-smaller sizes act as control points, so they shape
-        // one uninterrupted path without becoming visible stops.
         const cursorDiameter = cursorRadius * 2;
-        const geometryProgress = toolMorphProgress;
-        const inverseProgress = 1 - geometryProgress;
+        const inverseProgress = 1 - toolMorphProgress;
         const startWeight = inverseProgress ** 3;
-        const nearSquareWeight = 3 * inverseProgress ** 2 * geometryProgress;
-        const largeBallWeight = 3 * inverseProgress * geometryProgress ** 2;
-        const cursorWeight = geometryProgress ** 3;
+        const nearSquareWeight = 3 * inverseProgress ** 2 * toolMorphProgress;
+        const largeBallWeight = 3 * inverseProgress * toolMorphProgress ** 2;
+        const cursorWeight = toolMorphProgress ** 3;
         const morphWidth =
           startWeight * toolMorphStartWidth +
           nearSquareWeight * toolMorphNearSquareSize +
@@ -1290,14 +1565,11 @@ export function FluidCursor() {
         fallback.style.inlineSize = `${morphWidth}px`;
         fallback.style.blockSize = `${morphHeight}px`;
         fallback.style.borderRadius = `${Math.min(morphRadius, smallerSide / 2)}px`;
+        fallback.style.padding = `${0.75 * inverseProgress}rem ${0.85 * inverseProgress}rem`;
+        fallback.style.boxShadow = "none";
 
-        const surfaceProgress = toolMorphProgress;
-        fallback.style.padding = `${0.75 * (1 - surfaceProgress)}rem ${0.85 * (1 - surfaceProgress)}rem`;
-        fallback.style.boxShadow = `0 ${0.5 - surfaceProgress * 0.32}rem ${1.4 - surfaceProgress * 0.9}rem color-mix(in srgb, var(--cursor) ${Math.round(26 * (1 - surfaceProgress))}%, transparent)`;
-
-        // Spring position starts immediately. Once both axes are genuinely
-        // circular, blend in the normal cursor's velocity-based deformation;
-        // the rectangular portion remains level and cannot twist.
+        // A rectangle stays level. As it becomes circular, blend in the same
+        // directional stretch and rotation used by the ordinary mouse ball.
         const speed = Math.min(Math.hypot(cursor.vx, cursor.vy), 28);
         const stretchReadiness = smootherstep(
           0,
@@ -1321,6 +1593,10 @@ export function FluidCursor() {
       cursor.vy = (cursor.vy + (pointer.y - cursor.y) * 0.12) * 0.7;
       cursor.x += cursor.vx;
       cursor.y += cursor.vy;
+      if (pendingToolActivation && Math.hypot(pointer.x - cursor.x, pointer.y - cursor.y) < 1.5) {
+        pendingToolActivation = false;
+        window.requestAnimationFrame(activateToolUnderPointer);
+      }
       setActiveTarget(cursor.x, cursor.y);
       const pointerNearTarget = isNearTarget(pointer.x, pointer.y);
       const speed = Math.min(Math.hypot(cursor.vx, cursor.vy), 28);
@@ -1369,7 +1645,7 @@ export function FluidCursor() {
           clearLiquidFrame();
           fallback.classList.add("fluid-cursor--liquid-handoff");
         }
-        syncNegativeMask(cursor.x, cursor.y);
+        syncNegativeMask(cursor.x, cursor.y, angle, stretch);
         fallback.classList.add("fluid-cursor--visible");
         fallback.style.transform = `translate3d(${cursor.x}px, ${cursor.y}px, 0) translate(-50%, -50%) rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch * 0.52})`;
         canvas?.classList.remove("is-visible");
@@ -1405,8 +1681,6 @@ export function FluidCursor() {
       }
       if (activeTool) return;
       if (toolMorphing) {
-        // render() runs the exit spring immediately; no still-pointer bridge
-        // is needed, and a distant move increases its pace on the next frame.
         startLoop();
         return;
       }
@@ -1425,20 +1699,7 @@ export function FluidCursor() {
     };
 
     const resetTargets = () => {
-      activeTarget?.element.removeAttribute("data-liquid-active");
-      activeTarget?.element.removeAttribute("data-liquid-rendered");
-      activeTarget?.element.removeAttribute("data-liquid-absorbed");
-      activeTarget = null;
-      targets.forEach((target) => {
-        target.element.removeAttribute("data-liquid-absorbed");
-        target.tx = 0;
-        target.ty = 0;
-        if (target.isOutline) {
-          target.surface.style.removeProperty("--liquid-ink-x");
-          target.surface.style.removeProperty("--liquid-ink-y");
-          target.surface.style.removeProperty("--liquid-ink-radius");
-        }
-      });
+      releaseLiquidTargets();
       startLoop();
     };
 
@@ -1446,6 +1707,7 @@ export function FluidCursor() {
       cursorSuppressed = true;
       liquidWasRendering = false;
       cursorResumeFallbackUntil = 0;
+      textMask.style.opacity = "0";
       canvas.classList.remove("is-visible");
       fallback.classList.remove("fluid-cursor--visible");
       resetTargets();
@@ -1470,6 +1732,8 @@ export function FluidCursor() {
       if (event.relatedTarget !== null) return;
       pointer.active = false;
       clearToolCursor();
+      clearNativeTextInk();
+      textMask.style.opacity = "0";
       fallback.classList.remove("fluid-cursor--visible");
       canvas.classList.remove("is-visible");
       resetTargets();
@@ -1502,7 +1766,13 @@ export function FluidCursor() {
     };
     const handleScroll = () => {
       isScrolling = true;
-      clearToolCursor();
+      pendingToolActivation = false;
+      // Begin the exact same tooltip-to-ball timeline as a hover exit. Do it
+      // only once per scroll gesture: repeated wheel events must not restart
+      // the morph and make it look slow or sticky.
+      if (activeTool || fallback.classList.contains("fluid-cursor--tool-popover")) {
+        clearToolCursor();
+      }
       const currentScrollX = window.scrollX;
       const currentScrollY = window.scrollY;
       const deltaX = currentScrollX - lastScrollX;
@@ -1542,6 +1812,9 @@ export function FluidCursor() {
         isScrolling = false;
         magneticTranslationSuspended = false;
         measureTargets();
+        // Pointerenter does not fire when scrolling moves a tool beneath a
+        // stationary cursor. Probe the element under it once scrolling stops.
+        activateToolUnderPointer();
         startLoop();
       }, scrollSettleDelay);
       startLoop();
@@ -1550,6 +1823,7 @@ export function FluidCursor() {
       if (document.hidden) {
         window.cancelAnimationFrame(frame);
         running = false;
+        textMask.style.opacity = "0";
         fallback.classList.remove("fluid-cursor--visible");
         canvas.classList.remove("is-visible");
       } else if (pointer.active) enterWindow();
@@ -1575,7 +1849,12 @@ export function FluidCursor() {
     targetResizeObserver = new ResizeObserver(() => scheduleMeasurement());
     refreshTargets();
     initializeWebGL();
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((records) => {
+      // Replacing the visual text clone is an internal paint operation. Do
+      // not feed it back into global target discovery on the following frame.
+      if (records.every((record) => record.target === textMask || textMask.contains(record.target))) return;
+      textMaskSource = null;
+      textMaskSignature = "";
       refreshTargets();
       if (!activeTool) startLoop();
     });
@@ -1608,16 +1887,20 @@ export function FluidCursor() {
 
     return () => {
       observer.disconnect();
+      nativePaintRuns.forEach((run) => run.removeAttribute("data-fluid-cursor-native-paint"));
+      nativePaintRuns.clear();
       themeStylesObserver.disconnect();
       targetResizeObserver.disconnect();
       window.cancelAnimationFrame(frame);
       window.cancelAnimationFrame(measurementFrame);
       window.cancelAnimationFrame(toolCopyFrame);
+      window.cancelAnimationFrame(toolEntryFrame);
       window.clearTimeout(scrollIdleTimer);
       window.clearTimeout(toolLeaveTimer);
       window.clearTimeout(toolCopyTimer);
       window.clearTimeout(toolEntryTimer);
       clearToolCursor();
+      textMask.style.opacity = "0";
       window.removeEventListener("pointermove", followPointer);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);

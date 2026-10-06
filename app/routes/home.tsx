@@ -11,7 +11,7 @@ const homeProjects = projects.slice(0, 5);
 export function meta(_args: Route.MetaArgs) {
   return routeMeta(
     "Portfolio home",
-    "Webapp design, accessible front-end implementation, production experience, and leadership presented through a proof-led portfolio structure.",
+    "Web App design, accessible front-end implementation, production experience, and leadership presented through a proof-led portfolio structure.",
     "/",
   );
 }

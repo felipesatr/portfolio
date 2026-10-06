@@ -264,7 +264,7 @@ export function Hero() {
                 aria-pressed={selectedAudience === audience.id}
                 onClick={() => selectAudience(audience.id)}
               >
-                {audience.label}
+                <span data-fluid-cursor-native-ink>{audience.label}</span>
               </button>
             ))}
           </div>

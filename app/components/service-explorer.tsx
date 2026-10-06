@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { services, type Service } from "~/content/services";
-import { ArrowUpRightIcon, CodeIcon, InterfaceIcon, SparkIcon } from "./icons";
+import { ArrowUpRightIcon, AutomationIcon, CodeIcon, InterfaceIcon } from "./icons";
 
 function ServiceIcon({ service }: { service: Service }) {
   if (service.icon === "code") return <CodeIcon size={30} />;
-  if (service.icon === "spark") return <SparkIcon size={30} />;
+  if (service.icon === "spark") return <AutomationIcon size={30} />;
   return <InterfaceIcon size={30} />;
 }
 

@@ -5,13 +5,13 @@ import type { Object3D } from "three";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
 import { publicAsset } from "~/lib/public-asset";
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, AutomationIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
 import { RevealTitle, SoftBlurText } from "./motion-reveal";
 import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
 
 function ServiceIcon({ service }: { service: Service }) {
   if (service.icon === "code") return <CodeIcon />;
-  if (service.icon === "spark") return <SparkIcon />;
+  if (service.icon === "spark") return <AutomationIcon />;
   if (service.icon === "strategy") return <StrategyIcon />;
   return <InterfaceIcon />;
 }
@@ -20,24 +20,67 @@ type StackTool = {
   badge: string;
   color: string;
   use: string;
+  icon?: string;
+  src?: string;
+  logoClass?: string;
+  framed?: boolean;
+  invert?: boolean;
+  solid?: boolean;
+  symbol?: "code";
 };
 
 /* Placeholder tiles keep this first pass asset-free. They can be replaced with
    licensed tool marks later without changing the stack interaction. */
 const stackTools: Record<string, StackTool> = {
-  Figma: { badge: "Fi", color: "#a259ff", use: "UI flows, responsive screens, and prototypes." },
-  HTML: { badge: "H", color: "#e44d26", use: "Semantic structure and accessible content." },
-  CSS: { badge: "C", color: "#264de4", use: "Visual systems, responsive layouts, and interaction polish." },
+  Figma: { badge: "Fi", color: "#ffffff", src: "/images/tool-logos/uxui-figma-tile.webp", solid: true, use: "Where the interface takes shape" },
+  Sketch: { badge: "Sk", color: "#ffffff", src: "/images/tool-logos/uxui-sketch-tile.webp", solid: true, use: "Even more UI flows and prototyping" },
+  "Adobe XD": { badge: "Xd", color: "#470137", src: "/images/tool-logos/uxui-adobe-xd-tile.webp", solid: true, use: "More UI flows and prototyping" },
+  DevTools: { badge: "</>", color: "#252525", src: "/images/tool-logos/uxui-devtools-tile.webp", solid: true, use: "Inspecting, testing and adjusting" },
+  "Coming soon": { badge: "—", color: "#64748b", use: "This toolset is being defined." },
+  Illustrator: { badge: "Ai", color: "#ff9a00", src: "/images/tool-logos/illustrator.webp", use: "For vectors, illustrations and graphic systems" },
+  Photoshop: { badge: "Ps", color: "#31a8ff", src: "/images/tool-logos/photoshop-fixed.webp", use: "Pixels and composition" },
+  InDesign: { badge: "Id", color: "#ff3366", src: "/images/tool-logos/indesign-fixed.webp", use: "For editorial layouts, documents and publications" },
+  Miro: { badge: "M", color: "#ffd02f", src: "/images/tool-logos/miro-fixed.webp?v=2", use: "Workshops, mapping and collaborative planning" },
+  Webflow: { badge: "W", color: "#146ef5", src: "/images/tool-logos/frontend-webflow-tile.webp", use: "For no-code web design and deployment #2" },
+  Framer: { badge: "Fr", color: "#000000", src: "/images/tool-logos/frontend-framer-tile.webp?v=3", solid: true, use: "For no-code web design and deployment #1" },
+  WordPress: { badge: "W", color: "#21759b", src: "/images/tool-logos/frontend-wordpress-tile.webp", use: "Alternative for content-managed website production" },
+  HTML: { badge: "H", color: "#f16529", src: "/images/tool-logos/frontend-html-tile.webp", use: "The bones of the page" },
+  CSS: { badge: "C", color: "#0096dc", src: "/images/tool-logos/frontend-css-tile.webp", use: "Shape, color, movement" },
+  React: { badge: "R", color: "#20232a", src: "/images/tool-logos/frontend-react-tile.webp", use: "Component-based interface development" },
+  TypeScript: { badge: "TS", color: "#3178c6", src: "/images/tool-logos/frontend-typescript-tile.webp", use: "For a little more clarity in the code" },
+  "React Router": { badge: "RR", color: "#ffffff", icon: "reactrouter/reactrouter-original", framed: true, use: "Client-side routing and page transitions." },
+  "Node.js": { badge: "N", color: "#ffffff", src: "/images/tool-logos/frontend-node-tile.webp", use: "JavaScript tooling and server-side workflows" },
+  "Three.js": { badge: "3D", color: "#111111", src: "/images/tool-logos/frontend-threejs-tile.webp", use: "For 3D in the browser" },
   "Design systems": { badge: "DS", color: "#7c3aed", use: "Reusable tokens, components, and states." },
   Workshops: { badge: "W", color: "#ea580c", use: "Aligning the problem, audience, and next decisions." },
   Research: { badge: "R", color: "#0f766e", use: "Clarifying audience needs and useful patterns." },
   "Content planning": { badge: "Cp", color: "#ca8a04", use: "Turning the message into useful, structured content." },
-  JavaScript: { badge: "JS", color: "#d4a800", use: "Small interactions and practical interface behavior." },
-  Git: { badge: "G", color: "#f05032", use: "Keeping implementation changes traceable and reviewable." },
-  GitHub: { badge: "GH", color: "#24292f", use: "Version control, collaboration, and project handoff." },
-  Vite: { badge: "V", color: "#646cff", use: "Fast front-end development and production builds." },
+  Notion: { badge: "N", color: "#111111", src: `${publicAsset("images/tool-logos/automation-notion-tile.webp")}?v=1`, solid: true, use: "For notes, planning and project documentation" },
+  Excel: { badge: "X", color: "#217346", use: "Structured data, planning, and practical analysis." },
+  PowerPoint: { badge: "P", color: "#d24726", use: "Presentations, narrative structure, and visual communication." },
+  "Monday.com": { badge: "M", color: "#ffffff", src: "/images/tool-logos/monday-square.webp", use: "Project planning and delivery tracking #1" },
+  Jira: { badge: "J", color: "#0052cc", src: "/images/tool-logos/jira-square.webp", use: "Project planning and delivery tracking #2" },
+  Confluence: { badge: "C", color: "#1868db", src: "/images/tool-logos/confluence-square.webp", use: "Shared technical and project documentation" },
+  "Microsoft 365": { badge: "M365", color: "#ffffff", src: "/images/tool-logos/microsoft-365-transparent.webp", solid: true, use: "Documents, planning, numbers and presentations" },
+  Slack: { badge: "S", color: "#4a154b", src: "/images/tool-logos/slack-transparent.webp", solid: true, use: "Team communication and workflow coordination" },
+  "Microsoft Teams": { badge: "T", color: "#ffffff", src: "/images/tool-logos/teams-transparent.webp", solid: true, use: "More team communication and workflow coordination" },
+  JavaScript: { badge: "JS", color: "#d4a800", src: "/images/tool-logos/frontend-javascript-tile.webp", use: "For behavior, interactions and feedback" },
+  Git: { badge: "G", color: "#ffffff", src: "/images/tool-logos/frontend-git-tile.webp", use: "Version control, tracing and reviewing" },
+  GitHub: { badge: "GH", color: "#24292f", icon: "github/github-original", use: "Version control, collaboration, and project handoff." },
+  Vite: { badge: "V", color: "#ffffff", src: "/images/tool-logos/frontend-vite-tile.webp", use: "Where the projects get moving" },
+  n8n: { badge: "n8n", color: "#ffffff", src: `${publicAsset("images/tool-logos/automation-n8n-tile.webp")}?v=1`, solid: true, use: "Workflow automation and integrations" },
+  Obsidian: { badge: "O", color: "#7c3aed", src: `${publicAsset("images/tool-logos/automation-obsidian-tile.webp")}?v=1`, solid: true, use: "Personal vault for research and reusable knowledge" },
+  "Google Sheets": { badge: "S", color: "#ffffff", src: `${publicAsset("images/tool-logos/automation-google-sheets-tile.webp")}?v=1`, solid: true, use: "Status, numbers and tracking" },
+  "Google Drive": { badge: "D", color: "#ffffff", src: `${publicAsset("images/tool-logos/automation-google-drive-tile.webp")}?v=1`, solid: true, use: "For assets and files" },
+  Mailchimp: { badge: "M", color: "#ffe01b", src: `${publicAsset("images/tool-logos/automation-mailchimp-tile.webp")}?v=1`, solid: true, use: "Email automation" },
+  Stripe: { badge: "S", color: "#635bff", src: `${publicAsset("images/tool-logos/automation-stripe-tile.webp")}?v=1`, solid: true, use: "For payments and receipts" },
+  Supabase: { badge: "Sb", color: "#000000", src: `${publicAsset("images/tool-logos/automation-supabase-tile.webp")}?v=1`, solid: true, use: "Authentication, storage and data" },
+  Codex: { badge: "Cx", color: "#111111", use: "Supervised coding workflows and implementation support." },
+  Make: { badge: "Mk", color: "#6d3df5", use: "Visual automation and connected workflows." },
   "No-code platforms": { badge: "NC", color: "#0891b2", use: "Shipping the right work with the right platform." },
-  ChatGPT: { badge: "AI", color: "#10a37f", use: "Drafting, exploring, and accelerating supervised workflows." },
+  ChatGPT: { badge: "AI", color: "#ffffff", src: `${publicAsset("images/tool-logos/automation-chatgpt-tile.webp")}?v=1`, solid: true, use: "Drafting, exploring and accelerating supervised workflows" },
+  Claude: { badge: "Cl", color: "#d97757", src: `${publicAsset("images/tool-logos/automation-claude-tile.webp")}?v=1`, solid: true, use: "For a second opinion and reviewing" },
+  "Pen and paper": { badge: "P", color: "#64748b", src: `${publicAsset("images/tool-logos/pen-line.webp")}?v=4`, use: "Early thinking, sketching, and rapid idea development." },
   "AI agents": { badge: "Ag", color: "#8b5cf6", use: "Assisted task flows with human checkpoints." },
   "Structured prompting": { badge: "P", color: "#ec4899", use: "Making AI output more reliable and repeatable." },
   "Automation tools": { badge: "Au", color: "#2563eb", use: "Reducing repetitive production work." },
@@ -45,6 +88,27 @@ const stackTools: Record<string, StackTool> = {
 };
 
 type CursorToolEvent = "portfolio-stack-tool-enter" | "portfolio-stack-tool-leave";
+
+const localDeviconNames = new Set([
+  "figma/figma-original",
+  "wordpress/wordpress-plain",
+  "html5/html5-original",
+  "css3/css3-original",
+  "react/react-original",
+  "typescript/typescript-original",
+  "reactrouter/reactrouter-original",
+  "nodejs/nodejs-original",
+  "threejs/threejs-original",
+  "notion/notion-original",
+  "javascript/javascript-original",
+  "git/git-original",
+  "github/github-original",
+  "vitejs/vitejs-original",
+]);
+
+const deviconSvg = (icon: string) => localDeviconNames.has(icon)
+  ? `/images/tool-logos/devicon-${icon.replace("/", "-")}.webp`
+  : `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${icon}.svg`;
 
 /* Magic Screen controls reuse the established stack-tile handoff, so one
    cursor owns every tooltip morph instead of running a second interaction. */
@@ -864,8 +928,8 @@ function VisualMemoryGame() {
     <article className="lab-preview__placeholder lab-preview__placeholder--1 lab-visual-memory" aria-label="Visual memory game" onPointerEnter={() => setIsPointerInsideGame(true)} onPointerLeave={() => setIsPointerInsideGame(false)}>
       <div className="lab-visual-memory__topline">
         <div className="lab-visual-memory__scoreline">
-          <span className="lab-visual-memory__level" data-fluid-cursor-negative-mask>{"Lvl " + level}</span>
-          {highScore !== null ? <span className="lab-visual-memory__high-score" data-fluid-cursor-negative-mask><SparkIcon size={15} /><span>{highScore}</span></span> : null}
+          <span className="lab-visual-memory__level" data-fluid-cursor-native-ink>{"Lvl " + level}</span>
+          {highScore !== null ? <span className="lab-visual-memory__high-score" data-fluid-cursor-native-ink><SparkIcon size={15} /><span>{highScore}</span></span> : null}
         </div>
         <div className="lab-visual-memory__actions">
           <span className="lab-visual-memory__lives" aria-label={lives + " lives remaining"}>{[0, 1, 2].map((heart) => <HeartIcon key={heart} className={heart >= lives ? "is-lost" : undefined} />)}</span>
@@ -909,11 +973,13 @@ function ServiceStack({ service }: { service: Service }) {
               }}
             >
               <span
-                className="service-stack__tile"
+              className={`service-stack__tile${item.icon || item.src || item.symbol ? " service-stack__tile--logo" : ""}${item.framed ? " service-stack__tile--framed" : ""}${item.solid ? " service-stack__tile--solid" : ""}`}
                 aria-hidden="true"
                 style={{ "--stack-tool-color": item.color } as CSSProperties}
               >
                 {item.badge}
+                {item.symbol === "code" ? <CodeIcon size={17} className="service-stack__symbol" /> : null}
+                {(item.icon || item.src) ? <img className={`service-stack__logo${item.invert ? " service-stack__logo--invert" : ""}${item.logoClass ? ` service-stack__logo--${item.logoClass}` : ""}`} src={item.src ?? deviconSvg(item.icon!)} alt="" aria-hidden="true" /> : null}
               </span>
             </button>
           );
@@ -1190,11 +1256,11 @@ function TypeRacer() {
     <article className="lab-preview__placeholder lab-preview__placeholder--3 lab-type-racer" aria-label="Type racer experiment">
       <button type="button" className={`lab-type-racer__restart${startedAt ? " is-visible" : ""}`} tabIndex={startedAt ? 0 : -1} aria-hidden={!startedAt} aria-label="Restart type racer" title="Restart type racer" data-cursor-tool data-cursor-title="" data-cursor-description="Restart timer" onClick={restart} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><RestartIcon /></button>
       <button type="button" className="lab-type-racer__info" aria-label="About this type racer" title="About this type racer" data-cursor-tool data-cursor-title="" data-cursor-description="Type the phrase exactly as it is in the shortest time possible!" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
-      <output className={`lab-type-racer__timer${completionTime !== null ? " is-complete" : ""}`} data-fluid-cursor-negative-mask aria-live="polite">{time}</output>
-      {highScore !== null ? <span className="lab-type-racer__high-score" data-fluid-cursor-negative-mask aria-label={`Best time ${formatTime(highScore)}`}><SparkIcon size={15} /><span>{formatTime(highScore)}</span></span> : null}
+      <output className={`lab-type-racer__timer${completionTime !== null ? " is-complete" : ""}`} data-fluid-cursor-native-ink aria-live="polite">{time}</output>
+      {highScore !== null ? <span className="lab-type-racer__high-score" data-fluid-cursor-native-ink aria-label={`Best time ${formatTime(highScore)}`}><SparkIcon size={15} /><span>{formatTime(highScore)}</span></span> : null}
       <p className="lab-type-racer__prompt" onPointerEnter={() => { isPointerInsidePrompt.current = true; if (startedAt && completionTime === null) scheduleInputCursorFade(); }} onPointerLeave={() => { isPointerInsidePrompt.current = false; clearInputCursorFade(); showTypeCursor(); }}>
-        <span data-fluid-cursor-negative-mask>{words.map((word, index) => <Fragment key={`${word}-${index}`}><span className={`lab-type-racer__word ${wordState(index)}${arrivingWordIndex === index ? " is-arriving" : ""}`}>{word}</span>{index < words.length - 1 ? " " : null}</Fragment>)}</span>
-        <span data-fluid-cursor-negative-mask>{isComplete ? "Done!" : `${entry.length}/${phrase.length}`}</span>
+        <span data-fluid-cursor-native-ink>{words.map((word, index) => <Fragment key={`${word}-${index}`}><span className={`lab-type-racer__word ${wordState(index)}${arrivingWordIndex === index ? " is-arriving" : ""}`}>{word}</span>{index < words.length - 1 ? " " : null}</Fragment>)}</span>
+        <span data-fluid-cursor-native-ink>{isComplete ? "Done!" : `${entry.length}/${phrase.length}`}</span>
       </p>
       <div className={`lab-type-racer__input-wrap${isInputPlaceholderVisible ? " is-placeholder-visible" : ""}${isInputVanishActive ? " is-vanishing" : ""}`}>
         <input ref={inputRef} aria-label="Type the displayed phrase" value={entry} onPointerEnter={() => { isPointerInsideInput.current = true; }} onPointerLeave={() => { isPointerInsideInput.current = false; inputClickPoint.current = null; clearInputCursorFade(); showTypeCursor(); }} onPointerDown={(event) => { inputClickPoint.current = { x: event.clientX, y: event.clientY }; hideTypeCursor(); }} onChange={(event) => { if (isInputVanishActive) { cancelInputVanish(); setIsInputVanishActive(false); setIsInputPlaceholderVisible(true); } const nextEntry = event.target.value; const previousWordIndex = entry ? entry.split(" ").length - 1 : -1; const nextWordIndex = nextEntry ? nextEntry.split(" ").length - 1 : -1; if (nextWordIndex > previousWordIndex) setArrivingWordIndex(nextWordIndex); else if (nextWordIndex < previousWordIndex) setArrivingWordIndex(null); if (resetElapsed !== null) { cancelTimerReset(); setElapsed(0); } if (!startedAt && nextEntry) setStartedAt(Date.now()); setEntry(nextEntry); scheduleInputCursorFade(); }} placeholder="Type it here" spellCheck="false" autoCapitalize="off" autoComplete="off" />
@@ -1418,8 +1484,8 @@ function SnakeGame() {
   return (
     <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-snake" aria-label="Snake game" onPointerEnter={() => setIsPointerInsideSnake(true)} onPointerLeave={() => { setIsPointerInsideSnake(false); boardActive.current = false; }}>
       <div className="lab-snake__topline">
-        <span className="lab-snake__score" data-fluid-cursor-negative-mask><i aria-hidden="true" />{String(score).padStart(2, "0")}</span>
-        <span className="lab-snake__high-score" data-fluid-cursor-negative-mask><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span>
+        <span className="lab-snake__score" data-fluid-cursor-native-ink><i aria-hidden="true" />{String(score).padStart(2, "0")}</span>
+        <span className="lab-snake__high-score" data-fluid-cursor-native-ink><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span>
         <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself! Use WASD or the arrow keys to move" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
       <div className={`lab-snake__board${status === "crashing" ? ` is-crashing${isCrashVertical ? " is-crash-vertical" : ""}` : status === "lost" || status === "won" ? " is-paused" : ""}`} onPointerEnter={() => { boardActive.current = true; }} aria-label={status === "playing" ? "Snake game board" : "Snake game"}>
@@ -1464,12 +1530,14 @@ function CalendarPreview() {
 }
 
 export function LabPreview() {
+  const [isTitleRevealed, setIsTitleRevealed] = useState(false);
+
   return (
-    <section className="lab-preview" id="lab&tools" aria-labelledby="lab-preview-heading">
+    <section className={`lab-preview${isTitleRevealed ? " lab-preview--title-revealed" : ""}`} id="lab&tools" aria-labelledby="lab-preview-heading">
       <div className="lab-grid">
         <div className="lab-grid__intro">
           <div className="lab-grid__title-fit">
-            <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} />
+            <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} onRevealComplete={() => setIsTitleRevealed(true)} />
           </div>
           <Link className="button button--secondary lab-grid__cta" to="/lab"><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
         </div>

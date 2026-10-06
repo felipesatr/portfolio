@@ -3,11 +3,15 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { SunIcon } from "./icons";
 
 const themes = [
-  { id: "dark", label: "Lavender dark" },
-  { id: "light", label: "Violet light" },
-  { id: "warm", label: "Terracotta warm" },
-  { id: "cool", label: "Teal cool" },
-  { id: "contrast", label: "Electric violet contrast" },
+  { id: "dark-sky", label: "Violet" },
+  { id: "dark-monochrome", label: "Signal red" },
+  { id: "dark-cyan", label: "Indigo" },
+  { id: "dark-berry", label: "Berry" },
+  { id: "dark", label: "Electric violet" },
+  { id: "warm", label: "Terracotta" },
+  { id: "light", label: "Blue-gray" },
+  { id: "cool", label: "Green teal" },
+  { id: "contrast", label: "Grayscale" },
 ] as const;
 
 type ThemeId = (typeof themes)[number]["id"];
@@ -25,7 +29,6 @@ function selectTheme(theme: ThemeId) {
 export function ThemeControl() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [hasPositionedTheme, setHasPositionedTheme] = useState(false);
   const controlRef = useRef<HTMLFieldSetElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isDraggingRef = useRef(false);
@@ -42,14 +45,16 @@ export function ThemeControl() {
     () => "dark",
   );
   const selectedIndex = themes.findIndex((theme) => theme.id === selectedTheme);
-  const visualIndex = hasPositionedTheme ? selectedIndex : 0;
+  const visualIndex = selectedIndex;
   const selectedLabel = themes[selectedIndex]?.label ?? themes[0].label;
   const visualLabel = themes[visualIndex]?.label ?? themes[0].label;
   const progress = `${(visualIndex / (themes.length - 1)) * 100}%`;
   const thumbOffset = `${visualIndex * 1.875}rem`;
+  const panelExpandedSize = `${((themes.length - 1) * 1.875) + 2.5}rem`;
   const themeStyles = {
     "--theme-progress": progress,
     "--theme-thumb-offset": thumbOffset,
+    "--theme-panel-expanded-size": panelExpandedSize,
   } as CSSProperties;
 
   useEffect(() => {
@@ -83,7 +88,6 @@ export function ThemeControl() {
     if (targetIndex === undefined) return;
 
     event.preventDefault();
-    setHasPositionedTheme(true);
     selectTheme(themes[targetIndex].id);
   };
 
@@ -98,7 +102,6 @@ export function ThemeControl() {
     const bottomCenter = rect.bottom - thumbRadius;
     const progressFromBottom = Math.min(1, Math.max(0, (bottomCenter - event.clientY) / travel));
     const nextIndex = Math.round(progressFromBottom * (themes.length - 1));
-    setHasPositionedTheme(true);
     selectTheme(themes[nextIndex].id);
   };
 
@@ -176,7 +179,6 @@ export function ThemeControl() {
             value={visualIndex}
             aria-valuetext={visualLabel}
             onChange={(event) => {
-              setHasPositionedTheme(true);
               selectTheme(themes[Number(event.currentTarget.value)].id);
             }}
             onKeyDown={handleKeyDown}

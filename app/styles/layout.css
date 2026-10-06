@@ -184,6 +184,14 @@
   overflow-y: auto;
 }
 
+/* The rail background matches the page beneath it. Making it transparent only
+   during native text recolouring lets the cursor remain visible below the
+   exact original nav glyphs while the rail's stacking context is elevated. */
+.desktop-rail.is-fluid-cursor-ink-layer {
+  z-index: 89;
+  background: transparent;
+}
+
 .rail__top {
   display: grid;
   gap: var(--space-3);
@@ -208,12 +216,21 @@
   inset-inline: clamp(0.75rem, 1.25vw, 2rem) clamp(0.75rem, 1.1vw, 1.75rem);
   display: grid;
   gap: 0.15rem;
-  font-size: 0.625rem;
+  font-size: 14px;
   margin: 0;
 }
 
 .rail-nav .nav-link {
   font-size: inherit;
+  min-block-size: 2.25rem;
+  font-weight: 600;
+  text-transform: none;
+  -webkit-text-stroke: 0;
+}
+
+.rail-nav__socials .nav-link {
+  font-weight: 1000;
+  -webkit-text-stroke: 0;
 }
 
 .rail-nav__socials {

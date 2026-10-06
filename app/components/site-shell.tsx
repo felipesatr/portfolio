@@ -29,17 +29,17 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
           end={item.href === "/"}
           className={({ isActive }) => `nav-link${isActive ? " nav-link--active" : ""}`}
         >
-          {item.label}
+          <span data-fluid-cursor-native-ink>{item.label}</span>
         </NavLink>
       ))}
       <a className="nav-link" href={publicAsset("resume-placeholder.txt")} target="_blank" rel="noreferrer">
-        Resume <span className="visually-hidden">placeholder, opens in a new tab</span>
+        <span data-fluid-cursor-native-ink>Resume</span> <span className="visually-hidden">placeholder, opens in a new tab</span>
       </a>
       {showSocials ? (
         <div className="rail-nav__socials" aria-label="Social profile placeholders">
-          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="LinkedIn profile placeholder">LinkedIn</span>
-          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="GitHub profile placeholder">GitHub</span>
-          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="Behance profile placeholder">Behance</span>
+          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="LinkedIn profile placeholder"><span data-fluid-cursor-native-ink>LinkedIn</span></span>
+          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="GitHub profile placeholder"><span data-fluid-cursor-native-ink>GitHub</span></span>
+          <span className="nav-link nav-link--placeholder" aria-disabled="true" title="Behance profile placeholder"><span data-fluid-cursor-native-ink>Behance</span></span>
         </div>
       ) : null}
     </nav>
@@ -55,10 +55,10 @@ function SiteFooter() {
       </div>
       <nav aria-label="Footer navigation">
         {navigation.map((item) => (
-          <NavLink key={item.href} to={item.href}>{item.label}</NavLink>
+          <NavLink key={item.href} to={item.href}><span data-fluid-cursor-native-ink>{item.label}</span></NavLink>
         ))}
-        <NavLink to="/privacy">Privacy</NavLink>
-        <NavLink to="/accessibility">Accessibility statement</NavLink>
+        <NavLink to="/privacy"><span data-fluid-cursor-native-ink>Privacy</span></NavLink>
+        <NavLink to="/accessibility"><span data-fluid-cursor-native-ink>Accessibility statement</span></NavLink>
       </nav>
       <span>V0 · Built for keyboard access, readable contrast, and reduced motion. <NavLink to="/accessibility">Read the accessibility statement</NavLink>.</span>
     </footer>

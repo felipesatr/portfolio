@@ -2,7 +2,7 @@ import type { MetaDescriptor } from "react-router";
 
 export const siteContent = {
   name: "Name placeholder",
-  title: "Webapp Designer & Front-End Developer",
+  title: "Web App Designer & Front-End Developer",
   headline: "Design the interface. Understand the constraints. Finish the work.",
   // Provisional V0 copy. Replace only after the positioning review.
   supportingStatement:

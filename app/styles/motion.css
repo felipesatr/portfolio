@@ -159,6 +159,40 @@
   filter: none;
 }
 
+/* The Lab title establishes the section before its interactive surfaces
+   arrive. This prevents a lower card entering view from jumping ahead of the
+   heading, while retaining the normal observer behaviour when the title is
+   already visible. */
+.soft-reveal-ready .lab-preview:not(.lab-preview--title-revealed) :is(
+  .lab-preview__placeholder,
+  .lab-snake,
+  .lab-calendar
+) {
+  opacity: 0;
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.soft-reveal-ready .lab-preview.lab-preview--title-revealed :is(
+  .lab-preview__placeholder,
+  .lab-snake,
+  .lab-calendar
+).is-soft-revealed {
+  opacity: 1;
+  filter: none;
+  pointer-events: auto;
+  transition-delay: var(--lab-reveal-delay, 0ms);
+}
+
+/* Requested visual sequence: 02, Visual Memory, Type Racer, Snake, Calendar,
+   then the 3D models card. */
+.lab-preview__placeholder--2 { --lab-reveal-delay: 0ms; }
+.lab-preview__placeholder--1 { --lab-reveal-delay: 120ms; }
+.lab-preview__placeholder--3 { --lab-reveal-delay: 240ms; }
+.lab-snake { --lab-reveal-delay: 360ms; }
+.lab-calendar { --lab-reveal-delay: 480ms; }
+.lab-preview__placeholder--6 { --lab-reveal-delay: 600ms; }
+
 /* Keep the initial screen intentionally empty around the headline. Once its
    word-by-word reveal resolves, these surfaces use the normal soft fade/unblur. */
 html[data-hero-intro] .desktop-rail,

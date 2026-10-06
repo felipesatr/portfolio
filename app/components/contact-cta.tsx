@@ -10,7 +10,7 @@ export function ContactCta() {
       <RevealTitle id="contact-cta-heading" lines={["Design judgment.", "Practical front-end.", "Finished work."]} />
       <div className="contact-cta__lower">
         <div>
-          <RevealText delay={120}>Open to webapp design, UI, design-focused front-end, and web-production roles.</RevealText>
+          <RevealText delay={120}>Open to Web App design, UI, design-focused front-end, and web-production roles.</RevealText>
           <span>{siteContent.location} · Remote availability placeholder</span>
         </div>
         <div className="contact-cta__actions">

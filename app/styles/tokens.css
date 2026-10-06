@@ -1,36 +1,46 @@
 :root,
 [data-theme="light"] {
   color-scheme: light;
-  --page: #fefefc;
-  --text: #171717;
-  --text-body: #373735;
-  --muted: #666660;
-  --line: #bdbcb6;
+  --page: #f0f5f9;
+  --text: #1e2022;
+  --text-body: #1e2022;
+  --muted: #52616b;
+  --line: #52616b;
   /* Shared neutral for explicit design directions that call for grey. */
   --grey: #b8b8b8;
-  --soft: #f2f1ec;
-  --soft-strong: #e5e3dc;
-  --inverse-bg: #171717;
-  --inverse-text: #fefefc;
-  --inverse-muted: #c8c8c2;
+  --soft: #c9d6df;
+  --soft-strong: #52616b;
+  --inverse-bg: #1e2022;
+  --inverse-text: #f0f5f9;
+  --inverse-muted: #c9d6df;
   /* Interaction roles — the current values are documented in
      docs/design/theme-colors.md. Components consume the role, never a raw
      palette value, so each theme can evolve independently. */
-  --primary: #6948e8;
-  --primary-hover: #5636c8;
-  --primary-ink: #ffffff;
-  --secondary: #e33333;
-  --secondary-hover: #bf2428;
-  --secondary-ink: #ffffff;
+  --primary: #52616b;
+  --primary-hover: var(--primary);
+  --primary-ink: #f0f5f9;
+  --primary-active: #1e2022;
+  --secondary: #1e2022;
+  --secondary-hover: var(--secondary);
+  --secondary-ink: #f0f5f9;
+  --secondary-active: #52616b;
+  --cta: var(--primary);
+  --cta-hover: var(--primary);
+  --cta-active: var(--primary-active);
+  --cta-ink: var(--primary-ink);
+  --cta-active-ink: var(--cta-ink);
+  --secondary-active-ink: var(--secondary-ink);
+  --cta-outline-hover: var(--primary);
+  --cta-outline-active: var(--primary);
   --accent: var(--primary);
   --focus: var(--primary);
-  --cursor: #171717;
-  --cursor-ink: #fefefc;
-  --theme-light: #fefefc;
-  --theme-dark: #171717;
-  --theme-warm: #e7ded0;
+  --cursor: #1e2022;
+  --cursor-ink: #f0f5f9;
+  --theme-light: #f0f5f9;
+  --theme-dark: #1b0044;
+  --theme-warm: #f2e9d7;
   --theme-cool: #dde4e1;
-  --theme-contrast: #6948e8;
+  --theme-contrast: #7f7f7f;
 
   --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -96,14 +106,18 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-theme="dark-cyan"],
+[data-theme="dark-sky"],
+[data-theme="dark-monochrome"],
+[data-theme="dark-berry"] {
   color-scheme: dark;
   --page: #0a0a0a;
   --text: #f5f5f1;
   --text-body: #deded8;
   --muted: #b9b9b2;
   --line: #555550;
-  --soft: #20201f;
+  --soft: #1c1c1e;
   --soft-strong: #2d2d2a;
   --inverse-bg: #f1f1ed;
   --inverse-text: #161616;
@@ -120,24 +134,177 @@
   --cursor-ink: #0a0a0a;
 }
 
+/* Shared dark-theme defaults; individual palettes override roles as needed. */
+[data-theme="dark"] {
+  --page: #1b0044;
+  --text: #ffffff;
+  --text-body: #d6c5f0;
+  --muted: #d6c5f0;
+  --line: #9153f4;
+  --soft: #5727a3;
+  --soft-strong: #9153f4;
+  --inverse-bg: #d6c5f0;
+  --inverse-text: #1b0044;
+  --inverse-muted: #5727a3;
+  --primary: #9153f4;
+  --primary-hover: #d6c5f0;
+  --primary-ink: #1b0044;
+  --primary-active: #5727a3;
+  --accent: #9153f4;
+  --focus: #d6c5f0;
+  --cursor: #d6c5f0;
+  --cursor-ink: #1b0044;
+  --cta: #5727a3;
+  --cta-hover: var(--cta);
+  --cta-active: #1b0044;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
+  --cta-outline-hover: var(--cta);
+  --cta-outline-active: var(--cta-active);
+  --secondary: #9153f4;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #5727a3;
+  --secondary-ink: #ffffff;
+}
+
+[data-theme="dark-cyan"] {
+  color-scheme: dark;
+  --page: #190482;
+  --text: #ffffff;
+  --text-body: #c2d9ff;
+  --muted: #8e8ffa;
+  --line: #8e8ffa;
+  --soft: #7752fe;
+  --soft-strong: #8e8ffa;
+  --inverse-bg: #c2d9ff;
+  --inverse-text: #190482;
+  --inverse-muted: #7752fe;
+  --primary: #8e8ffa;
+  --primary-hover: #c2d9ff;
+  --primary-ink: #190482;
+  --primary-active: #7752fe;
+  --accent: #8e8ffa;
+  --focus: #c2d9ff;
+  --cursor: #c2d9ff;
+  --cursor-ink: #190482;
+  --cta: #7752fe;
+  --cta-hover: var(--cta);
+  --cta-active: #5b35d5;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
+  --cta-outline-hover: var(--cta);
+  --cta-outline-active: var(--cta-active);
+  --secondary: #c2d9ff;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #8e8ffa;
+  --secondary-ink: var(--cta-ink);
+}
+
+[data-theme="dark-sky"] {
+  --cta: #4803b4;
+  --cta-hover: var(--cta);
+  --cta-active: #33027f;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --secondary: #7752fe;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #5b35d5;
+  --secondary-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
+  --cta-outline-hover: var(--cta);
+  --cta-outline-active: var(--cta-active);
+}
+
+[data-theme="dark-monochrome"] {
+  --page: #252525;
+  --text: #ffffff;
+  --text-body: #f0f0f0;
+  --muted: #c9c9c9;
+  --line: #414141;
+  --soft: #414141;
+  --soft-strong: #414141;
+  --inverse-bg: #414141;
+  --inverse-text: #ffffff;
+  --inverse-muted: #c9c9c9;
+  --primary: #ff0000;
+  --primary-hover: var(--primary);
+  --primary-ink: #000000;
+  --primary-active: #af0404;
+  --accent: #ff0000;
+  --focus: #af0404;
+  --cursor: #ff0000;
+  --cursor-ink: #252525;
+  --cta: #ad0000;
+  --cta-hover: var(--cta);
+  --cta-active: #af0404;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --cta-outline-hover: var(--cta);
+  --cta-outline-active: var(--cta-active);
+  --secondary: #e60000;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #af0404;
+  --secondary-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
+}
+
+[data-theme="dark-berry"] {
+  color-scheme: dark;
+  --page: #3a0519;
+  --text: #ffffff;
+  --text-body: #f8e8ee;
+  --muted: #ef88ad;
+  --line: #a53860;
+  --soft: #670d2f;
+  --soft-strong: #a53860;
+  --inverse-bg: #ef88ad;
+  --inverse-text: #3a0519;
+  --inverse-muted: #670d2f;
+  --primary: #ef88ad;
+  --primary-hover: var(--primary);
+  --primary-ink: #3a0519;
+  --primary-active: #670d2f;
+  --accent: #ef88ad;
+  --focus: #ef88ad;
+  --cursor: #ef88ad;
+  --cursor-ink: #3a0519;
+  --cta: #a53860;
+  --cta-hover: var(--cta);
+  --cta-active: #670d2f;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --cta-outline-hover: var(--cta);
+  --cta-outline-active: var(--cta-active);
+  --secondary: #ef88ad;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #a53860;
+  --secondary-ink: #3a0519;
+  --secondary-active-ink: #ffffff;
+}
+
 [data-theme="warm"] {
   color-scheme: light;
-  --page: #f4eee5;
+  --page: #f2e9d7;
   --text: #281d17;
   --text-body: #4f3d33;
   --muted: #746257;
-  --line: #b9a99d;
+  --line: #c5b6a4;
   --soft: #e9dfd2;
   --soft-strong: #d8c9b8;
   --inverse-bg: #2d211a;
   --inverse-text: #fff8ed;
   --inverse-muted: #d6c7b7;
-  --primary: #9c4d2c;
-  --primary-hover: #7e3c22;
-  --primary-ink: #fff8ed;
-  --secondary: #386f62;
-  --secondary-hover: #28584d;
-  --secondary-ink: #f4fbf7;
+  --primary: #d97757;
+  --primary-hover: var(--primary);
+  --primary-active: #d97757;
+  --primary-ink: #ffffff;
+  --secondary: #b84131;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #b84131;
+  --secondary-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
   --accent: var(--primary);
   --focus: var(--primary);
   --cursor: #281d17;
@@ -159,9 +326,10 @@
   --primary: #216f70;
   --primary-hover: #18595a;
   --primary-ink: #f5fffd;
-  --secondary: #90518d;
-  --secondary-hover: #733e70;
-  --secondary-ink: #fff9ff;
+  --secondary: #37babc;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #27989b;
+  --secondary-ink: #15211d;
   --accent: var(--primary);
   --focus: var(--primary);
   --cursor: #15211d;
@@ -180,12 +348,17 @@
   --inverse-bg: #000000;
   --inverse-text: #ffffff;
   --inverse-muted: #f1f1f1;
-  --primary: #4d19c4;
-  --primary-hover: #32008a;
+  --primary: #7f7f7f;
+  --primary-hover: var(--primary);
+  --primary-active: #7f7f7f;
   --primary-ink: #ffffff;
-  --secondary: #d9183d;
-  --secondary-hover: #ad102f;
+  --cta-ink: #ffffff;
+  --cta-active-ink: #ffffff;
+  --secondary: #323232;
+  --secondary-hover: var(--secondary);
+  --secondary-active: #323232;
   --secondary-ink: #ffffff;
+  --secondary-active-ink: #ffffff;
   --accent: var(--primary);
   --focus: var(--primary);
   --cursor: #000000;

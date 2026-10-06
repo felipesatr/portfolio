@@ -4,7 +4,7 @@ import { ServiceExplorer } from "~/components/service-explorer";
 import { routeMeta } from "~/content/site";
 
 export function meta(_args: Route.MetaArgs) {
-  return routeMeta("What I do", "Webapp design, accessible front-end production, and clearly scoped AI-assisted creative workflows.", "/services");
+  return routeMeta("What I do", "Web App design, accessible front-end production, and clearly scoped AI-assisted creative workflows.", "/services");
 }
 
 export default function Services() {

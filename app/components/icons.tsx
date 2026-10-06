@@ -1,4 +1,5 @@
 import {
+  AppleImac2021,
   ArrowDown,
   ArrowLeft,
   ArrowLeftCircle,
@@ -14,6 +15,7 @@ import {
   InfoCircle,
   Language,
   LightBulb,
+  MagicWand,
   NavArrowLeft,
   Play,
   Refresh,
@@ -22,7 +24,6 @@ import {
   SunLight,
   Trash,
   ViewGrid,
-  WindowTabs,
 } from "iconoir-react";
 
 interface IconProps {
@@ -116,7 +117,7 @@ export function RestartIcon({ size = 18, className }: IconProps) {
 }
 
 export function InterfaceIcon({ size = 28, className }: IconProps) {
-  return <WindowTabs {...sharedProps} className={className} width={size} height={size} />;
+  return <AppleImac2021 {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function CodeIcon({ size = 28, className }: IconProps) {
@@ -129,4 +130,8 @@ export function StrategyIcon({ size = 28, className }: IconProps) {
 
 export function SparkIcon({ size = 28, className }: IconProps) {
   return <Sparks {...sharedProps} className={className} width={size} height={size} />;
+}
+
+export function AutomationIcon({ size = 28, className }: IconProps) {
+  return <MagicWand {...sharedProps} className={className} width={size} height={size} />;
 }

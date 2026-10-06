@@ -5,7 +5,7 @@ import { routeMeta, siteContent } from "~/content/site";
 import { publicAsset } from "~/lib/public-asset";
 
 export function meta(_args: Route.MetaArgs) {
-  return routeMeta("Contact", "Direct contact details for webapp design and design-focused front-end opportunities.", "/contact");
+  return routeMeta("Contact", "Direct contact details for Web App design and design-focused front-end opportunities.", "/contact");
 }
 
 export default function Contact() {
@@ -14,7 +14,7 @@ export default function Contact() {
       <PageHeader
         eyebrow="Contact / Placeholder details"
         title="For roles where design judgment and implementation both matter."
-        intro="Open to webapp design, UI design, design-focused front-end, web production, and related opportunities. Replace every placeholder below before public launch."
+        intro="Open to Web App design, UI design, design-focused front-end, web production, and related opportunities. Replace every placeholder below before public launch."
       />
       <section className="contact-directory" aria-labelledby="contact-directory-heading">
         <h2 id="contact-directory-heading" className="visually-hidden">Contact directory</h2>

@@ -30,13 +30,25 @@ export function SpotlightGrid({
       y = event.clientY;
       if (!frame) frame = window.requestAnimationFrame(updateSpotlight);
     };
+    const clearSpotlight = () => {
+      x = -1000;
+      y = -1000;
+      if (!frame) frame = window.requestAnimationFrame(updateSpotlight);
+    };
+    const clearWhenLeavingDocument = (event: PointerEvent) => {
+      if (!event.relatedTarget) clearSpotlight();
+    };
 
-    grid.addEventListener("pointerenter", syncPointer, { passive: true });
-    grid.addEventListener("pointermove", syncPointer, { passive: true });
+    // Track the fixed viewport point globally so the border keeps moving away
+    // from a card. Reset only when the pointer truly leaves the document.
+    window.addEventListener("pointermove", syncPointer, { passive: true });
+    document.addEventListener("pointerout", clearWhenLeavingDocument, { passive: true });
+    window.addEventListener("blur", clearSpotlight);
     return () => {
       window.cancelAnimationFrame(frame);
-      grid.removeEventListener("pointerenter", syncPointer);
-      grid.removeEventListener("pointermove", syncPointer);
+      window.removeEventListener("pointermove", syncPointer);
+      document.removeEventListener("pointerout", clearWhenLeavingDocument);
+      window.removeEventListener("blur", clearSpotlight);
     };
   }, []);
 

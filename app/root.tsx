@@ -83,7 +83,7 @@ const earlyPreferenceScript = `
 
       const savedTheme = localStorage.getItem('portfolio-theme');
       const themeIds = ['dark-sky', 'dark-monochrome', 'dark-cyan', 'dark-berry', 'dark', 'warm', 'light', 'cool', 'contrast'];
-      if (savedTheme && themeIds.includes(savedTheme)) root.dataset.theme = savedTheme;
+      root.dataset.theme = themeIds.includes(savedTheme) ? savedTheme : themeIds[0];
     } catch (_) {}
   })();
 `;

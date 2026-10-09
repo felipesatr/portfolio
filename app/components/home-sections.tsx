@@ -1,19 +1,21 @@
 import { Link } from "react-router";
 import { createPortal, flushSync } from "react-dom";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
-import type { Object3D } from "three";
+import { Download } from "iconoir-react";
+import type { BufferGeometry, Material, Object3D, Texture } from "three";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
 import { publicAsset } from "~/lib/public-asset";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, AutomationIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
 import { RevealTitle, SoftBlurText } from "./motion-reveal";
 import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
+import { LabCalendar } from "./lab-calendar";
 
-function ServiceIcon({ service }: { service: Service }) {
-  if (service.icon === "code") return <CodeIcon />;
-  if (service.icon === "spark") return <AutomationIcon />;
-  if (service.icon === "strategy") return <StrategyIcon />;
-  return <InterfaceIcon />;
+function ServiceIcon({ service, className }: { service: Service; className?: string }) {
+  if (service.icon === "code") return <CodeIcon className={className} />;
+  if (service.icon === "spark") return <AutomationIcon className={className} />;
+  if (service.icon === "strategy") return <StrategyIcon className={className} />;
+  return <InterfaceIcon className={className} />;
 }
 
 type StackTool = {
@@ -152,14 +154,33 @@ function includesMemoryCell(cells: MemoryCell[], cell: MemoryCell) {
 
 function DrawingPad() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const eraseCanvasRef = useRef<HTMLCanvasElement>(null);
+  const eraseFrameRef = useRef<number | null>(null);
   const drawingPointer = useRef<number | null>(null);
   const previousPoint = useRef<{ x: number; y: number } | null>(null);
+
+  const downloadDrawing = () => {
+    // The dots/page colour are CSS only, not pixels in this transparent canvas.
+    canvasRef.current?.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "work-of-art.png";
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, "image/png");
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const resize = () => {
+      if (eraseFrameRef.current !== null) {
+        window.cancelAnimationFrame(eraseFrameRef.current);
+        eraseFrameRef.current = null;
+      }
       const bounds = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const previous = document.createElement("canvas");
@@ -168,6 +189,11 @@ function DrawingPad() {
       previous.getContext("2d")?.drawImage(canvas, 0, 0);
       canvas.width = Math.max(1, Math.round(bounds.width * dpr));
       canvas.height = Math.max(1, Math.round(bounds.height * dpr));
+      const eraseCanvas = eraseCanvasRef.current;
+      if (eraseCanvas) {
+        eraseCanvas.width = canvas.width;
+        eraseCanvas.height = canvas.height;
+      }
       const context = canvas.getContext("2d");
       if (!context) return;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -185,9 +211,80 @@ function DrawingPad() {
     observer.observe(canvas);
     return () => {
       observer.disconnect();
+      if (eraseFrameRef.current !== null) window.cancelAnimationFrame(eraseFrameRef.current);
       document.documentElement.classList.remove("draw-cursor-hidden");
     };
   }, []);
+
+  const eraseDrawing = () => {
+    const canvas = canvasRef.current;
+    const eraseCanvas = eraseCanvasRef.current;
+    const context = canvas?.getContext("2d", { willReadFrequently: true });
+    const eraseContext = eraseCanvas?.getContext("2d", { willReadFrequently: true });
+    if (!canvas || !eraseCanvas || !context || !eraseContext) return;
+
+    if (eraseFrameRef.current !== null) window.cancelAnimationFrame(eraseFrameRef.current);
+    eraseFrameRef.current = null;
+    eraseContext.setTransform(1, 0, 0, 1, 0, 0);
+    eraseContext.clearRect(0, 0, eraseCanvas.width, eraseCanvas.height);
+
+    const source = context.getImageData(0, 0, canvas.width, canvas.height);
+    let hasInk = false;
+    const particles: Array<{ x: number; y: number; alpha: number; drift: number; lift: number; releasedAt: number | null }> = [];
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const sample = Math.max(1, Math.round(pixelRatio));
+    for (let y = 0; y < canvas.height; y += sample) {
+      for (let x = 0; x < canvas.width; x += sample) {
+        const alpha = source.data[(y * canvas.width + x) * 4 + 3];
+        if (alpha === 0) continue;
+        hasInk = true;
+        if (alpha < 96 || Math.random() < 0.18) continue;
+        particles.push({ x: x / pixelRatio, y: y / pixelRatio, alpha: alpha / 255, drift: 14 + Math.random() * 18, lift: (Math.random() - 0.5) * 12, releasedAt: null });
+      }
+    }
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    if (!hasInk || window.matchMedia("(prefers-reduced-motion: reduce)").matches || particles.length === 0) return;
+
+    const snapshot = document.createElement("canvas");
+    snapshot.width = canvas.width;
+    snapshot.height = canvas.height;
+    snapshot.getContext("2d")?.putImageData(source, 0, 0);
+    const startedAt = performance.now();
+    const waveDuration = 660;
+    const particleDuration = 380;
+    const width = eraseCanvas.width / pixelRatio;
+    const height = eraseCanvas.height / pixelRatio;
+    const draw = (now: number) => {
+      const waveProgress = Math.min(1, (now - startedAt) / waveDuration);
+      const sweep = width - (width + 8) * waveProgress;
+      eraseContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      eraseContext.clearRect(0, 0, width, height);
+      const preservedWidth = Math.min(width, Math.max(0, sweep + 3));
+      if (preservedWidth > 0) eraseContext.drawImage(snapshot, 0, 0, preservedWidth * pixelRatio, eraseCanvas.height, 0, 0, preservedWidth, height);
+      for (const particle of particles) {
+        if (particle.releasedAt === null && particle.x >= sweep - 3) particle.releasedAt = now;
+        if (particle.releasedAt === null) continue;
+        const progress = Math.min(1, (now - particle.releasedAt) / particleDuration);
+        if (progress >= 1) continue;
+        eraseContext.globalAlpha = particle.alpha * (1 - progress);
+        eraseContext.fillStyle = "#e8e8e8";
+        eraseContext.fillRect(particle.x + progress * particle.drift, particle.y + progress * particle.lift, 1.15, 1.15);
+      }
+      eraseContext.globalAlpha = 1;
+      const hasActiveParticles = particles.some((particle) => particle.releasedAt === null || now - particle.releasedAt < particleDuration);
+      if (waveProgress < 1 || hasActiveParticles) {
+        eraseFrameRef.current = window.requestAnimationFrame(draw);
+        return;
+      }
+      eraseContext.setTransform(1, 0, 0, 1, 0, 0);
+      eraseContext.clearRect(0, 0, eraseCanvas.width, eraseCanvas.height);
+      eraseFrameRef.current = null;
+    };
+    eraseFrameRef.current = window.requestAnimationFrame(draw);
+  };
 
   const pointFromEvent = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -203,7 +300,6 @@ function DrawingPad() {
 
   return (
     <article className="lab-preview__placeholder lab-preview__placeholder--2 lab-draw" aria-label="Drawing pad">
-      <span className="lab-preview__number">02</span>
       <canvas
         ref={canvasRef}
         className="lab-draw__canvas"
@@ -230,9 +326,13 @@ function DrawingPad() {
         onPointerUp={endStroke}
         onPointerCancel={endStroke}
       />
-      <div className="lab-draw__controls" aria-label="Drawing controls coming soon">
-        <span className="lab-draw__placeholders" aria-hidden="true"><i /><i /><i /></span>
-        <button type="button" className="lab-draw__info" aria-label="About this drawing pad" data-cursor-tool data-cursor-title="" data-cursor-description="A simple freehand canvas. More drawing controls are coming soon." onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
+      <canvas ref={eraseCanvasRef} className="lab-draw__erase-animation" aria-hidden="true" />
+      <div className="lab-draw__controls" aria-label="Drawing controls">
+        <div className="lab-draw__actions">
+          <button type="button" className="lab-draw__reset" aria-label="Clear drawing" data-cursor-tool data-cursor-compact data-cursor-title="" data-cursor-description="Clear drawing" onClick={eraseDrawing} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><RestartIcon /></button>
+          <button type="button" className="lab-draw__download" aria-label="Download work of art" data-cursor-tool data-cursor-compact data-cursor-width="152" data-cursor-title="" data-cursor-description="Download work of art" onClick={downloadDrawing} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><Download /></button>
+        </div>
+        <button type="button" className="lab-draw__info" aria-label="About this drawing pad" data-cursor-tool data-cursor-title="" data-cursor-description="A small space to sketch! Save your drawing or clear the canvas anytime" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
     </article>
   );
@@ -249,7 +349,27 @@ type CarTransitionController = {
   expand: (anchor: CarFrameAnchor, onComplete: () => void) => void;
   collapse: (anchor: CarFrameAnchor, onComplete: () => void) => void;
   finishCollapse: () => void;
+  changeModel: (index: number) => Promise<void>;
 };
+
+const showcaseCars = [
+  { name: "2017 Lexus LC 500", model: "models/gallery/lexus-lc-500-2017.glb", url: "https://sketchfab.com/3d-models/2017-lexus-lc-500-06f7ccfdf2aa4ef7afce64da59cacb16", author: "Ddiaz Design", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/", interiorVariant: "cream" },
+  { name: "2017 Lexus LC 500", model: "models/gallery/lexus-lc-500-2017.glb", url: "https://sketchfab.com/3d-models/2017-lexus-lc-500-06f7ccfdf2aa4ef7afce64da59cacb16", author: "Ddiaz Design", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/", interiorVariant: "red-and-black" },
+  { name: "1968 Lamborghini Miura P400", model: "models/miura/1968-lamborghini-miura-p400.glb", url: "https://sketchfab.com/3d-models/1968-lamborghini-miura-p400-d11a4c26add347d9b1b40ae0812fd83d", author: "Ddiaz Design", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/" },
+  { name: "1962 Ferrari 250 GTO", model: "models/1962-ferrari-250-gto.glb", url: "https://sketchfab.com/3d-models/1962-ferrari-250-gto-500aca7ef92c4a79b5026f6c8fc51ac3", author: "OUTPISTON", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/" },
+  { name: "Bugatti - La Voiture Noire", model: "models/bugatti/bugatti-la-voiture-noire.glb", url: "https://sketchfab.com/3d-models/bugatti-la-voiture-noire-b713f2e7c48842c194084cf42b0b7a5f", author: "SINNIK", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "2022 Apollo Project Evo", model: "models/gallery/apollo-project-evo-2022.glb", url: "https://sketchfab.com/3d-models/2022-apollo-project-evo-fd92ce955d6341e89143c564cc09ed14", author: "Ddiaz Design", license: "CC BY-NC 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc/4.0/" },
+  { name: "1936 Bugatti Type 57SC Atlantic", model: "models/gallery/bugatti-type-57sc-atlantic-1936.glb", url: "https://sketchfab.com/3d-models/1936-bugatti-type-57sc-atlantic-4d40726e8183405188b333189e235f3d", author: "Res1n", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "2021 Ferrari SF90 Spider", model: "models/gallery/ferrari-sf90-spider-2021.glb", url: "https://sketchfab.com/3d-models/2021-ferrari-sf90-spider-94a830f22c974dc2a8d437fab830456f", author: "Outlaw Games™", license: "CC BY-NC 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc/4.0/" },
+  { name: "BMW M8 F92 Coupé Competition", model: "models/gallery/bmw-m8-f92-coupe-competition.glb", url: "https://sketchfab.com/3d-models/bmw-m8-f92-coupe-competition-25d5b4f6d13e4217afa09bbf89f8d993", author: "kevin (ケビン)", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "Aston Martin DBS Superleggera 2019", model: "models/gallery/aston-martin-dbs-superleggera-2019.glb", url: "https://sketchfab.com/3d-models/aston-martin-dbs-superleggera-2019-c7fb95e6b7ce40df8e3c4a55b7ecf9d9", author: "kevin (ケビン)", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "1925 Rolls Royce Phantom I Jonckheere Coupe", model: "models/gallery/rolls-royce-phantom-i-jonckheere-coupe-1925.glb", url: "https://sketchfab.com/3d-models/1925-rolls-royce-phantom-i-jonckheere-coupe-1043f7cdbe1146df828a047dcbf42cc2", author: "Antonio Sagistiano", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "Pininfarina Battista", model: "models/gallery/pininfarina-battista.glb", url: "https://sketchfab.com/3d-models/pininfarina-battista-675658aa6cee4267877d8b83e20e096c", author: "kevin (ケビン)", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "2020 Mercedes AVTR Concept", model: "models/gallery/mercedes-avtr-concept-2020.glb", url: "https://sketchfab.com/3d-models/2020-mercedes-avtr-concept-thanks-100k-wiew-690b13f974254b16a1c8ea8d6b92275b", author: "kevin (ケビン)", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "2015 Mazda RX-Vision Concept", model: "models/gallery/mazda-rx-vision-2015.glb", url: "https://sketchfab.com/3d-models/2015-mazda-rx-vision-concept-a12b2f7d41dc4a54a4a55c7b7f8b0422", author: "kevin (ケビン)", license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { name: "2023 Ferrari 296 GTS", model: "models/gallery/ferrari-296-gts-2023.glb", url: "https://sketchfab.com/3d-models/2023-ferrari-296-gts-9a596b9d09414adfad64fc1f5fd019f9", author: "Ddiaz Design", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/" },
+  { name: "FREE - McLaren P1 MSO", model: "models/gallery/mclaren-p1-mso.glb", url: "https://sketchfab.com/3d-models/free-mclaren-p1-mso-c7687064e08c4be9a0af88e98bcf0a8e", author: "bohmerang", license: "CC BY-NC-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/" },
+] as const;
 
 function CarShowcase() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -262,6 +382,37 @@ function CarShowcase() {
   const [isExpanding, setIsExpanding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCameraTransitioning, setIsCameraTransitioning] = useState(false);
+  const [carIndex, setCarIndex] = useState(0);
+  const [isCarChanging, setIsCarChanging] = useState(false);
+  const carIndexRef = useRef(0);
+  const carChangingRef = useRef(false);
+
+  const changeCar = (step: number) => {
+    if (carChangingRef.current) return;
+    const next = Math.max(0, Math.min(showcaseCars.length - 1, carIndexRef.current + step));
+    if (next === carIndexRef.current) return;
+    const controller = transitionControllerRef.current;
+    if (!controller) return;
+    const previous = carIndexRef.current;
+    carChangingRef.current = true;
+    setIsCarChanging(true);
+    void (async () => {
+      // Let the current credit finish its fade/blur before changing its content.
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 180));
+      carIndexRef.current = next;
+      setCarIndex(next);
+      try {
+        await controller.changeModel(next);
+      } catch (error) {
+        carIndexRef.current = previous;
+        setCarIndex(previous);
+        console.error("Could not load car model", error);
+      } finally {
+        carChangingRef.current = false;
+        setIsCarChanging(false);
+      }
+    })();
+  };
 
   const setExpanded = (nextExpanded: boolean) => {
     expandedRef.current = nextExpanded;
@@ -338,14 +489,32 @@ function CarShowcase() {
   useEffect(() => {
     let disposed = false;
     let teardown = () => {};
+    let bootObserver: IntersectionObserver | null = null;
 
     void (async () => {
-      const [{ GLTFLoader }, THREE] = await Promise.all([
+      // Don't parse models or create a second WebGL context during the hero.
+      await new Promise<void>((resolve) => {
+        const stage = stageRef.current;
+        if (!stage) { resolve(); return; }
+        bootObserver = new IntersectionObserver(([entry]) => {
+          if (!entry?.isIntersecting) return;
+          bootObserver?.disconnect();
+          resolve();
+        }, { rootMargin: "800px" });
+        bootObserver.observe(stage);
+      });
+      if (disposed) return;
+      const [{ GLTFLoader }, THREE, { mergeGeometries }, { MeshoptDecoder: meshoptDecoder }] = await Promise.all([
         import("three/addons/loaders/GLTFLoader.js"),
         import("three"),
+        import("three/addons/utils/BufferGeometryUtils.js"),
+        import("three/addons/libs/meshopt_decoder.module.js"),
       ]);
       const stage = stageRef.current;
       if (!stage || disposed) return;
+      // Decoding neighbors stays off the animation's main thread.
+      meshoptDecoder.useWorkers(2);
+      const modelLoader = new GLTFLoader().setMeshoptDecoder(meshoptDecoder);
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
@@ -362,14 +531,13 @@ function CarShowcase() {
       const keyLight = new THREE.DirectionalLight(0xffffff, 4.2);
       keyLight.position.set(4, 6, 5);
       scene.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(0xffdc32, 1.1);
+      const rimLight = new THREE.DirectionalLight(0xffffff, 1.1);
       rimLight.position.set(-5, 2, -4);
       scene.add(rimLight);
 
       const defaultYaw = -0.55;
       const defaultPitch = 0.08;
       const defaultCameraDistance = 5.85;
-      const closeZoomThreshold = 4.1;
       let yaw = defaultYaw;
       let pitch = defaultPitch;
       let pointerId: number | null = null;
@@ -383,6 +551,42 @@ function CarShowcase() {
       let cameraDistance = defaultCameraDistance;
       let cameraTargetDistance = cameraDistance;
       let loadedModel: Object3D | null = null;
+      const modelCache = new Map<number, Object3D>();
+      const modelLoads = new Map<number, Promise<Object3D>>();
+      let currentModelIndex = 0;
+      let finishModelTransition: (() => void) | null = null;
+      let modelTransitionStarted = 0;
+      let transitionFrameTimes: number[] = [];
+      let transitionLastFrame = 0;
+      let carTriangles = 0;
+      let carDrawCalls = 0;
+      const preparedModels = new WeakMap<Object3D, Promise<void>>();
+      // Keep the outgoing image on the GPU: no PNG encoding, CPU readback,
+      // Image.decode, SVG masks or 48 DOM attribute writes per frame.
+      const outgoingFrame = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: true, stencilBuffer: false, samples: 2 });
+      const warmupFrame = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: true, stencilBuffer: false });
+      const blindsScene = new THREE.Scene();
+      const blindsCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const blindsMaterial = new THREE.ShaderMaterial({
+        depthTest: false, depthWrite: false, toneMapped: true,
+        uniforms: { frame: { value: outgoingFrame.texture }, background: { value: new THREE.Color() }, elapsed: { value: 0 }, forward: { value: 1 } },
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+        fragmentShader: `uniform sampler2D frame; uniform vec3 background; uniform float elapsed; uniform float forward; varying vec2 vUv;
+          void main() {
+            float column = min(floor(vUv.x * 24.0), 23.0);
+            float order = mix(column, 23.0 - column, forward);
+            float p = clamp((elapsed - order * 14.0) / 420.0, 0.0, 1.0);
+            p = p * p * (3.0 - 2.0 * p);
+            if (abs(fract(vUv.x * 24.0) - 0.5) * 2.0 >= 1.001 - p) discard;
+            vec4 old = texture2D(frame, vUv);
+            gl_FragColor = vec4(old.rgb, 1.0);
+            #include <tonemapping_fragment>
+            gl_FragColor.rgb = mix(background, gl_FragColor.rgb, old.a);
+            #include <colorspace_fragment>
+          }`,
+      });
+      const blindsGeometry = new THREE.PlaneGeometry(2, 2);
+      blindsScene.add(new THREE.Mesh(blindsGeometry, blindsMaterial));
       let hasStartedRendering = false;
       let lastRenderWidth = 0;
       let lastRenderHeight = 0;
@@ -471,6 +675,19 @@ function CarShowcase() {
         camera.position.z = cameraDistance;
         carGroup.rotation.set(pitch, yaw, 0);
         renderer.render(scene, camera);
+        carTriangles = renderer.info.render.triangles;
+        carDrawCalls = renderer.info.render.calls;
+        if (finishModelTransition) {
+          const now = performance.now();
+          const elapsed = now - modelTransitionStarted;
+          if (import.meta.env.DEV && transitionLastFrame) transitionFrameTimes.push(now - transitionLastFrame);
+          transitionLastFrame = now;
+          blindsMaterial.uniforms.elapsed.value = elapsed;
+          renderer.autoClear = false;
+          renderer.render(blindsScene, blindsCamera);
+          renderer.autoClear = true;
+          if (elapsed >= 742) finishModelTransition();
+        }
       };
 
       const resize = () => {
@@ -492,10 +709,289 @@ function CarShowcase() {
         // setPixelRatio() calls setSize() internally in this Three.js version.
         // This writes the drawing buffer only once for the new stage geometry.
         renderer.setDrawingBufferSize(width, height, pixelRatio);
+        // One reusable snapshot target, allocated only when its size changes.
+        outgoingFrame.setSize(renderer.domElement.width, renderer.domElement.height);
         return true;
       };
 
       const interpolate = (from: number, to: number, progress: number) => from + (to - from) * progress;
+      const disposeModel = (model: Object3D) => {
+        const geometries = new Set<BufferGeometry>();
+        const materials = new Set<Material>();
+        const textures = new Set<Texture>();
+        model.traverse((object: Object3D) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          geometries.add(object.geometry);
+          for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+            materials.add(material);
+            for (const value of Object.values(material)) {
+              if (value instanceof THREE.Texture) textures.add(value);
+            }
+          }
+        });
+        geometries.forEach((geometry) => geometry.dispose());
+        const bitmaps = new Set<ImageBitmap>();
+        textures.forEach((texture) => {
+          if (typeof ImageBitmap !== "undefined" && texture.source.data instanceof ImageBitmap) bitmaps.add(texture.source.data);
+          texture.dispose();
+        });
+        bitmaps.forEach((bitmap) => bitmap.close());
+        materials.forEach((material) => material.dispose());
+      };
+      const pruneModelCache = (center: number) => {
+        for (const [index, model] of modelCache) {
+          if (Math.abs(index - center) <= 1) continue;
+          modelCache.delete(index);
+          disposeModel(model);
+        }
+      };
+      const loadModel = async (index: number): Promise<Object3D> => {
+        const cached = modelCache.get(index);
+        if (cached) return cached;
+        const inFlight = modelLoads.get(index);
+        if (inFlight) return inFlight;
+        const car = showcaseCars[index];
+        if (!car) throw new RangeError(`No showcase car exists at index ${index}`);
+        const assetName = car.model.split("/").at(-1)!;
+        const request = modelLoader.loadAsync(publicAsset(`models/optimized/${assetName}`)).then(async (gltf) => {
+          const model = gltf.scene;
+          // The Bugatti GLB's forward axis is opposite to the other showcase cars.
+          if (car.name === "Bugatti - La Voiture Noire") model.rotation.y = Math.PI;
+          // The Type 57SC is authored along the X axis, unlike the gallery's
+          // Z-forward cars. Turn its nose toward the camera without mirroring it.
+          if (car.name === "1936 Bugatti Type 57SC Atlantic") model.rotation.y = -Math.PI / 2;
+          // Give the BMW the Miura's restrained metallic paint finish in blue,
+          // leaving its glass, lights, trim, wheels, and texture maps intact.
+          if (car.name === "BMW M8 F92 Coupé Competition") {
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial) || material.name !== "m8f92_CarPaint") continue;
+                material.color.set("#245d9f");
+                material.metalness = 0.10819;
+                material.roughness = 0.105737;
+                if (material instanceof THREE.MeshPhysicalMaterial) {
+                  material.specularIntensity = 0.163048;
+                  material.clearcoat = 0;
+                }
+              }
+            });
+          }
+          if (car.name === "1925 Rolls Royce Phantom I Jonckheere Coupe") {
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial) || material.name !== "Car_Base") continue;
+                material.color.set("#5f9e6e");
+                material.metalness = 0.28;
+                material.roughness = 0.3;
+              }
+            });
+          }
+          if (car.name === "2017 Lexus LC 500") {
+            const darkInterior = "interiorVariant" in car && car.interiorVariant === "red-and-black";
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+                if (material.name === "CUERO") {
+                  material.color.set(darkInterior ? "#29282b" : "#684b37");
+                  if (darkInterior) material.roughness = 0.44;
+                }
+                // Authored fabric is mustard yellow on the pillars and mirror
+                // housing. Keep it in the dashboard's muted cream-beige range,
+                // rather than the much lighter original recolor.
+                if (material.name === "TELA") material.color.set(darkInterior ? "#414348" : "#9e795e");
+                // This separate interior trim material carries the factory-dark
+                // details. Tint only this interior material red; CHROME remains
+                // untouched so the metallic accents keep their original finish.
+                if (darkInterior && material.name === "Lexus_LC500TNR0_2018InteriorA_Material") material.color.set("#a51c2a");
+              }
+            });
+          }
+          if (car.name === "BMW M8 F92 Coupé Competition" || car.name === "2020 Mercedes AVTR Concept") {
+            const glassMaterialNames = car.name === "BMW M8 F92 Coupé Competition"
+              ? new Set(["m8f92_glass"])
+              : new Set(["avtr_glass", "avtr_glass.001"]);
+            const windowOpacity = car.name === "BMW M8 F92 Coupé Competition" ? 0.48 : 0.1;
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial) || !glassMaterialNames.has(material.name)) continue;
+                material.opacity = windowOpacity;
+                material.transparent = true;
+                material.depthWrite = false;
+                if (car.name === "BMW M8 F92 Coupé Competition") {
+                  material.color.set("#303b46");
+                  material.roughness = 0.18;
+                  material.metalness = 0;
+                } else if (car.name === "2020 Mercedes AVTR Concept") {
+                  material.color.setRGB(0.08, 0.09, 0.1);
+                  material.metalness = 0;
+                  material.roughness = 0;
+                }
+              }
+            });
+          }
+          if (car.name === "Aston Martin DBS Superleggera 2019") {
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial) || material.name !== "ext_glass") continue;
+                material.color.set("#343d46");
+                material.opacity = 0.36;
+                material.transparent = true;
+                material.depthWrite = false;
+                material.roughness = 0.18;
+                material.metalness = 0;
+              }
+            });
+          }
+          if (car.name === "2015 Mazda RX-Vision Concept") {
+            model.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial) || !["body", "body_add"].includes(material.name)) continue;
+                material.metalness = 0.12;
+                material.roughness = 0.62;
+              }
+            });
+          }
+          if (car.name === "Pininfarina Battista") {
+            const detachedWindow = model.getObjectByName("Window_Geo_lodA_battista_glass_0");
+            if (detachedWindow) {
+              detachedWindow.parent?.remove(detachedWindow);
+              if (detachedWindow instanceof THREE.Mesh) {
+                detachedWindow.geometry.dispose();
+              }
+            }
+          }
+          // Some exports split a static car into >1,000 opaque primitives.
+          // Batch only identical-material, compatible leaf meshes. Glass,
+          // skins, morphs, mirrored geometry and authored animations stay intact.
+          const meshList: InstanceType<typeof THREE.Mesh>[] = [];
+          model.traverse((object) => { if (object instanceof THREE.Mesh) meshList.push(object); });
+          if (meshList.length > 250 && !gltf.animations.length) {
+            model.updateMatrixWorld(true);
+            const inverseRoot = model.matrixWorld.clone().invert();
+            const buckets = new Map<string, InstanceType<typeof THREE.Mesh>[]>();
+            for (const mesh of meshList) {
+              const material = mesh.material;
+              if (mesh instanceof THREE.SkinnedMesh || mesh.children.length || !mesh.visible || Array.isArray(material) || material.transparent ||
+                Object.keys(mesh.geometry.morphAttributes).length || mesh.matrixWorld.determinant() < 0 ||
+                (material instanceof THREE.MeshPhysicalMaterial && material.transmission > 0)) continue;
+              const layout = Object.entries(mesh.geometry.attributes).map(([name, attribute]) => `${name}:${attribute.itemSize}:${attribute.normalized}:${attribute.array.constructor.name}`).sort().join("|");
+              const key = `${material.uuid}:${mesh.renderOrder}:${Boolean(mesh.geometry.index)}:${layout}`;
+              const bucket = buckets.get(key) ?? [];
+              bucket.push(mesh); buckets.set(key, bucket);
+            }
+            const removed = new Set<BufferGeometry>();
+            for (const bucket of buckets.values()) {
+              if (bucket.length < 2) continue;
+              await yieldForUpload();
+              if (disposed) { disposeModel(model); return model; }
+              const baked: BufferGeometry[] = [];
+              for (let part = 0; part < bucket.length; part++) {
+                const mesh = bucket[part];
+                baked.push(mesh.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverseRoot, mesh.matrixWorld)));
+                if (part % 12 === 11) await yieldForUpload();
+              }
+              const geometry = mergeGeometries(baked, false);
+              baked.forEach((part) => part.dispose());
+              if (!geometry) continue;
+              const merged = new THREE.Mesh(geometry, bucket[0].material);
+              merged.name = `Batched_${bucket[0].name}`;
+              merged.renderOrder = bucket[0].renderOrder;
+              bucket.forEach((mesh) => { removed.add(mesh.geometry); mesh.removeFromParent(); });
+              model.add(merged);
+            }
+            model.traverse((object) => { if (object instanceof THREE.Mesh) removed.delete(object.geometry); });
+            removed.forEach((geometry) => geometry.dispose());
+          }
+          const bounds = new THREE.Box3().setFromObject(model);
+          const centre = bounds.getCenter(new THREE.Vector3());
+          const size = bounds.getSize(new THREE.Vector3());
+          const scale = 4.55 / Math.max(size.x, size.y, size.z, 0.001);
+          model.scale.setScalar(scale);
+          model.position.copy(centre).multiplyScalar(-scale);
+          model.position.y += 0.08;
+          if (disposed || Math.abs(index - currentModelIndex) > 1) {
+            disposeModel(model);
+            return model;
+          }
+          modelCache.set(index, model);
+          return model;
+        }).finally(() => modelLoads.delete(index));
+        modelLoads.set(index, request);
+        return request;
+      };
+      const maintainModelWindow = (center: number) => {
+        pruneModelCache(center);
+        for (const index of [center - 1, center + 1]) {
+          if (index < 0 || index >= showcaseCars.length) continue;
+          void loadModel(index).then((model) => {
+            if (!disposed && modelCache.get(index) === model) return prepareModel(model);
+          }).catch((error) => console.error(`Could not preload ${showcaseCars[index].name}`, error));
+        }
+      };
+      const yieldForUpload = () => new Promise<void>((resolve) => window.setTimeout(resolve, 16));
+      const prepareModel = (model: Object3D) => {
+        const existing = preparedModels.get(model);
+        if (existing) return existing;
+        const work = (async () => {
+          const textures = new Set<Texture>();
+          model.traverse((object) => {
+            if (!(object instanceof THREE.Mesh)) return;
+            for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+              for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+            }
+          });
+          // Upload separately instead of stalling the first frame of the wipe.
+          for (const texture of textures) {
+            await yieldForUpload();
+            if (disposed || !Array.from(modelCache.values()).includes(model)) return;
+            renderer.initTexture(texture);
+          }
+          if (disposed || !Array.from(modelCache.values()).includes(model)) return;
+          await renderer.compileAsync(model, camera, scene);
+          // The outgoing capture renders linear HDR; compile that variant too.
+          // Restore the target before awaiting, so the live loop stays intact.
+          renderer.setRenderTarget(warmupFrame);
+          const captureProgram = renderer.compileAsync(model, camera, scene);
+          renderer.setRenderTarget(null);
+          await captureProgram;
+          if (disposed || !Array.from(modelCache.values()).includes(model)) return;
+          const warmScene = new THREE.Scene();
+          warmScene.add(scene.children.find((object) => object instanceof THREE.HemisphereLight)!.clone(), keyLight.clone(), rimLight.clone());
+          warmScene.add(model);
+          renderer.setRenderTarget(warmupFrame);
+          renderer.render(warmScene, camera);
+          renderer.setRenderTarget(null);
+          warmScene.remove(model);
+        })();
+        preparedModels.set(model, work);
+        return work;
+      };
+      const revealNewModel = (direction: "left-to-right" | "right-to-left") => new Promise<void>((resolve) => {
+        modelTransitionStarted = performance.now();
+        transitionFrameTimes = [];
+        transitionLastFrame = 0;
+        blindsMaterial.uniforms.elapsed.value = 0;
+        blindsMaterial.uniforms.forward.value = direction === "right-to-left" ? 1 : 0;
+        finishModelTransition = () => {
+          finishModelTransition = null;
+          if (import.meta.env.DEV) {
+            const times = [...transitionFrameTimes].sort((a, b) => a - b);
+            stage.dataset.carTransitionStats = JSON.stringify({ model: showcaseCars[currentModelIndex].name, direction,
+              frames: times.length, p95: Number((times[Math.floor(times.length * 0.95)] ?? 0).toFixed(1)),
+              worst: Number((times.at(-1) ?? 0).toFixed(1)), cachedModels: modelCache.size,
+              triangles: carTriangles, drawCalls: carDrawCalls, textures: renderer.info.memory.textures });
+          }
+          resolve();
+        };
+        if (isVisible) startRendering();
+        else finishModelTransition();
+      });
       const clearClipReveal = () => {
         clipReveal?.cancel();
         clipReveal = null;
@@ -565,6 +1061,42 @@ function CarShowcase() {
           resize();
           applyProjection();
           paint();
+        },
+        changeModel: async (index) => {
+          const nextModel = await loadModel(index);
+          await prepareModel(nextModel);
+          if (disposed) return;
+          const direction = index > currentModelIndex ? "right-to-left" : "left-to-right";
+          paint();
+          if (!renderer.domElement.width || !renderer.domElement.height) {
+            throw new Error("The car stage has no drawable area for its blinds transition");
+          }
+          // Capture once on-GPU. This is opaque over the entire stage, not just
+          // the car silhouette, so the new car cannot leak through early.
+          renderer.setRenderTarget(outgoingFrame);
+          renderer.render(scene, camera);
+          renderer.setRenderTarget(null);
+          blindsMaterial.uniforms.background.value.set(getComputedStyle(stage).backgroundColor);
+          const installModel = () => {
+            if (loadedModel) carGroup.remove(loadedModel);
+            loadedModel = nextModel;
+            currentModelIndex = index;
+            carGroup.add(nextModel);
+            pruneModelCache(index);
+          };
+          installModel();
+          // Prime the incoming display variant behind a completely closed
+          // wipe before starting its clock. First-use driver work must not
+          // consume the wipe's duration and jump straight to its last frame.
+          blindsMaterial.uniforms.elapsed.value = 0;
+          blindsMaterial.uniforms.forward.value = direction === "right-to-left" ? 1 : 0;
+          paint();
+          renderer.autoClear = false;
+          renderer.render(blindsScene, blindsCamera);
+          renderer.autoClear = true;
+          const transition = revealNewModel(direction);
+          await transition;
+          if (!disposed) maintainModelWindow(index);
         },
       };
       const anchorDistance = () => cardAnchorRef.current?.distance ?? defaultCameraDistance;
@@ -678,7 +1210,7 @@ function CarShowcase() {
         cameraTargetDistance = Math.max(3.2, Math.min(defaultCameraDistance, cameraTargetDistance + delta * 0.006));
       };
       const onCanvasLeave = () => {
-        if (pointerId === null && cameraTargetDistance <= closeZoomThreshold && !expandedRef.current) isZoomReturning = true;
+        if (pointerId === null && cameraTargetDistance < defaultCameraDistance - 0.001 && !expandedRef.current) isZoomReturning = true;
       };
       renderer.domElement.addEventListener("pointerdown", onPointerDown);
       renderer.domElement.addEventListener("pointermove", onPointerMove);
@@ -694,7 +1226,7 @@ function CarShowcase() {
       const syncRenderVisibility = () => {
         isVisible = !document.hidden && (expandedRef.current || isIntersecting);
         if (isVisible) startRendering();
-        else stopRendering();
+        else { stopRendering(); finishModelTransition?.(); }
       };
       const visibilityObserver = new IntersectionObserver((entries) => {
         const entry = entries[0];
@@ -708,23 +1240,20 @@ function CarShowcase() {
       resize();
       paint();
 
-      new GLTFLoader().load(publicAsset("models/1962-ferrari-250-gto.glb"), (gltf) => {
-        if (disposed) return;
-        loadedModel = gltf.scene;
-        const bounds = new THREE.Box3().setFromObject(loadedModel);
-        const centre = bounds.getCenter(new THREE.Vector3());
-        const size = bounds.getSize(new THREE.Vector3());
-        const scale = 4.55 / Math.max(size.x, size.y, size.z);
-        loadedModel.position.sub(centre);
-        loadedModel.scale.setScalar(scale);
-        loadedModel.position.y += 0.08;
-        carGroup.add(loadedModel);
-        if (isVisible) paint();
-      });
+      void renderer.compileAsync(blindsScene, blindsCamera);
+      void loadModel(0).then(async (model) => {
+        await prepareModel(model);
+        if (disposed || currentModelIndex !== 0) return;
+        loadedModel = model;
+        carGroup.add(model);
+        maintainModelWindow(0);
+        paint();
+      }).catch((error) => console.error("Could not load Ferrari model", error));
 
       teardown = () => {
         if (transitionControllerRef.current === controller) transitionControllerRef.current = null;
         clearClipReveal();
+        finishModelTransition?.();
         window.cancelAnimationFrame(animationFrame);
         observer.disconnect();
         visibilityObserver.disconnect();
@@ -735,36 +1264,38 @@ function CarShowcase() {
         renderer.domElement.removeEventListener("pointercancel", onPointerEnd);
         renderer.domElement.removeEventListener("pointerleave", onCanvasLeave);
         renderer.domElement.removeEventListener("wheel", onWheel);
-        loadedModel?.traverse((object: Object3D) => {
-          if (!(object instanceof THREE.Mesh)) return;
-          object.geometry.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((material) => material.dispose());
-        });
+        modelCache.forEach(disposeModel);
+        modelCache.clear();
+        outgoingFrame.dispose();
+        warmupFrame.dispose();
+        blindsGeometry.dispose();
+        blindsMaterial.dispose();
         renderer.dispose();
+        meshoptDecoder.useWorkers(0);
         renderer.domElement.remove();
       };
     })();
 
     return () => {
       disposed = true;
+      bootObserver?.disconnect();
       teardown();
     };
   }, []);
 
   return (
     <>
-    <article className={`lab-preview__placeholder lab-preview__placeholder--6 lab-car${isExpanding ? " is-expanding" : ""}${isExpanded ? " is-expanded" : ""}${isCameraTransitioning ? " is-camera-transitioning" : ""}`} aria-label="Interactive Ferrari 250 GTO showcase">
-      <div ref={stageRef} className="lab-car__stage" aria-label="Rotate the Ferrari 250 GTO by dragging" onPointerEnter={() => setIsPointerInsideCar(true)} onPointerLeave={() => setIsPointerInsideCar(false)}>
+    <article className={`lab-preview__placeholder lab-preview__placeholder--6 lab-car${isExpanding ? " is-expanding" : ""}${isExpanded ? " is-expanded" : ""}${isCameraTransitioning ? " is-camera-transitioning" : ""}${isCarChanging ? " is-changing" : ""}`} aria-label="Interactive car showcase">
+      <div ref={stageRef} className="lab-car__stage" aria-label={`Rotate the ${showcaseCars[carIndex].name} by dragging`} onPointerEnter={() => setIsPointerInsideCar(true)} onPointerLeave={() => setIsPointerInsideCar(false)}>
         <button type="button" className="lab-car__expand" aria-label="Expand 3D showcase" onClick={beginExpand}><ExpandIcon size={17} /></button>
         <p className="lab-car__credit">
-          <a href="https://skfb.ly/pMsTp" target="_blank" rel="noreferrer">“1962 Ferrari 250 GTO”</a> by Dave Love, SketchFab, licensed under <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>.
+          <a href={showcaseCars[carIndex].url} target="_blank" rel="noreferrer">“{showcaseCars[carIndex].name}”</a> by {showcaseCars[carIndex].author}, Sketchfab, licensed under <a href={showcaseCars[carIndex].licenseUrl} target="_blank" rel="noreferrer">{showcaseCars[carIndex].license}</a>.
         </p>
       </div>
       <div className="lab-car__controls">
         <div className="lab-car__actions" aria-label="Car gallery controls">
-          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Previous car"><ArrowLeftIcon size={15} /></button>
-          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Next car"><ArrowRightIcon size={15} /></button>
+          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Previous car" disabled={carIndex === 0} onClick={() => changeCar(-1)}><ArrowLeftIcon size={15} /></button>
+          <button type="button" className="lab-car__action" data-fluid-cursor-surface data-fluid-cursor-dark-surface data-fluid-cursor-tight aria-label="Next car" disabled={carIndex === showcaseCars.length - 1} onClick={() => changeCar(1)}><ArrowRightIcon size={15} /></button>
         </div>
         <button type="button" className="lab-car__info" aria-label="About this 3D showcase" data-cursor-tool data-cursor-title="" data-cursor-description="Here’s a showcase of some of my all-time favorite cars, with details about each one! Scroll to zoom in or out, and drag to rotate the model" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
@@ -778,8 +1309,8 @@ function CarShowcase() {
             <span className="lab-car__back-label" aria-hidden="true">HOMEPAGE</span>
           </div>
           <div className="lab-car__expanded-nav" aria-label="Car gallery controls">
-            <button type="button" className="lab-car__action" aria-label="Previous car"><ArrowLeftIcon size={24} /></button>
-            <button type="button" className="lab-car__action" aria-label="Next car"><ArrowRightIcon size={24} /></button>
+            <button type="button" className="lab-car__action" aria-label="Previous car" disabled={carIndex === 0} onClick={() => changeCar(-1)}><ArrowLeftIcon size={24} /></button>
+            <button type="button" className="lab-car__action" aria-label="Next car" disabled={carIndex === showcaseCars.length - 1} onClick={() => changeCar(1)}><ArrowRightIcon size={24} /></button>
           </div>
         </div>
       </div>, document.body) : null}
@@ -932,7 +1463,7 @@ function VisualMemoryGame() {
           {highScore !== null ? <span className="lab-visual-memory__high-score" data-fluid-cursor-native-ink><SparkIcon size={15} /><span>{highScore}</span></span> : null}
         </div>
         <div className="lab-visual-memory__actions">
-          <span className="lab-visual-memory__lives" aria-label={lives + " lives remaining"}>{[0, 1, 2].map((heart) => <HeartIcon key={heart} className={heart >= lives ? "is-lost" : undefined} />)}</span>
+          <span className="lab-visual-memory__lives" data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask aria-label={lives + " lives remaining"}>{[0, 1, 2].map((heart) => <HeartIcon key={heart} className={heart >= lives ? "is-lost" : undefined} />)}</span>
           <button type="button" aria-label="How to play visual memory" data-cursor-tool data-cursor-title="" data-cursor-description="Watch the pattern, then repeat it. Three wrong clicks cost a life. See how far you can get!" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
         </div>
       </div>
@@ -948,10 +1479,10 @@ function VisualMemoryGame() {
     </article>
   );
 }
-function ServiceStack({ service }: { service: Service }) {
+function ServiceStack({ service, heading = "The stack:" }: { service: Service; heading?: string }) {
   return (
-    <section className="service-stack" aria-label={`The stack for ${service.title}`}>
-      <h6>The stack:</h6>
+    <section className="service-stack" aria-label={`${heading} for ${service.title}`}>
+      <h6>{heading}</h6>
       <div className="service-stack__tools">
         {service.tools.map((tool) => {
           const item = stackTools[tool] ?? { badge: tool.slice(0, 2), color: "#64748b", use: `Used for ${tool}.` };
@@ -989,26 +1520,54 @@ function ServiceStack({ service }: { service: Service }) {
   );
 }
 
-export function SkillsSection() {
+type SkillsSectionProps = {
+  experiment?: boolean;
+  idSuffix?: string;
+  cardVariant?: "default" | "stacked";
+  originalCopy?: boolean;
+  toolsLabel?: string;
+};
+
+const experimentSummaries: Record<string, string> = {
+  "webapp-ui-design": "I shape content, requirements, and user needs into clear responsive websites and interfaces that can move into production.",
+  "strategy-brand-consulting": "I clarify ideas, audiences, and visual direction before shaping useful brands and digital experiences.",
+  "front-end-technical-delivery": "I turn approved designs into responsive, accessible websites with code or the right no-code platform.",
+  "ai-workflows-automation": "I design supervised AI workflows, automate repetitive production work, and turn useful ideas into practical prototypes and tools.",
+};
+
+export function SkillsSection({ experiment = false, idSuffix, cardVariant = idSuffix === "third" ? "stacked" : "default", originalCopy = false, toolsLabel }: SkillsSectionProps = {}) {
   const [isProcessActionRevealed, setIsProcessActionRevealed] = useState(false);
+  const sectionId = experiment ? `skills${idSuffix ? `-${idSuffix}` : "-experiment"}` : "skills";
+  const headingId = experiment ? `skills-heading-cards${idSuffix ? `-${idSuffix}` : "-experiment"}` : "skills-heading-cards";
+  const usesStackedCards = cardVariant === "stacked";
 
   return (
-    <section className="skills-section what-i-do what-i-do--cards" id="skills" aria-labelledby="skills-heading-cards">
+    <section className={`skills-section what-i-do what-i-do--cards${experiment ? " what-i-do--experiment" : ""}${usesStackedCards ? " what-i-do--stacked" : ""}${idSuffix ? ` what-i-do--${idSuffix}` : ""}`} id={sectionId} aria-labelledby={headingId}>
       <div className="skills-section__intro">
-        <RevealTitle id="skills-heading-cards" lines={["What I do"]} />
+        <RevealTitle id={headingId} lines={["What I do"]} />
       </div>
       <SpotlightGrid className="service-summary-grid">
         {services.map((service) => (
-          <SpotlightCard key={service.id} className="service-summary-card">
-            <span className="service-summary-card__icon"><ServiceIcon service={service} /></span>
-            <h5>{service.cardTitle}</h5>
-            <p>{service.summary}</p>
-            <ServiceStack service={service} />
+          <SpotlightCard key={service.id} className={`service-summary-card${experiment ? " service-summary-card--experiment" : ""}`}>
+            <span className={`service-summary-card__icon${experiment ? " service-summary-card__icon--experiment" : ""}${service.icon === "strategy" ? " service-summary-card__icon--strategy" : ""}`}>
+              <ServiceIcon service={service} />
+            </span>
+            {experiment ? (
+              usesStackedCards ? (
+                <h5>{originalCopy ? service.cardTitle : service.id === "front-end-technical-delivery" ? "Code & No-Code Development" : service.cardTitle}</h5>
+              ) : (
+                <h6>{originalCopy ? service.cardTitle : service.id === "front-end-technical-delivery" ? "Code & No-Code Development" : service.cardTitle}</h6>
+              )
+            ) : (
+              <h5>{service.cardTitle}</h5>
+            )}
+            <p>{experiment && !originalCopy ? experimentSummaries[service.id] : service.summary}</p>
+            <ServiceStack service={service} heading={toolsLabel} />
           </SpotlightCard>
         ))}
       </SpotlightGrid>
       <div className="what-i-do__process">
-        <RevealTitle as="h3" lines={["How do I do it?"]} onRevealComplete={() => setIsProcessActionRevealed(true)} />
+        <RevealTitle as="h3" lines={["How do I do it?"]} onRevealSettled={() => setIsProcessActionRevealed(true)} />
         <Link
           className={`button button--secondary reveal-following-action${isProcessActionRevealed ? " is-revealed" : ""}`}
           to="/services"
@@ -1254,7 +1813,7 @@ function TypeRacer() {
 
   return (
     <article className="lab-preview__placeholder lab-preview__placeholder--3 lab-type-racer" aria-label="Type racer experiment">
-      <button type="button" className={`lab-type-racer__restart${startedAt ? " is-visible" : ""}`} tabIndex={startedAt ? 0 : -1} aria-hidden={!startedAt} aria-label="Restart type racer" title="Restart type racer" data-cursor-tool data-cursor-title="" data-cursor-description="Restart timer" onClick={restart} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><RestartIcon /></button>
+      <button type="button" className={`lab-type-racer__restart${startedAt ? " is-visible" : ""}`} tabIndex={startedAt ? 0 : -1} aria-hidden={!startedAt} aria-label="Restart type racer" data-cursor-tool data-cursor-compact data-cursor-title="" data-cursor-description="Restart timer" onClick={restart} onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><RestartIcon /></button>
       <button type="button" className="lab-type-racer__info" aria-label="About this type racer" title="About this type racer" data-cursor-tool data-cursor-title="" data-cursor-description="Type the phrase exactly as it is in the shortest time possible!" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       <output className={`lab-type-racer__timer${completionTime !== null ? " is-complete" : ""}`} data-fluid-cursor-native-ink aria-live="polite">{time}</output>
       {highScore !== null ? <span className="lab-type-racer__high-score" data-fluid-cursor-native-ink aria-label={`Best time ${formatTime(highScore)}`}><SparkIcon size={15} /><span>{formatTime(highScore)}</span></span> : null}
@@ -1485,7 +2044,7 @@ function SnakeGame() {
     <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-snake" aria-label="Snake game" onPointerEnter={() => setIsPointerInsideSnake(true)} onPointerLeave={() => { setIsPointerInsideSnake(false); boardActive.current = false; }}>
       <div className="lab-snake__topline">
         <span className="lab-snake__score" data-fluid-cursor-native-ink><i aria-hidden="true" />{String(score).padStart(2, "0")}</span>
-        <span className="lab-snake__high-score" data-fluid-cursor-native-ink><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span>
+        {highScore > 0 ? <span className="lab-snake__high-score" data-fluid-cursor-native-ink aria-label={`High score ${highScore}`}><SparkIcon size={15} /><span>{String(highScore).padStart(2, "0")}</span></span> : null}
         <button type="button" className="lab-snake__info" aria-label="How to play Snake" data-cursor-tool data-cursor-title="" data-cursor-description="Grow by eating the food scattered across the canvas and avoid crashing into the border or yourself! Use WASD or the arrow keys to move" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
       </div>
       <div className={`lab-snake__board${status === "crashing" ? ` is-crashing${isCrashVertical ? " is-crash-vertical" : ""}` : status === "lost" || status === "won" ? " is-paused" : ""}`} onPointerEnter={() => { boardActive.current = true; }} aria-label={status === "playing" ? "Snake game board" : "Snake game"}>
@@ -1504,48 +2063,29 @@ function SnakeGame() {
   );
 }
 
-function CalendarPreview() {
-  const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
-  // A visual-only first pass: September 2026 begins on a Tuesday.
-  const days = [
-    { value: 31, muted: true },
-    ...Array.from({ length: 30 }, (_, index) => ({ value: index + 1, muted: false })),
-    ...Array.from({ length: 4 }, (_, index) => ({ value: index + 1, muted: true })),
-  ];
-
-  return (
-    <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-calendar" aria-label="September 2026 calendar preview">
-      <div className="lab-calendar__header">
-        <strong>September</strong>
-        <span>2026</span>
-      </div>
-      <div className="lab-calendar__weekdays" aria-hidden="true">
-        {weekDays.map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
-      </div>
-      <div className="lab-calendar__dates" aria-hidden="true">
-        {days.map((day, index) => <span key={`${day.value}-${index}`} className={`${day.muted ? "is-muted" : ""}${day.value === 16 && !day.muted ? " is-today" : ""}`}>{day.value}</span>)}
-      </div>
-    </article>
-  );
-}
-
 export function LabPreview() {
   const [isTitleRevealed, setIsTitleRevealed] = useState(false);
+  const [isLabActionRevealed, setIsLabActionRevealed] = useState(false);
 
   return (
     <section className={`lab-preview${isTitleRevealed ? " lab-preview--title-revealed" : ""}`} id="lab&tools" aria-labelledby="lab-preview-heading">
       <div className="lab-grid">
         <div className="lab-grid__intro">
           <div className="lab-grid__title-fit">
-            <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} onRevealComplete={() => setIsTitleRevealed(true)} />
+            <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} onRevealComplete={() => setIsTitleRevealed(true)} onRevealSettled={() => setIsLabActionRevealed(true)} />
           </div>
-          <Link className="button button--secondary lab-grid__cta" to="/lab"><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
+          <Link
+            className={`button button--secondary lab-grid__cta reveal-following-action${isLabActionRevealed ? " is-revealed" : ""}`}
+            to="/lab"
+            tabIndex={isLabActionRevealed ? undefined : -1}
+            aria-hidden={!isLabActionRevealed}
+          ><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
         </div>
         <VisualMemoryGame />
         <DrawingPad />
         <TypeRacer />
         <SnakeGame />
-        <CalendarPreview />
+        <LabCalendar />
         <CarShowcase />
       </div>
     </section>
@@ -1557,20 +2097,30 @@ export function ExperienceSection() {
     <section className="experience-section" id="experience" aria-labelledby="experience-heading">
       <div className="experience-section__intro">
         <RevealTitle id="experience-heading" lines={["Career"]} />
-        <a className="button button--secondary" href={publicAsset("resume-placeholder.txt")} target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
+        <a className="button button--secondary" href={publicAsset("resume/felipe-salazar-cv.pdf")} target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
       </div>
       <ol className="experience-list experience-list--index">
         {experience.map((item) => (
           <li key={item.id}>
-            <span className="experience-list__logo" role="img" aria-label="Company logo placeholder"><span aria-hidden="true">Logo</span></span>
-            <div className="experience-list__role">
-              <h3>{item.title}</h3>
-              <p>{item.company}</p>
+            <div className="experience-list__identity">
+              <span className="experience-list__logo" role="img" aria-label={`${item.company} initials`}><span aria-hidden="true">{item.initials}</span></span>
+              <div className="experience-list__identity-copy">
+                <p className="experience-list__company-name">{item.company}</p>
+                <p className="experience-list__role">{item.title}</p>
+              </div>
             </div>
-            <SoftBlurText className="experience-list__contribution" delay={0}>{item.summary}</SoftBlurText>
+            <p className="experience-list__contribution">{item.summary}</p>
             <p className="experience-list__years">{item.years}</p>
           </li>
         ))}
+        <li className="experience-list__education">
+          <div className="experience-list__identity">
+            <img className="experience-list__university-logo" src={publicAsset("images/uniandes-logo.svg")} alt="Universidad de los Andes" width={300} height={126} loading="lazy" />
+            <p className="experience-list__degree">Bachelor’s degree in Design</p>
+          </div>
+          <p className="experience-list__contribution">Universidad de Los Andes</p>
+          <p className="experience-list__years">2024</p>
+        </li>
       </ol>
     </section>
   );

@@ -72,8 +72,8 @@
   --type-h2: calc(var(--grid-row) / 1.06);
   --type-h3: calc(4.25rem / 1.06);
   --type-h4: calc(2.5rem / 1.06);
-  --type-h5: calc(1.75rem / 1.06);
-  --type-h6: calc(1.25rem / 1.06);
+  --type-h5: calc(2rem / 1.06);
+  --type-h6: calc(1.7rem / 1.06);
 
   --space-1: 0.375rem;
   --space-2: 0.625rem;
@@ -203,6 +203,10 @@
 }
 
 [data-theme="dark-sky"] {
+  /* Theme 1's ordinary cursor is the same near-white as its text, not the
+     shared dark-theme fallback red. Pills inherit this exact cursor role. */
+  --cursor: var(--text);
+  --cursor-ink: var(--page);
   --cta: #4803b4;
   --cta-hover: var(--cta);
   --cta-active: #33027f;
@@ -234,7 +238,9 @@
   --primary-active: #af0404;
   --accent: #ff0000;
   --focus: #af0404;
-  --cursor: #ff0000;
+  /* Keep the mouse and text pills neutral-white in theme 2 rather than
+     introducing the theme's red accent into this global cursor interaction. */
+  --cursor: #ffffff;
   --cursor-ink: #252525;
   --cta: #ad0000;
   --cta-hover: var(--cta);
@@ -268,7 +274,7 @@
   --primary-active: #670d2f;
   --accent: #ef88ad;
   --focus: #ef88ad;
-  --cursor: #ef88ad;
+  --cursor: #ffffff;
   --cursor-ink: #3a0519;
   --cta: #a53860;
   --cta-hover: var(--cta);

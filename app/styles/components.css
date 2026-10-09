@@ -581,6 +581,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .hero-audience {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-5);
   block-size: 1.5rem;
@@ -604,6 +605,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .hero-audience button {
+  display: inline-flex;
+  align-items: center;
   block-size: 100%;
   min-block-size: 0;
   padding: 0 var(--space-2);
@@ -611,9 +614,10 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border-radius: var(--radius-pill);
   color: var(--muted);
   background: transparent;
-  font-size: 1rem;
+  font-size: 17.5px;
   font-weight: 800;
   letter-spacing: 0.015em;
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -626,6 +630,10 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .hero-audience button:focus-visible,
 .hero-audience button[aria-pressed="true"] {
   color: var(--text);
+}
+
+.hero-audience button[data-cursor-pill]:hover:not([data-cursor-pill-active]):not([aria-pressed="true"]) {
+  color: var(--muted);
 }
 
 .hero-audience button[aria-pressed="true"] {
@@ -673,8 +681,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   z-index: 40;
   display: grid;
   place-items: center;
-  inline-size: 4rem;
-  block-size: 4rem;
+  inline-size: 7rem;
+  block-size: 7rem;
   padding: 0;
   border: var(--border);
   border-radius: 50%;
@@ -1557,6 +1565,59 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
     opacity 100ms linear;
 }
 
+/* Navigation and audience labels use the cursor's tooltip-style geometry
+   transition, but resolve into a simple static pill: no magnetic pull and no
+   liquid/WebGL union. The real label stays above the moving fill. */
+.fluid-cursor--pill-highlight {
+  inline-size: var(--fluid-pill-width, 1.35rem);
+  block-size: var(--fluid-pill-height, 1.35rem);
+  padding: 0;
+  border-radius: 999px;
+  transform-origin: center;
+  background: var(--cursor);
+  box-shadow: none;
+  transition:
+    transform 380ms var(--ease-out),
+    inline-size 380ms var(--ease-out),
+    block-size 380ms var(--ease-out),
+    border-radius 380ms var(--ease-out),
+    opacity 100ms linear;
+}
+
+.fluid-cursor--pill-highlight.fluid-cursor--tool-entering {
+  transition:
+    transform 460ms var(--ease-out),
+    inline-size 460ms var(--ease-out),
+    block-size 460ms var(--ease-out),
+    border-radius 460ms var(--ease-out),
+    opacity 100ms linear;
+}
+
+.fluid-cursor--pill-highlight.is-fluid-cursor-pill-pressed {
+  /* Press feedback is a centered scale, so every edge moves together. */
+  transition: transform 50ms linear;
+  will-change: transform;
+}
+
+.fluid-cursor--pill-highlight .fluid-cursor__tool-copy {
+  opacity: 0 !important;
+}
+
+[data-cursor-pill-active] {
+  position: relative;
+  z-index: 1;
+  color: var(--cursor-ink) !important;
+}
+
+.desktop-rail.is-fluid-cursor-pill-layer {
+  z-index: 89;
+  background: transparent;
+}
+
+.hero-audience.is-fluid-cursor-pill-layer {
+  z-index: 89;
+}
+
 .fluid-cursor--liquid-handoff {
   transition: opacity 0ms linear !important;
 }
@@ -1583,7 +1644,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 .fluid-cursor--tool-popover .fluid-cursor__tool-copy {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
   transition-delay: 100ms;
 }
 
@@ -1631,9 +1692,9 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .fluid-cursor--tool-popover .fluid-cursor__tool-copy span {
-  filter: blur(0);
+  filter: none;
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
   transition-delay: 100ms;
 }
 
@@ -2140,6 +2201,164 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   min-block-size: calc(3.5 * var(--grid-row) + 1rem);
 }
 
+/* Section 2 experiment: keep the cards in one desktop row. */
+.what-i-do--experiment .service-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.what-i-do--experiment .service-summary-card {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  column-gap: var(--space-3);
+  row-gap: var(--space-3);
+  min-block-size: calc(3 * var(--grid-row) + 1rem);
+}
+
+.what-i-do--experiment .service-summary-card > h6 {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  font-size: var(--type-h5);
+  max-inline-size: 18ch;
+  white-space: normal;
+}
+
+.what-i-do--experiment .service-summary-card > :is(h4, p) {
+  max-inline-size: none;
+}
+
+.what-i-do--experiment .service-summary-card > p {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%);
+  font-size: 1rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.what-i-do:not(.what-i-do--experiment) .service-summary-card > p {
+  color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%);
+}
+
+.what-i-do--experiment .service-summary-card--experiment > .service-summary-card__icon--experiment {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative !important;
+  inline-size: 3.4rem;
+  block-size: 3.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0.55rem;
+  border-radius: 0.75rem;
+  background: var(--text);
+  color: var(--page);
+  z-index: 4 !important;
+}
+
+.what-i-do--experiment .service-summary-card--experiment > .service-summary-card__icon--experiment svg {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke-width: 1.7;
+  color: var(--page) !important;
+}
+
+/* Section 2 keeps the same icon scale, but removes the white host square so
+   the artwork itself is the only visible mark. */
+.what-i-do--third .service-summary-card--experiment > .service-summary-card__icon--experiment {
+  inline-size: var(--control-height);
+  block-size: var(--control-height);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.what-i-do--third .service-summary-card--experiment > .service-summary-card__icon--experiment svg {
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--text) !important;
+}
+
+.what-i-do--experiment .service-summary-card--experiment > .service-summary-card__icon--strategy svg {
+  transform: scale(1.1);
+}
+
+.what-i-do--experiment .service-summary-card > .service-stack {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-self: end;
+}
+
+/* Stacked-card experiment: give the cards half a grid square more height and
+   stack each title directly below its icon. */
+.what-i-do--stacked .service-summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-block-size: calc(3.5 * var(--grid-row) + 1rem);
+}
+
+.what-i-do--stacked .service-summary-card > h5 {
+  align-self: flex-start;
+  margin-inline-start: 0;
+  text-align: left;
+  max-inline-size: 18ch;
+}
+
+.what-i-do--stacked .service-summary-card > p {
+  max-inline-size: none;
+  font-size: 14.5px;
+}
+
+.what-i-do--stacked .service-summary-card > .service-stack {
+  inline-size: 100%;
+  margin-block-start: auto;
+}
+
+.what-i-do--stacked .service-stack > h6 {
+  display: none;
+}
+
+.what-i-do--third .service-stack > h6 {
+  display: block;
+  color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%) !important;
+}
+
+.what-i-do--stacked .service-stack__tools {
+  min-block-size: 2rem !important;
+  padding-block: 0.45rem !important;
+}
+
+.what-i-do--stacked .service-stack__tool {
+  inline-size: 28px !important;
+  block-size: 28px !important;
+}
+
+.what-i-do--stacked .service-stack__tool + .service-stack__tool {
+  margin-inline-start: -0.35rem !important;
+}
+
+/* Section 2 experiment: give the stack marks a small, proportional size lift
+   while keeping the overlap tight enough for the longest tool row. */
+.what-i-do--experiment .service-stack__tools {
+  min-block-size: 2.25rem;
+  padding-block: 0.35rem;
+}
+
+.what-i-do--experiment .service-stack__tool {
+  inline-size: 31px;
+  block-size: 31px;
+}
+
+.what-i-do--experiment .service-stack__tool + .service-stack__tool {
+  margin-inline-start: -0.4rem;
+}
+
 .service-comparison-label {
   color: var(--muted);
   font: 700 var(--type-caption)/1 var(--font-mono);
@@ -2239,15 +2458,16 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --service-card-muted: #c2d9ff;
 }
 
-:root[data-theme="dark-cyan"] .lab-preview {
+:root[data-theme="dark-cyan"] :is(.lab-preview, .experience-section) {
   --service-card-bg: #371adb;
+  --service-card-ink: #ffffff;
 }
 
 :root[data-theme="dark"] .service-summary-grid {
   --service-card-bg: #2a006a;
 }
 
-:root[data-theme="dark"] .lab-preview {
+:root[data-theme="dark"] :is(.lab-preview, .experience-section) {
   --service-card-bg: #2a006a;
 }
 
@@ -2487,7 +2707,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border-radius: 0.85rem;
 }
 
-.service-summary-card h5 {
+.service-summary-card :is(h4, h5, h6) {
   margin: 0;
   min-inline-size: 0;
   overflow-wrap: normal;
@@ -2879,8 +3099,8 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   position: relative;
   min-block-size: calc(10.5 * var(--grid-row));
   padding-block: 0;
-  /* Keep Career two full squares below the car card. */
-  margin-block-end: calc(2 * var(--grid-row));
+  /* Measured Lab starts H28; its 10.5 rows plus this gap place Career at H41. */
+  margin-block-end: calc(2.5 * var(--grid-row));
 }
 
 .lab-preview h2,
@@ -3034,9 +3254,11 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   grid-template-rows: minmax(0, 1fr) auto;
   gap: var(--space-3);
   padding: var(--space-4);
-  padding-block-start: calc(var(--space-4) + var(--type-caption) + var(--space-3));
-  padding-block-end: calc(var(--space-4) + var(--space-3));
+  padding-block-start: var(--space-4);
+  padding-block-end: var(--space-4);
 }
+
+.lab-draw { position: relative; }
 
 .lab-car {
   /* 06 has no number label, so its 3D stage uses the card's normal top inset.
@@ -3053,13 +3275,27 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-draw__canvas {
+  grid-area: 1 / 1;
   display: block;
   block-size: 100%;
+  min-inline-size: 0;
+  align-self: stretch;
   cursor: crosshair;
   touch-action: none;
   background-image: radial-gradient(circle, var(--soft) 1px, transparent 1.1px);
-  background-position: 0.65rem 0.65rem;
+  background-position: center;
   background-size: 1.3rem 1.3rem;
+}
+
+.lab-draw__erase-animation {
+  grid-area: 1 / 1;
+  z-index: 1;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: calc(var(--radius-card) - 0.5rem);
+  pointer-events: none;
+  min-inline-size: 0;
+  min-block-size: 0;
 }
 
 .lab-draw__controls,
@@ -3070,21 +3306,29 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   min-block-size: 1.2rem;
 }
 
+.lab-draw__controls { z-index: 2; }
+
 .lab-car__controls {
   min-block-size: 2.1rem;
 }
 
-.lab-draw__placeholders {
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.lab-draw__placeholders i {
-  display: block;
+.lab-draw__reset {
+  display: grid;
+  place-items: center;
   inline-size: 1.2rem;
   block-size: 1.2rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--page) 72%, var(--soft));
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.lab-draw__reset svg {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  stroke-width: 2.5;
+  transform: scaleX(-1);
 }
 
 .lab-car__actions {
@@ -3106,13 +3350,19 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   color: var(--page);
   background: var(--text);
   cursor: pointer;
-  transition: color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+  transition: color 180ms var(--ease-out), background-color 180ms var(--ease-out), opacity 220ms var(--ease-out);
 }
 
 .lab-car__action svg {
   inline-size: 0.9rem;
   block-size: 0.9rem;
   stroke-width: 3.2;
+}
+
+.lab-car__action:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
 }
 
 .lab-draw__info,
@@ -3123,7 +3373,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   block-size: 1.2rem;
   padding: 0;
   border: 0;
-  color: var(--text);
+  color: var(--muted);
   background: transparent;
   cursor: pointer;
 }
@@ -3136,7 +3386,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-draw:hover .lab-draw__info { color: #fff; }
-.lab-draw:hover .lab-draw__placeholders i { background: #fff; }
+.lab-draw:hover .lab-draw__reset { color: #fff; }
 
 /* 06: the renderer stays local to the portfolio. Its canvas and attribution
    are layered inside the stage, never in an external embedded viewer. */
@@ -3157,6 +3407,15 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .lab-car__canvas.is-dragging { cursor: grabbing; }
+
+.lab-car__model-transition {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
 
 .lab-car__expand {
   position: absolute;
@@ -3203,17 +3462,24 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   letter-spacing: 0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 180ms var(--ease-out);
+  transition: opacity 170ms var(--ease-out), filter 170ms var(--ease-out);
 }
 
-.lab-car__credit:hover {
-  color: color-mix(in srgb, #e8e8e8 68%, transparent);
+.lab-car__credit,
+.lab-car__credit a {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 .lab-car__credit a {
   color: inherit;
   text-decoration-color: color-mix(in srgb, currentColor 58%, transparent);
   text-underline-offset: 0.12em;
+}
+
+.lab-car__credit a:hover,
+.lab-car__credit a:focus-visible {
+  color: inherit;
 }
 
 .lab-car:hover .lab-car__info { color: #171717; }
@@ -3237,7 +3503,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 .lab-car.is-expanding .lab-car__credit {
   opacity: 0;
   filter: blur(0.5rem);
-  transition: color 180ms var(--ease-out), opacity 320ms var(--ease-out), filter 320ms var(--ease-out);
+  transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out);
 }
 .lab-car.is-expanding .lab-car__controls {
   opacity: 0;
@@ -3366,11 +3632,7 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   font-size: 0.75rem;
   font-weight: 650;
   filter: blur(0.5rem);
-  transition: color 180ms var(--ease-out), opacity 300ms var(--ease-out), filter 300ms var(--ease-out);
-}
-
-.lab-car.is-expanded .lab-car__credit:hover {
-  color: color-mix(in srgb, #e8e8e8 72%, transparent);
+  transition: opacity 300ms var(--ease-out), filter 300ms var(--ease-out);
 }
 
 .lab-car__description {
@@ -3430,6 +3692,13 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 .lab-car.is-expanded:not(.is-camera-transitioning) .lab-car__credit {
   opacity: 1;
   filter: none;
+}
+
+.lab-car.is-changing .lab-car__credit,
+.lab-car.is-expanded.is-changing:not(.is-camera-transitioning) .lab-car__credit {
+  opacity: 0;
+  filter: blur(0.45rem);
+  pointer-events: none;
 }
 
 .lab-car__expanded-overlay:not(.is-camera-transitioning) .lab-car__expanded-ui {
@@ -3611,13 +3880,21 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   font: 700 1.2rem / 1 var(--font-body);
 }
 
-.lab-visual-memory__high-score {
+.lab-visual-memory__high-score,
+.lab-type-racer__high-score,
+.lab-snake__high-score {
+  display: inline-flex;
+  align-items: center;
   gap: 0.25rem;
+  min-block-size: 1.2rem;
   color: #17c964;
-  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
+  font: 700 calc(var(--type-caption) * 1.16) / 1.2rem var(--font-body);
 }
 
-.lab-visual-memory__high-score svg {
+.lab-visual-memory__high-score svg,
+.lab-type-racer__high-score svg,
+.lab-snake__high-score svg {
+  flex: 0 0 0.95rem;
   inline-size: 0.95rem;
   block-size: 0.95rem;
   stroke-width: 2.4;
@@ -3648,7 +3925,7 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   block-size: 1.2rem;
   padding: 0;
   border: 0;
-  color: inherit;
+  color: var(--muted);
   background: transparent;
   cursor: pointer;
 }
@@ -3687,27 +3964,11 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   padding: 0;
   border: 0;
   border-radius: 0.2rem;
-  contain: layout paint style;
+  contain: layout style;
   transform: translateZ(0);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
   background: var(--page);
   cursor: pointer;
   transition: transform 180ms var(--ease-out), background-color 180ms var(--ease-out);
-}
-
-/* The white face belongs to the same tile. During a reveal the tile rotates
-   between its two faces, which keeps the animation on the compositor instead
-   of repainting the nine backgrounds every frame. */
-.lab-visual-memory__cell::after {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  backface-visibility: hidden;
-  background: #fff;
-  content: "";
-  pointer-events: none;
-  transform: rotateX(180deg) translateZ(0.1px);
 }
 
 .lab-visual-memory:hover .lab-visual-memory__cell {
@@ -3721,20 +3982,25 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 }
 
 .lab-visual-memory__cell:disabled { cursor: default; }
-.lab-visual-memory__cell.is-revealed {
-  overflow: hidden;
+.lab-visual-memory .lab-visual-memory__cell.is-revealed {
+  background-color: color-mix(in srgb, var(--page) 72%, var(--soft));
 }
 .lab-visual-memory__cell.is-entering {
   animation: memory-cell-flip-in 300ms var(--ease-out) both;
 }
-.lab-visual-memory__cell.is-shown { transform: translateZ(0) rotateX(180deg); }
+.lab-visual-memory .lab-visual-memory__cell.is-shown {
+  transform: translateZ(0);
+  background-color: #fff;
+}
 .lab-visual-memory__cell.is-hiding {
   animation: memory-cell-flip-out 300ms var(--ease-out) both;
-}.lab-visual-memory__cell.is-selected { background: #fff; }
+}
+.lab-visual-memory .lab-visual-memory__cell.is-selected { background: #fff; }
 .lab-visual-memory__cell.is-error {
   background-color: #142b45;
   animation: memory-cell-error 300ms ease-in-out both;
 }
+.lab-visual-memory .lab-visual-memory__cell.is-error { background-color: #142b45; }
 .lab-visual-memory__cell.is-result-fade-all.is-selected,
 .lab-visual-memory__cell.is-result-fade-fast.is-selected,
 .lab-visual-memory__cell.is-result-fade-white.is-selected {
@@ -3843,13 +4109,17 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   50% { transform: translateX(0.12rem); }
 }
 @keyframes memory-cell-flip-in {
-  from { transform: translateZ(0) rotateX(0deg); }
-  to { transform: translateZ(0) rotateX(180deg); }
+  0% { transform: scaleX(1); }
+  49% { transform: scaleX(0.02); background-color: color-mix(in srgb, var(--page) 72%, var(--soft)); }
+  50% { transform: scaleX(0.02); background-color: #fff; }
+  100% { transform: scaleX(1); background-color: #fff; }
 }
 
 @keyframes memory-cell-flip-out {
-  from { transform: translateZ(0) rotateX(180deg); }
-  to { transform: translateZ(0) rotateX(360deg); }
+  0% { transform: scaleX(1); background-color: #fff; }
+  49% { transform: scaleX(0.02); background-color: #fff; }
+  50% { transform: scaleX(0.02); background-color: color-mix(in srgb, var(--page) 72%, var(--soft)); }
+  100% { transform: scaleX(1); background-color: color-mix(in srgb, var(--page) 72%, var(--soft)); }
 }
 @keyframes memory-cell-result-fade-white {
   from { background-color: #fff; }
@@ -4249,17 +4519,6 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   position: absolute;
   inset-block-start: var(--space-3);
   inset-inline-start: calc(var(--type-racer-edge) + 4.4rem);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #17c964;
-  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
-}
-
-.lab-type-racer__high-score svg {
-  inline-size: 0.95rem;
-  block-size: 0.95rem;
-  stroke-width: 2.4;
 }
 
 .lab-type-racer .lab-type-racer__prompt {
@@ -4400,14 +4659,6 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 
 .lab-snake__high-score {
   margin-inline-start: var(--space-3);
-  color: #17c964;
-  font: 700 calc(var(--type-caption) * 1.16) / 1 var(--font-body);
-}
-
-.lab-snake__high-score svg {
-  inline-size: 0.95rem;
-  block-size: 0.95rem;
-  stroke-width: 2.4;
 }
 
 .lab-snake__info {
@@ -6497,4 +6748,36 @@ h6 { font-size: var(--type-h6) !important; }
 
 .lab-car:hover .lab-car__action:hover {
   background: color-mix(in srgb, var(--page) 86%, var(--soft));
+}
+
+/* Career rows occupy V5–V10; the preceding section owns H41. */
+.home-page .experience-section { grid-template-columns: calc(2 * var(--layout-column)) minmax(0, 1fr); gap: var(--space-5); border-block-end: 0; padding-block-end: 0; margin-block-end: calc(2 * var(--grid-row)); }
+.home-page .contact-cta { border-block-start: 0; }
+.home-page .experience-section__intro { display: grid; align-content: start; justify-items: start; gap: 0; }
+.home-page .experience-section__intro .button { margin-block-start: 2.375rem; }
+.home-page .experience-section .experience-list { gap: var(--space-3); align-content: start; }
+.home-page .experience-section .experience-list li { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(7rem, 0.5fr); align-items: center; align-content: center; gap: var(--space-4); block-size: var(--grid-row); min-block-size: var(--grid-row); padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-card); background: var(--service-card-bg, var(--soft)); color: var(--service-card-ink, var(--text)); font-synthesis: none; }
+.home-page .experience-section .experience-list :is(p, .experience-list__contribution) { grid-column: auto; max-inline-size: none; margin: 0; font: 400 14.5px / 1.5 var(--font-body); text-transform: none; text-align: start; }
+.home-page .experience-list__identity { display: flex; grid-column: 1; align-items: center; gap: 0.6rem; min-inline-size: 0; }
+.home-page .experience-list__identity-copy { display: grid; gap: 0.1rem; min-inline-size: 0; }
+.home-page .experience-section .experience-list .experience-list__company-name { color: inherit; font-size: 16px; font-weight: 700; }
+.home-page .experience-section .experience-list .experience-list__role { display: block; color: var(--service-card-ink, var(--text)); }
+.home-page .experience-section .experience-list .experience-list__contribution { grid-column: 2; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
+.home-page .experience-section .experience-list .experience-list__years { grid-column: 3; color: var(--service-card-ink, var(--text)); font: 400 14.5px / 1.5 var(--font-body); text-align: end; text-transform: none; }
+.home-page .experience-list__logo { flex: 0 0 1.75rem; inline-size: 1.75rem; border-radius: 0.35rem; font: 400 9px / 1 var(--font-body); text-transform: none; }
+.home-page .experience-section .experience-list .experience-list__education { block-size: calc(0.6 * var(--grid-row)); min-block-size: calc(0.6 * var(--grid-row)); }
+.home-page .experience-list__university-logo { flex: 0 0 3.5rem; inline-size: 3.5rem; block-size: auto; object-fit: contain; }
+.home-page .experience-section .experience-list .experience-list__degree { color: var(--service-card-ink, var(--text)); }
+@media (min-width: 761px) and (max-width: 1599px) {
+  .home-page .experience-section__intro h2 { --type-h2: min(calc(var(--grid-row) / 1.06), calc(0.68 * var(--layout-column))); }
+  .home-page .experience-section .experience-list li { block-size: auto; }
+  .home-page .experience-section .experience-list .experience-list__education { block-size: auto; }
+}
+@media (max-width: 760px) {
+  .home-page .experience-section { grid-template-columns: minmax(0,1fr); gap: var(--space-6); }
+  .home-page .experience-section .experience-list li { grid-template-columns: minmax(0, 1fr) auto; align-items: start; block-size: auto; }
+  .home-page .experience-section .experience-list__identity { grid-column: 1; }
+  .home-page .experience-section .experience-list .experience-list__contribution { grid-column: 1 / -1; }
+  .home-page .experience-section .experience-list .experience-list__years { grid-column: 2; grid-row: 1; }
+  .home-page .experience-section .experience-list .experience-list__education { block-size: auto; }
 }

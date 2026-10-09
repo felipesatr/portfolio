@@ -80,6 +80,13 @@ export function SoftRevealObserver() {
       if (parent) siblingIndexes.set(parent, siblingIndex + 1);
       (element as HTMLElement).style.setProperty("--soft-reveal-index", String(Math.min(siblingIndex, 4)));
 
+      // Hero actions belong to the post-headline reveal even when they sit
+      // against the viewport edge, outside the observer's -8% root margin.
+      if (element.matches(".hero__details")) {
+        element.classList.add("is-soft-revealed");
+        return;
+      }
+
       if (!intersectionObserver) {
         element.classList.add("is-soft-revealed");
         return;

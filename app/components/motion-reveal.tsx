@@ -79,6 +79,7 @@ interface RevealTitleProps {
   lines: string[];
   live?: "polite" | "assertive";
   onRevealComplete?: () => void;
+  onRevealSettled?: () => void;
 }
 
 function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, enabled: boolean) {
@@ -133,9 +134,11 @@ function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, en
   }, [content, enabled, ref]);
 }
 
-export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live, onRevealComplete }: RevealTitleProps) {
+export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live, onRevealComplete, onRevealSettled }: RevealTitleProps) {
   const { ref, isRevealed } = useRevealOnView<HTMLElement>();
   const hasCompleted = useRef(false);
+  const hasSettled = useRef(false);
+  const onRevealSettledRef = useRef(onRevealSettled);
   const Heading = as as ElementType;
   let wordIndex = 0;
   const totalWords = lines.reduce((count, line) => count + line.trim().split(/\s+/).filter(Boolean).length, 0);
@@ -145,6 +148,15 @@ export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, 
     hasCompleted.current = true;
     onRevealComplete?.();
   }, [onRevealComplete]);
+  const settleReveal = useCallback(() => {
+    if (hasSettled.current) return;
+    hasSettled.current = true;
+    onRevealSettledRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    onRevealSettledRef.current = onRevealSettled;
+  }, [onRevealSettled]);
 
   useEffect(() => {
     if (!isRevealed || !onRevealComplete) return;
@@ -158,6 +170,18 @@ export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, 
     const timer = window.setTimeout(completeReveal, totalWords * 42 + 192);
     return () => window.clearTimeout(timer);
   }, [completeReveal, isRevealed, onRevealComplete, totalWords]);
+
+  useEffect(() => {
+    if (!isRevealed || !onRevealSettledRef.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const frame = window.requestAnimationFrame(settleReveal);
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    // Wait for the final word's 42ms stagger plus its 680ms settle transition.
+    const timer = window.setTimeout(settleReveal, Math.max(0, totalWords - 1) * 42 + 680);
+    return () => window.clearTimeout(timer);
+  }, [isRevealed, settleReveal, totalWords]);
 
   return (
     <Heading

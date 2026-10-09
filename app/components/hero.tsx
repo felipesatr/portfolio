@@ -163,11 +163,14 @@ function HeadlineLayer({ audience, headline, format = "display", fixedSize, inco
 }
 
 export function Hero() {
+  // The server renders the headline before its first reveal. The early head
+  // script marks that same state before hydration; later SPA visits start ready.
+  const startsWithDocumentIntro = typeof document === "undefined" || document.documentElement.dataset.documentIntro === "pending";
   const [selectedAudience, setSelectedAudience] = useState<Audience>("anyone");
   const [outgoingAudience, setOutgoingAudience] = useState<Audience | null>(null);
   const [outgoingSize, setOutgoingSize] = useState<number | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const [hasCompletedInitialReveal, setHasCompletedInitialReveal] = useState(false);
+  const [isMoving, setIsMoving] = useState(!startsWithDocumentIntro);
+  const [hasCompletedInitialReveal, setHasCompletedInitialReveal] = useState(!startsWithDocumentIntro);
   const frameRef = useRef<number | null>(null);
   const fittedSizesRef = useRef(new Map<Audience, number>());
   const selectedContent = audienceContent.find((item) => item.id === selectedAudience) ?? audienceContent[0];
@@ -176,43 +179,44 @@ export function Hero() {
     : null;
 
   useLayoutEffect(() => {
+    if (document.documentElement.dataset.documentIntro !== "pending") return;
     document.documentElement.dataset.heroIntro = "pending";
-    return () => { delete document.documentElement.dataset.heroIntro; };
+    // This document state must survive React's development-mode effect replay.
+    // Clearing it in an effect cleanup exposes the server-rendered page for a
+    // frame before the headline reveal starts.
   }, []);
 
   useEffect(() => {
     if (!hasCompletedInitialReveal) return;
     const root = document.documentElement;
+    if (root.dataset.documentIntro !== "pending") return;
     root.dataset.heroIntro = "ready";
+    root.dataset.documentIntro = "ready";
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       root.dataset.heroIntro = "complete";
+      root.dataset.documentIntro = "complete";
       window.dispatchEvent(new Event("portfolio-hero-intro-complete"));
       return;
     }
 
     const timer = window.setTimeout(() => {
       root.dataset.heroIntro = "complete";
+      root.dataset.documentIntro = "complete";
       window.dispatchEvent(new Event("portfolio-hero-intro-complete"));
     }, 500);
     return () => window.clearTimeout(timer);
   }, [hasCompletedInitialReveal]);
 
   useEffect(() => {
-    if (!wordRevealEnabled) {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    frameRef.current = window.requestAnimationFrame(() => {
       setIsMoving(true);
-      setOutgoingAudience(null);
-      setOutgoingSize(null);
-      setHasCompletedInitialReveal(true);
-      return;
-    }
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setIsMoving(true);
-      setHasCompletedInitialReveal(true);
-      return;
-    }
-
-    frameRef.current = window.requestAnimationFrame(() => setIsMoving(true));
+      if (!wordRevealEnabled || reduceMotion) {
+        setOutgoingAudience(null);
+        setOutgoingSize(null);
+        setHasCompletedInitialReveal(true);
+      }
+    });
 
     return () => {
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
@@ -261,10 +265,11 @@ export function Hero() {
               <button
                 key={audience.id}
                 type="button"
+                data-cursor-pill
                 aria-pressed={selectedAudience === audience.id}
                 onClick={() => selectAudience(audience.id)}
               >
-                <span data-fluid-cursor-native-ink>{audience.label}</span>
+                <span data-cursor-pill-label data-fluid-cursor-native-ink>{audience.label}</span>
               </button>
             ))}
           </div>

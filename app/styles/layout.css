@@ -216,7 +216,7 @@
   inset-inline: clamp(0.75rem, 1.25vw, 2rem) clamp(0.75rem, 1.1vw, 1.75rem);
   display: grid;
   gap: 0.15rem;
-  font-size: 14px;
+  font-size: 14.5px;
   margin: 0;
 }
 
@@ -261,6 +261,10 @@
 .nav-link:focus-visible,
 .nav-link--active {
   color: var(--text);
+}
+
+.rail-nav .nav-link:hover:not(.nav-link--active) {
+  color: var(--muted);
 }
 
 .rail__bottom {

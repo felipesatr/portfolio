@@ -1,0 +1,176 @@
+/* Shared roles cover month, week and both morphs in neutral/inverted states. */
+@font-face { font-family: "Figtree Lab"; font-style: normal; font-weight: 300 900; font-display: swap; src: url("../assets/figtree-variable.ttf") format("truetype"); }
+/* Scoped real variable weights. Site CTA button typography is unchanged. */
+.lab-preview__placeholder, .fluid-cursor__tool-copy, .calendar-flying-label { --font-body: "Figtree Lab", Figtree, sans-serif; font-synthesis: none; }
+.fluid-cursor__tool-copy strong, .fluid-cursor__tool-copy span { font-synthesis: none; }
+.fluid-cursor--date-attraction { transition: opacity 140ms var(--ease-out); }
+.lab-draw__actions { display: flex; gap: 0.55rem; align-items: center; }
+.lab-draw__download { display: grid; place-items: center; inline-size: 1.2rem; block-size: 1.2rem; border: 0; padding: 0; color: var(--muted); background: none; cursor: pointer; }
+.lab-draw__download svg { inline-size: 1.2rem; block-size: 1.2rem; stroke-width: 2.5; }
+.lab-draw:hover .lab-draw__download { color: #fff; }
+.lab-calendar {
+  --calendar-ink: var(--text);
+  --calendar-muted: color-mix(in srgb, var(--calendar-ink) 65%, transparent);
+  --calendar-line: color-mix(in srgb, var(--calendar-ink) 12%, transparent);
+  --calendar-control-fill: var(--text);
+  --calendar-control-ink: var(--page);
+  --calendar-today: var(--secondary);
+  --calendar-today-ink: var(--secondary-ink);
+  --calendar-date-size: 2.1rem;
+  --calendar-control-size: calc(1.2rem * 1.2 + 0.9rem);
+  --calendar-fluid-fill: var(--calendar-control-fill);
+  isolation: auto; block-size: calc(4.25 * var(--grid-row) - var(--lab-card-gap));
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0.8rem;
+  padding-block-end: calc(var(--space-4) - 0.3rem);
+  color: var(--calendar-ink); font-family: var(--font-body);
+}
+[data-theme="dark-sky"] .lab-calendar { --calendar-today: #ff101d; --calendar-today-ink: #0a0a0a; }
+.lab-calendar:hover { --calendar-ink: #1e2022; --calendar-control-fill: #1e2022; --calendar-control-ink: #f5f5f2; }
+.lab-calendar::before { display: block; }
+.lab-calendar > :is(.calendar-toolbar, .calendar-weekdays, .calendar-body) { z-index: auto; }
+.calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-block-end: 0.55rem; }
+.calendar-month-pill, .calendar-add { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border: 0; background: var(--calendar-control-fill); color: var(--calendar-control-ink); border-radius: 999px; cursor: pointer; transition: color 180ms ease; }
+.calendar-month-pill { block-size: var(--calendar-control-size); padding: 0.45rem 0.7rem; min-inline-size: 0; flex-shrink: 1; max-inline-size: calc(100% - var(--calendar-control-size) - 0.5rem); font: 700 1.2rem / 1.2 var(--font-body); white-space: nowrap; }
+.calendar-pill-copy { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+.calendar-month-pill span, .calendar-month-pill > svg, .calendar-add > svg { position: relative; z-index: 89; }
+.calendar-back-icon { inline-size: 0; block-size: 1.25rem; opacity: 0; filter: blur(3px); transition: inline-size 260ms var(--ease-out), margin 260ms var(--ease-out), opacity 180ms ease, filter 180ms ease; }
+.calendar-month-pill.is-week .calendar-back-icon { inline-size: 1.25rem; margin-inline-end: 0.3rem; opacity: 1; filter: none; }
+.calendar-add { inline-size: var(--calendar-control-size); block-size: var(--calendar-control-size); padding: 0; }
+.calendar-add svg { inline-size: 1.25rem; block-size: 1.25rem; }
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; color: var(--calendar-muted); font-size: 0.55rem; font-weight: 600; cursor: default; user-select: none; }
+.calendar-weekdays span { cursor: default; }
+.calendar-weekdays .is-weekend { color: color-mix(in srgb, var(--calendar-ink) 42%, transparent); }
+.calendar-body { min-block-size: 0; position: relative; }
+.calendar-weeks { position: absolute; inset: 0; }
+.calendar-week { position: absolute; z-index: auto; inset-inline: 0; top: calc(var(--week) * 100% / var(--week-count)); block-size: calc(100% / var(--week-count)); display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); transition: top 360ms var(--ease-out), transform 360ms var(--ease-out), opacity 220ms ease, filter 220ms ease; }
+.calendar-week-divider { position: absolute; inset: 0 0 auto; height: 1px; color: var(--calendar-line); }
+.calendar-week-divider svg, .calendar-hour-divider svg { inline-size: 100%; block-size: 1px; overflow: visible; }
+.calendar-week-divider path { stroke: currentColor; stroke-width: 1; }
+.calendar-day-slot { position: relative; display: grid; align-items: start; justify-items: center; padding-block-start: 0.3rem; min-inline-size: 0; }
+.calendar-day { --calendar-fluid-fill: #f5f5f2; position: relative; display: grid; place-items: center; border: 0; padding: 0; inline-size: min(var(--calendar-date-size), 90%); aspect-ratio: 1; border-radius: 50%; color: var(--calendar-ink); background: transparent; cursor: pointer; font: 600 0.78rem / 1 var(--font-body); }
+.calendar-day span { display: inline-block; position: relative; z-index: 89; }
+.calendar-day.is-weekend { color: color-mix(in srgb, var(--calendar-ink) 48%, transparent); }
+.calendar-day.is-outside { color: color-mix(in srgb, var(--calendar-ink) 19%, transparent); }
+.calendar-day.is-today { --button-fill: var(--calendar-today); --button-ink: var(--calendar-today-ink); color: var(--calendar-today-ink); background: var(--calendar-today); }
+.calendar-day.is-selected:not(.is-today)::after { content: ""; position: absolute; z-index: 89; inset: 0; border: 1px solid var(--calendar-ink); border-radius: 50%; pointer-events: none; }
+.calendar-day[data-cursor-date-active] { color: #1e2022; }
+.calendar-task-dot { position: absolute; top: calc(var(--calendar-date-size) + 0.45rem); left: calc(50% - 2px); inline-size: 4px; block-size: 4px; border-radius: 50%; background: var(--calendar-today); pointer-events: none; }
+.liquid-webgl-ready .calendar-day.is-today[data-liquid-rendered="true"], .liquid-webgl-ready :is(.calendar-month-pill, .calendar-add)[data-liquid-rendered="true"] { background: transparent; }
+.lab-calendar :is(button, .calendar-wheel, .calendar-agenda):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.lab-calendar:is([data-calendar-phase="collapsing"], [data-calendar-phase="week"]) .calendar-week:not(.is-selected-week) { opacity: 0; filter: blur(4px); pointer-events: none; }
+.lab-calendar[data-calendar-phase="collapsing"] .calendar-week.is-above:not(.is-selected-week) { transform: translateY(-24px); }
+.lab-calendar[data-calendar-phase="collapsing"] .calendar-week.is-below:not(.is-selected-week) { transform: translateY(24px); }
+.lab-calendar:is([data-calendar-phase="collapsing"], [data-calendar-phase="week"]) .calendar-week.is-selected-week { top: 0; transform: none; }
+.lab-calendar[data-calendar-phase="returning"] .calendar-week { animation: calendar-appear 300ms var(--ease-out) both; }
+.lab-calendar[data-calendar-phase="returning"] .calendar-week.is-selected-week { animation: none; }
+.lab-calendar[data-calendar-phase="picker-closing"][data-picker-changed] .calendar-weeks { opacity: 0; }
+.lab-calendar[data-calendar-phase="month-revealing"] .calendar-weeks { animation: calendar-appear 360ms var(--ease-out) both; }
+.calendar-agenda-frame { position: absolute; inset: calc(100% / var(--week-count) + 0.25rem) 0 0; }
+.calendar-agenda { position: absolute; inset: 0 14px 0 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; mask-image: linear-gradient(transparent, #000 12px, #000 calc(100% - 5px), transparent); }
+.calendar-agenda-frame { animation: calendar-appear 320ms var(--ease-out) both; }
+.calendar-hours { position: relative; min-block-size: 1064px; }
+.calendar-hour { block-size: 44px; display: flex; align-items: flex-start; gap: 0.4rem; }
+.calendar-hour > span:first-child { flex: 0 0 2.4rem; font-size: 0.65rem; color: var(--calendar-muted); line-height: 1.2; }
+.calendar-hour-divider { flex: 1; min-inline-size: 0; block-size: 1px; margin-block-start: calc(0.65rem * 1.2 / 2 - 1.25px); margin-inline-end: 4px; color: var(--calendar-line); overflow: visible; }
+.calendar-hour-divider path { stroke: currentColor; stroke-width: 1; }
+.calendar-task-layer { position: absolute; inset: 0 9px 0 2.8rem; pointer-events: none; }
+.calendar-task { position: absolute; padding: 0 2px; pointer-events: auto; transform-origin: left center; }
+.calendar-task.is-leaving { animation: calendar-task-leave 220ms var(--ease-out) both; pointer-events: none; }
+.calendar-task label { display: flex; align-items: center; gap: 0.45rem; block-size: 36px; padding: 5px 22px 5px 7px; border-radius: 8px; background: color-mix(in srgb, var(--calendar-ink) 9%, transparent); border: 1px solid var(--calendar-line); color: var(--calendar-ink); font-size: 0.7rem; line-height: 1.2; cursor: pointer; transition: background-color 160ms ease; }
+.calendar-task:hover label, .calendar-task:focus-within label { background: color-mix(in srgb, var(--calendar-ink) 17%, transparent); }
+.calendar-task input { appearance: none; inline-size: 1rem; block-size: 1rem; margin: 0; flex: 0 0 auto; border: 1px solid currentColor; border-radius: 50%; cursor: pointer; }
+.calendar-task-check { position: relative; display: inline-flex; flex: 0 0 1rem; inline-size: 1rem; block-size: 1rem; }
+.calendar-task-check > svg { position: absolute; inset: 1px; inline-size: 14px; block-size: 14px; pointer-events: none; opacity: 0; }
+.calendar-task-check input:checked + svg { opacity: 1; }
+.calendar-task-check input:checked { background: #1e2022; border-color: #1e2022; }
+.calendar-task-check input:checked + svg { color: #f5f5f2; }
+.calendar-task label > span:last-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.calendar-task.is-done label > span:last-child { opacity: 0.55; text-decoration: none; background-image: linear-gradient(currentColor,currentColor); background-position: 0 48%; background-size: 100% 1px; background-repeat: no-repeat; }
+.calendar-task-delete { position: absolute; z-index: 2; right: -5px; top: -7px; display: grid; place-items: center; inline-size: 22px; block-size: 22px; border: 0; border-radius: 50%; background: #1e2022; color: #f5f5f2; padding: 3px; opacity: 0; transition: opacity 120ms linear; cursor: pointer; }
+.calendar-task-delete svg { inline-size: 14px; block-size: 14px; }
+.calendar-task:hover .calendar-task-delete, .calendar-task-delete:focus-visible { opacity: 1; }
+.lab-calendar > .calendar-popover-backdrop { position: absolute; z-index: 94; inset: 0; padding: var(--space-4); background: transparent; }
+.calendar-popover { position: relative; background: var(--calendar-control-fill); color: var(--calendar-control-ink); border-radius: 1rem; padding: 0.75rem; min-inline-size: 0; max-block-size: 100%; overflow: auto; scrollbar-width: thin; --wheel-ink: var(--calendar-control-ink); --wheel-muted: color-mix(in srgb, var(--wheel-ink) 45%, transparent); transition: background-color 180ms ease, color 180ms ease; }
+.calendar-picker { transform-origin: top left; animation: calendar-picker-expand 260ms var(--ease-out) both; }
+.lab-calendar:is([data-calendar-phase="picking"], [data-calendar-phase="picker-closing"]) .calendar-month-pill > *, .lab-calendar[data-calendar-overlay="editor"] .calendar-add > * { visibility: hidden; }
+/* The resting fill stays beneath the morph until the renderer paints its
+   replacement. Only the duplicate icon/copy is hidden. */
+.calendar-overlay-open .lab-calendar :is(.calendar-month-pill, .calendar-add) { background: var(--calendar-control-fill); }
+.calendar-overlay-open .lab-calendar .calendar-day.is-today { background: var(--calendar-today); }
+.lab-calendar[data-calendar-phase="picker-closing"] .calendar-picker { animation: calendar-picker-collapse 260ms var(--ease-out) both; pointer-events: none; }
+.lab-calendar[data-calendar-phase="picker-closing"] :is(.calendar-picker-wheels, .calendar-picker-actions) { opacity: 0; transition: opacity 90ms linear; }
+.calendar-picker-wheels, .calendar-time-wheels { position: relative; display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 0.2rem; }
+.calendar-picker-wheels::before, .calendar-time-wheels::before { content: ""; position: absolute; top: 72px; height: 36px; inset-inline: 0; background: color-mix(in srgb, var(--wheel-ink) 10%, transparent); border-radius: 8px; pointer-events: none; }
+.calendar-wheel { block-size: 180px; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; padding-block: 72px; mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); }
+.calendar-wheel button { display: block; inline-size: 100%; block-size: 36px; border: 0; padding: 0; scroll-snap-align: center; color: var(--wheel-muted); background: transparent; font: 600 1rem / 36px var(--font-body); cursor: pointer; }
+.calendar-wheel button[aria-selected="true"] { color: var(--wheel-ink); }
+.calendar-picker-actions { display: flex; align-items: center; justify-content: space-between; margin-block-start: 0.4rem; }
+.calendar-picker-actions button, .calendar-editor-footer button, .calendar-editor-close { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 999px; color: inherit; background: transparent; padding: 0.4rem 0.7rem; cursor: pointer; font: 600 0.8rem / 1.2 var(--font-body); transition: background-color 140ms ease; }
+.calendar-picker-actions button:first-child { inline-size: 2rem; block-size: 2rem; padding: 0; }
+.calendar-picker-actions button:not(:disabled):hover, .calendar-editor-footer button:not(:disabled):hover { background: color-mix(in srgb, var(--calendar-control-ink) 18%, transparent); }
+.calendar-picker-actions button:disabled, .calendar-editor-footer button:disabled { pointer-events: none; }
+.calendar-picker-actions svg, .calendar-editor-footer svg { inline-size: 1rem; block-size: 1rem; }
+.calendar-editor { padding-block-start: 0; margin-block-start: var(--calendar-editor-shift, 0px); max-block-size: calc(100% - var(--calendar-editor-shift, 0px)); background: transparent; overflow: visible; }
+/* Morph only the fill. Clipping the whole dialog sliced the rotating icon
+   and content during entry/exit; the persistent top-right control must not
+   participate in that mask. This is a one-shot, card-sized paint effect. */
+.calendar-editor::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--calendar-control-fill); pointer-events: none; animation: calendar-editor-expand 260ms var(--ease-out) both; }
+.calendar-editor > form { position: relative; z-index: 1; }
+.calendar-editor.is-closing { pointer-events: none; }
+.calendar-editor.is-closing::before { animation: calendar-editor-collapse 220ms var(--ease-out) both; }
+.calendar-editor-header { display: flex; align-items: center; justify-content: space-between; block-size: var(--calendar-control-size); margin-block-end: 0.65rem; margin-inline-end: -0.75rem; }
+.calendar-editor-label { position: relative; top: 6px; font-size: 1.2rem; font-weight: 600; white-space: nowrap; }
+.calendar-editor-label span { margin-inline-start: 0.4rem; font-weight: 400; opacity: 0.65; }
+.calendar-editor-close { inline-size: var(--calendar-control-size); block-size: var(--calendar-control-size); padding: 0; flex: 0 0 auto; }
+.calendar-editor-close::before { content: ""; position: absolute; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; background: color-mix(in srgb,var(--calendar-control-ink) 18%,transparent); opacity: 0; transition: opacity 140ms ease; }
+.calendar-editor-close:hover::before { opacity: 1; }
+.calendar-editor-close svg { inline-size: 1.25rem; block-size: 1.25rem; animation: calendar-plus-to-close 260ms var(--ease-out) both; transform: rotate(45deg); }
+.calendar-editor.is-closing .calendar-editor-close svg { animation: calendar-close-to-plus 220ms var(--ease-out) both; }
+.calendar-editor input:not([type]) { display: block; inline-size: 100%; min-inline-size: 0; padding: 0.55rem; border: 1px solid color-mix(in srgb, var(--calendar-control-ink) 18%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--calendar-control-ink) 7%, transparent); color: inherit; font: 400 0.9rem / 1.4 var(--font-body); }
+.calendar-editor input::placeholder { color: inherit; opacity: 0.5; }
+.calendar-editor input:focus { outline: none; box-shadow: none; }
+.lab-calendar[data-calendar-keyboard] .calendar-editor input:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.calendar-editor-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.3rem; margin-block-start: 0.75rem; }
+.calendar-editor-footer .calendar-time-pill { background: color-mix(in srgb, var(--calendar-control-ink) 9%, transparent); white-space: nowrap; }
+.calendar-editor-footer .calendar-confirm { background: color-mix(in srgb, var(--calendar-control-ink) 12%, transparent); }
+.calendar-confirm:disabled { opacity: 0.4; cursor: default; }
+.calendar-time-expansion { display: grid; grid-template-rows: 0fr; opacity: 0; filter: blur(4px); transition: grid-template-rows 260ms var(--ease-out), opacity 180ms ease, filter 180ms ease; }
+.calendar-time-expansion > div { overflow: hidden; min-block-size: 0; }
+.is-time-open .calendar-time-expansion { grid-template-rows: 1fr; opacity: 1; filter: none; }
+.calendar-time-wheels { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-block-start: 0.6rem; margin-block-start: 0.6rem; border-block-start: 1px solid color-mix(in srgb, var(--calendar-control-ink) 16%, transparent); }
+.calendar-time-wheels::before { top: calc(45px + 0.6rem); }
+.calendar-wheel.is-compact { block-size: 126px; padding-block: 45px; }
+.calendar-editor-label, .calendar-editor input, .calendar-editor-footer, .calendar-picker-wheels, .calendar-picker-actions { animation: calendar-appear 180ms 90ms var(--ease-out) both; }
+.is-closing :is(.calendar-editor-label, input, .calendar-editor-footer, .calendar-time-expansion) { opacity: 0; transition: opacity 90ms linear; animation: none; }
+.calendar-overlay-open :is(.fluid-cursor, .liquid-button-canvas, .fluid-cursor__text-mask, .fluid-cursor__knob-mask) { opacity: 0 !important; }
+.calendar-overlay-open .lab-calendar, .calendar-overlay-open .lab-calendar * { cursor: auto; }
+.calendar-overlay-open .lab-calendar button, .calendar-overlay-open .lab-calendar button * { cursor: pointer; }
+.calendar-overlay-open .calendar-weekdays, .calendar-overlay-open .calendar-weekdays span { cursor: default; }
+.calendar-overlay-open .calendar-editor input { cursor: text; }
+.calendar-cursor-returning .fluid-cursor--visible:not(.fluid-cursor--tool-popover):not(.fluid-cursor--pill-highlight) { animation: calendar-appear 180ms ease both; }
+.fluid-cursor--tool-popover.fluid-cursor--tool-compact { padding: 0.45rem 0.65rem; border-radius: 999px; }
+.fluid-cursor--tool-compact .fluid-cursor__tool-copy { justify-content: center; text-align: center; }
+@keyframes calendar-appear { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: none; } }
+@keyframes calendar-week-return { from { transform: translateY(calc(-100% * var(--week))); } to { transform: none; } }
+@keyframes calendar-plus-to-close { from { transform: rotate(0); } to { transform: rotate(45deg); } }
+@keyframes calendar-close-to-plus { from { transform: var(--calendar-editor-close-rotation, rotate(45deg)); } to { transform: rotate(0); } }
+@keyframes calendar-task-leave { to { opacity: 0; transform: scaleX(0); } }
+.calendar-scrollbar { position: absolute; inset: -16px 0 0 auto; inline-size: 8px; display: grid; grid-template-rows: 12px minmax(0,1fr) 12px; gap: 4px; color: color-mix(in srgb,var(--calendar-ink) 38%,transparent); }
+.calendar-scrollbar button { border: 0; padding: 0; inline-size: 8px; background: none; color: inherit; cursor: pointer; }
+.calendar-scrollbar button span { display: block; }
+.calendar-scrollbar button svg { inline-size: 8px; block-size: 10px; stroke-width: 2; }
+.calendar-scroll-track { position: relative; cursor: pointer; touch-action: none; }
+.calendar-scroll-thumb { position: absolute; top: 0; left: 1px; inline-size: 6px; min-block-size: 20px; }
+.calendar-scroll-thumb svg { inline-size: 100%; block-size: 100%; }
+.calendar-flying-label { position: fixed; inset: 0 auto auto 0; z-index: 95; pointer-events: none; white-space: nowrap; }
+.lab-calendar[data-pill-reveal] .calendar-pill-copy { animation: calendar-appear 180ms ease both; }
+.lab-calendar[data-calendar-phase="picking"][data-labels-flying] .calendar-picker-wheels [aria-selected="true"] { color: transparent; }
+.lab-calendar[data-calendar-phase="picker-closing"] .calendar-picker-wheels [aria-selected="true"] { visibility: hidden; }
+@keyframes calendar-label-arrive { 0%,99% { color: transparent; } 100% { color: var(--wheel-ink); } }
+@keyframes calendar-picker-expand { from { clip-path: inset(0 calc(100% - var(--calendar-pill-width)) calc(100% - var(--calendar-pill-height)) 0 round 18px); } to { clip-path: inset(0 0 0 0 round 16px); } }
+@keyframes calendar-picker-collapse { from { clip-path: inset(0 0 0 0 round 16px); } to { clip-path: inset(0 calc(100% - var(--calendar-pill-width)) calc(100% - var(--calendar-pill-height)) 0 round 18px); } }
+@keyframes calendar-editor-expand { from { clip-path: inset(0 0 calc(100% - var(--calendar-editor-origin-size, var(--calendar-control-size))) calc(100% - var(--calendar-editor-origin-size, var(--calendar-control-size))) round calc(var(--calendar-editor-origin-size, var(--calendar-control-size)) / 2)); } to { clip-path: inset(0 0 0 0 round 16px); } }
+@keyframes calendar-editor-collapse { from { clip-path: var(--calendar-editor-close-from, inset(0 0 0 0 round 16px)); } to { clip-path: inset(0 0 calc(100% - var(--calendar-editor-origin-size, var(--calendar-control-size))) calc(100% - var(--calendar-editor-origin-size, var(--calendar-control-size))) round calc(var(--calendar-editor-origin-size, var(--calendar-control-size)) / 2)); } }
+@media (hover: none) { .calendar-task-delete { opacity: 1; } }
+@media (max-width: 900px) { .lab-calendar { position: relative; inset: auto; block-size: 24rem; } }
+@media (prefers-reduced-motion: reduce) { .lab-calendar *, .lab-calendar *::before, .calendar-cursor-returning * { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }

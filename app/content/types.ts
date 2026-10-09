@@ -50,6 +50,7 @@ export interface ExperienceItem {
   id: string;
   title: string;
   company: string;
+  initials?: string;
   summary: string;
   years: string;
   placeholder: boolean;

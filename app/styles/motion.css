@@ -159,6 +159,12 @@
   filter: none;
 }
 
+/* The first-load rail should arrive as one navigation unit, not a link-by-link
+   cascade. Other page content keeps its normal sibling reveal cadence. */
+html[data-hero-intro] .desktop-rail .soft-reveal-target {
+  transition-delay: 0ms;
+}
+
 /* The Lab title establishes the section before its interactive surfaces
    arrive. This prevents a lower card entering view from jumping ahead of the
    heading, while retaining the normal observer behaviour when the title is
@@ -193,6 +199,24 @@
 .lab-calendar { --lab-reveal-delay: 480ms; }
 .lab-preview__placeholder--6 { --lab-reveal-delay: 600ms; }
 
+/* The car credit gets its own entrance after the gallery card is admitted by
+   the soft-reveal observer; relying only on the parent fade made the small
+   text read as if it appeared immediately. */
+.soft-reveal-ready .lab-car.soft-reveal-target:not(.is-soft-revealed) .lab-car__credit {
+  opacity: 0;
+  filter: blur(0.45rem);
+  transition: none;
+}
+
+.soft-reveal-ready .lab-car.soft-reveal-target.is-soft-revealed:not(.is-changing) .lab-car__credit {
+  opacity: 1;
+  filter: none;
+  transition:
+    opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--lab-reveal-delay, 0ms) + 120ms);
+}
+
 /* Keep the initial screen intentionally empty around the headline. Once its
    word-by-word reveal resolves, these surfaces use the normal soft fade/unblur. */
 html[data-hero-intro] .desktop-rail,
@@ -213,6 +237,19 @@ html[data-hero-intro="pending"] .hero__details,
 html[data-hero-intro="pending"] .project-marquee__viewport {
   opacity: 0 !important;
   filter: blur(10px) !important;
+  visibility: hidden !important;
+  transition: none !important;
+  pointer-events: none;
+}
+
+/* Hydration marks the reveal targets after the HTML has been parsed. Without
+   this guard they can animate from their server-rendered visible state to
+   opacity zero as the boot veil lifts, briefly flashing before the headline. */
+html[data-document-intro="pending"] .soft-reveal-target {
+  opacity: 0 !important;
+  filter: blur(10px) !important;
+  visibility: hidden !important;
+  transition: none !important;
   pointer-events: none;
 }
 
@@ -222,6 +259,44 @@ html[data-hero-intro="ready"] .hero-audience,
 html[data-hero-intro="ready"] .hero__details,
 html[data-hero-intro="ready"] .project-marquee__viewport {
   pointer-events: none;
+}
+
+/* The document intro runs only on a fresh document. Route changes keep the
+   rail and cursor alive while the page surface performs its own transition. */
+html[data-app-boot="pending"],
+html[data-document-intro="pending"],
+html[data-document-intro="ready"] {
+  overflow: hidden !important;
+}
+
+html[data-document-intro="pending"] .fluid-cursor {
+  opacity: 0 !important;
+  filter: blur(10px);
+}
+
+html[data-document-intro="pending"] .fluid-cursor,
+html[data-document-intro="ready"] .fluid-cursor {
+  transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1), filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-surface--idle {
+  opacity: 1;
+  filter: none;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-surface--exiting {
+  opacity: 0;
+  filter: blur(12px);
+  pointer-events: none;
+  transition: opacity 240ms ease-in, filter 240ms ease-in;
+}
+
+.page-surface--entering {
+  opacity: 0;
+  filter: blur(12px);
+  pointer-events: none;
+  transition: none;
 }
 
 html[data-hero-intro="complete"] .desktop-rail,
@@ -315,5 +390,11 @@ html[data-intro="play"] .site-intro {
 
   .reveal-following-action {
     pointer-events: auto;
+  }
+
+  .soft-reveal-ready .lab-car.soft-reveal-target:not(.is-changing) .lab-car__credit {
+    opacity: 1;
+    filter: none;
+    transition: none;
   }
 }

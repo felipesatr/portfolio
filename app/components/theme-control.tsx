@@ -40,9 +40,9 @@ export function ThemeControl() {
     },
     () => {
       const documentTheme = document.documentElement.dataset.theme;
-      return isTheme(documentTheme ?? null) ? documentTheme : "dark";
+      return isTheme(documentTheme ?? null) ? documentTheme : "dark-sky";
     },
-    () => "dark",
+    () => "dark-sky",
   );
   const selectedIndex = themes.findIndex((theme) => theme.id === selectedTheme);
   const visualIndex = selectedIndex;

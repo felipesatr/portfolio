@@ -1,15 +1,15 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import type { RouteConfig } from "@react-router/dev/routes";
 
 export default [
-  index("routes/home.tsx"),
-  route("work", "routes/work.tsx"),
-  route("work/behind-this-portfolio", "routes/behind-portfolio.tsx"),
-  route("work/:slug", "routes/project-detail.tsx"),
-  route("services", "routes/services.tsx"),
-  route("about", "routes/about.tsx"),
-  route("lab", "routes/lab.tsx"),
-  route("contact", "routes/contact.tsx"),
-  route("privacy", "routes/privacy.tsx"),
-  route("accessibility", "routes/accessibility.tsx"),
-  route("*", "routes/not-found.tsx"),
+  { index: true, file: "routes/home.tsx" },
+  { path: "work", file: "routes/work.tsx" },
+  { path: "work/behind-this-portfolio", file: "routes/behind-portfolio.tsx" },
+  { path: "work/:slug", file: "routes/project-detail.tsx" },
+  { path: "services", file: "routes/services.tsx" },
+  { path: "about", file: "routes/about.tsx" },
+  { path: "lab", file: "routes/lab.tsx" },
+  { path: "contact", file: "routes/contact.tsx" },
+  { path: "privacy", file: "routes/privacy.tsx" },
+  { path: "accessibility", file: "routes/accessibility.tsx" },
+  { path: "*", file: "routes/not-found.tsx" },
 ] satisfies RouteConfig;

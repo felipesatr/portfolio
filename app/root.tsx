@@ -18,27 +18,39 @@ import "./styles/layout.css";
 import "./styles/components.css";
 import "./styles/utilities.css";
 import "./styles/motion.css";
+import "./styles/lab-calendar.css";
 
 const earlyPreferenceScript = `
   (() => {
     try {
       const root = document.documentElement;
+      root.dataset.appBoot = 'pending';
+      const homePath = ${JSON.stringify(publicAsset("") )};
+      if (window.location.pathname === homePath || window.location.pathname === homePath + 'index.html') {
+        root.dataset.documentIntro = 'pending';
+      }
       const resetToTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      const navigation = performance.getEntriesByType('navigation')[0];
-      const isReload = navigation && navigation.type === 'reload';
-
-      // New documents remain invisible until their scroll position has settled.
-      root.dataset.pageReset = 'pending';
+      const introLocked = () => root.dataset.appBoot === 'pending' ||
+        root.dataset.documentIntro === 'pending' || root.dataset.documentIntro === 'ready';
+      const blockIntroScroll = (event) => {
+        if (introLocked()) event.preventDefault();
+      };
+      window.addEventListener('wheel', blockIntroScroll, { capture: true, passive: false });
+      window.addEventListener('touchmove', blockIntroScroll, { capture: true, passive: false });
+      window.addEventListener('keydown', (event) => {
+        if (!introLocked() || event.altKey || event.ctrlKey || event.metaKey) return;
+        const target = event.target;
+        if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+        if ([' ', 'Spacebar', 'PageDown', 'PageUp', 'End', 'Home', 'ArrowDown', 'ArrowUp'].includes(event.key)) event.preventDefault();
+      }, { capture: true });
+      window.addEventListener('scroll', () => {
+        if (introLocked() && (window.scrollX || window.scrollY)) resetToTop();
+      }, { passive: true });
       root.style.scrollBehavior = 'auto';
       history.scrollRestoration = 'manual';
       resetToTop();
       requestAnimationFrame(() => {
         resetToTop();
-        requestAnimationFrame(() => {
-          resetToTop();
-          root.style.removeProperty('scroll-behavior');
-          delete root.dataset.pageReset;
-        });
       });
 
       // Keyboard reloads get a complete exit: fade and blur the live page,
@@ -49,7 +61,6 @@ const earlyPreferenceScript = `
         window.setTimeout(() => {
           root.style.scrollBehavior = 'auto';
           resetToTop();
-          sessionStorage.removeItem('portfolio-intro-seen');
           window.setTimeout(() => window.location.reload(), 24);
         }, 300);
       };
@@ -62,23 +73,36 @@ const earlyPreferenceScript = `
       }, { capture: true });
       window.addEventListener('beforeunload', () => {
         root.dataset.pageExit = 'leaving';
+        // Native toolbar reloads do not run through reloadWithExit. Hide the
+        // outgoing document synchronously so its last painted content cannot
+        // appear between the old page and the new document's boot veil.
+        if (document.body) document.body.style.visibility = 'hidden';
         root.style.scrollBehavior = 'auto';
         resetToTop();
       });
 
       const savedTheme = localStorage.getItem('portfolio-theme');
-      if (savedTheme) root.dataset.theme = savedTheme;
-      if (isReload || !sessionStorage.getItem('portfolio-intro-seen')) {
-        sessionStorage.setItem('portfolio-intro-seen', 'true');
-        root.dataset.intro = 'play';
-      } else {
-        root.dataset.intro = 'seen';
-      }
+      const themeIds = ['dark-sky', 'dark-monochrome', 'dark-cyan', 'dark-berry', 'dark', 'warm', 'light', 'cool', 'contrast'];
+      if (savedTheme && themeIds.includes(savedTheme)) root.dataset.theme = savedTheme;
     } catch (_) {}
   })();
 `;
 
-const figtreeStylesheet = "https://fonts.googleapis.com/css2?family=Figtree:wght@400&display=swap";
+const bootStyles = `
+  html { background: #0a0a0a; }
+  html[data-theme="dark"], html[data-theme="dark"] body { background: #1b0044; }
+  html[data-theme="dark-cyan"], html[data-theme="dark-cyan"] body { background: #190482; }
+  html[data-theme="dark-monochrome"], html[data-theme="dark-monochrome"] body { background: #252525; }
+  html[data-theme="dark-berry"], html[data-theme="dark-berry"] body { background: #3a0519; }
+  html[data-theme="warm"], html[data-theme="warm"] body { background: #f2e9d7; }
+  html[data-theme="light"], html[data-theme="light"] body { background: #f0f5f9; }
+  html[data-theme="cool"], html[data-theme="cool"] body { background: #edf3f0; }
+  html[data-theme="contrast"], html[data-theme="contrast"] body { background: #ffffff; }
+  html[data-app-boot="pending"] body { visibility: hidden !important; }
+  html[data-page-exit="leaving"] body { opacity: 0; filter: blur(12px); pointer-events: none; transition: opacity 280ms ease, filter 280ms ease; }
+`;
+
+const figtreeStylesheet = "https://fonts.googleapis.com/css2?family=Figtree:wght@400..900&display=swap";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: publicAsset("favicon.svg"), type: "image/svg+xml" },
@@ -88,16 +112,16 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en" data-theme="dark-sky" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
         <meta name="theme-color" content="#161616" />
+        <style>{bootStyles}</style>
+        <script dangerouslySetInnerHTML={{ __html: earlyPreferenceScript }} />
         <Meta />
         <Links />
-        <style>{`html[data-page-reset="pending"] { scroll-behavior: auto !important; } html[data-page-reset="pending"] body { visibility: hidden; } body { transition: opacity 300ms var(--ease-out), filter 300ms var(--ease-out); } html[data-page-exit="leaving"] body { opacity: 0; filter: blur(12px); pointer-events: none; }`}</style>
-        <script dangerouslySetInnerHTML={{ __html: earlyPreferenceScript }} />
       </head>
       <body>
         <noscript>

@@ -21,7 +21,7 @@ export default function Home() {
     <div className="home-page">
       <Hero />
       <ProjectGrid projects={homeProjects} variant="home-marquee" />
-      <SkillsSection />
+      <SkillsSection experiment idSuffix="third" originalCopy toolsLabel="Tools" />
       <LabPreview />
       <ExperienceSection />
       <ReferencesSection />

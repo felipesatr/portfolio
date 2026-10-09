@@ -268,30 +268,33 @@ export const skillGroups: SkillGroup[] = [
 export const experience: ExperienceItem[] = [
   {
     id: '01',
-    title: 'Web design + production',
-    company: 'Company name placeholder',
+    title: 'Web Designer & Developer / Team Lead',
+    company: 'Nationwide Marketing Group',
+    initials: 'NMG',
     summary:
-      'Responsive implementation, content structure, visual consistency, review, and finished delivery.',
-    years: 'Years placeholder',
-    placeholder: true,
+      'Migrated 70+ CMS websites and built pages with HTML, CSS and JavaScript. Led delivery, training, UX/UI and SEO improvements.',
+    years: 'Mar 2024 – Present',
+    placeholder: false,
   },
   {
     id: '02',
-    title: 'Large-scale migration',
-    company: 'Company name placeholder',
+    title: 'Visual Designer & AI Strategist',
+    company: 'Industrias Galgo Global',
+    initials: 'IGG',
     summary:
-      'Repeatable workflows, production coordination, and quality standards across many pages or sites.',
-    years: 'Years placeholder',
-    placeholder: true,
+      'Led the Philaac S.A.S. rebrand and designed product labels. Created AI-assisted imagery and video for social campaigns.',
+    years: 'Feb 2025 – May 2025',
+    placeholder: false,
   },
   {
     id: '03',
-    title: 'Leadership + process',
-    company: 'Company name placeholder',
+    title: 'Lead Designer',
+    company: 'UNE Consultores de Seguros',
+    initials: 'UNE',
     summary:
-      'Clear responsibilities, improved workflows, stronger timelines, and support for team productivity.',
-    years: 'Years placeholder',
-    placeholder: true,
+      'Refreshed the logo and visual identity, aligning color, typography and digital design with the brand’s strategy.',
+    years: 'Jan 2024 – Mar 2024',
+    placeholder: false,
   },
 ]
 

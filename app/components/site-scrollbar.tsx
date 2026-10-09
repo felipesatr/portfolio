@@ -23,11 +23,32 @@ export function SiteScrollbar() {
 
     const lenis = new Lenis({
       anchors: true,
-      autoRaf: true,
+      autoRaf: false,
       lerp: 0.1,
       smoothWheel: true,
     });
     let drag: DragGeometry | null = null;
+    let scrollFrame = 0;
+    const tick = (time: number) => {
+      lenis.raf(time);
+      // Draw viewport overlays after Lenis has moved the document, in the
+      // same frame. Native scroll events can arrive on the following frame.
+      window.dispatchEvent(new CustomEvent("portfolio-scroll-frame", {
+        detail: { scrolling: Boolean(lenis.isScrolling) },
+      }));
+      scrollFrame = window.requestAnimationFrame(tick);
+    };
+    scrollFrame = window.requestAnimationFrame(tick);
+
+    const introIsLocked = () => root.dataset.appBoot === "pending" ||
+      root.dataset.documentIntro === "pending" || root.dataset.documentIntro === "ready";
+    const syncIntroLock = () => {
+      if (introIsLocked()) lenis.stop();
+      else if (!drag) lenis.start();
+    };
+    const introObserver = new MutationObserver(syncIntroLock);
+    introObserver.observe(root, { attributes: true, attributeFilter: ["data-app-boot", "data-document-intro"] });
+    syncIntroLock();
 
     const paint = () => {
       const viewport = window.innerHeight;
@@ -53,7 +74,7 @@ export function SiteScrollbar() {
       }
       drag = null;
       scrollbar.classList.remove("site-scrollbar--dragging");
-      lenis.start();
+      syncIntroLock();
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
@@ -103,7 +124,10 @@ export function SiteScrollbar() {
     paint();
 
     return () => {
+      window.cancelAnimationFrame(scrollFrame);
+      window.dispatchEvent(new Event("portfolio-scroll-frame-stop"));
       releaseDrag();
+      introObserver.disconnect();
       root.classList.remove("has-scrollbar");
       thumb.removeEventListener("pointerdown", onPointerDown);
       lenis.off("scroll", paint);

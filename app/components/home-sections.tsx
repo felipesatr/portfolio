@@ -1317,7 +1317,7 @@ function CarShowcase() {
     </>
   );
 }
-function VisualMemoryGame() {
+function VisualMemoryGame({ instanceId = "primary" }: { instanceId?: string }) {
   const [level, setLevel] = useState(1);
   const [gridSize, setGridSize] = useState(3);
   const [pattern, setPattern] = useState<MemoryCell[]>([]);
@@ -1467,7 +1467,7 @@ function VisualMemoryGame() {
           <button type="button" aria-label="How to play visual memory" data-cursor-tool data-cursor-title="" data-cursor-description="Watch the pattern, then repeat it. Three wrong clicks cost a life. See how far you can get!" onPointerEnter={(event) => dispatchCursorToolEvent("portfolio-stack-tool-enter", event.currentTarget)} onPointerLeave={(event) => dispatchCursorToolEvent("portfolio-stack-tool-leave", event.currentTarget)}><InfoCircleIcon /></button>
         </div>
       </div>
-      <div id="visual-memory-board" className={`lab-visual-memory__board${isBoardTransitioning ? " is-transitioning" : ""}`} style={{ "--memory-grid": gridSize } as CSSProperties}>
+      <div id={`visual-memory-board-${instanceId}`} className={`lab-visual-memory__board${isBoardTransitioning ? " is-transitioning" : ""}`} style={{ "--memory-grid": gridSize } as CSSProperties}>
         {Array.from({ length: gridSize * gridSize }, (_, index) => {
           const cell = { x: index % gridSize, y: Math.floor(index / gridSize) };
           const phaseClass = isPatternVisible(cell) ? " is-revealed is-" + revealPhase : "";
@@ -1573,15 +1573,15 @@ export function SkillsSection({ experiment = false, idSuffix, cardVariant = idSu
           to="/services"
           tabIndex={isProcessActionRevealed ? undefined : -1}
           aria-hidden={!isProcessActionRevealed}
-        ><span className="liquid-button__surface">Learn about my process <ArrowUpRightIcon /></span></Link>
+        ><span className="liquid-button__surface">Learn about my process <ArrowRightIcon /></span></Link>
       </div>
     </section>
   );
 }
 
-function TypeRacer() {
+function TypeRacer({ instanceId = "primary" }: { instanceId?: string }) {
   const phrase = "The quick brown fox jumps over the lazy dog.";
-  const highScoreKey = "portfolio:type-racer:high-score";
+  const highScoreKey = instanceId === "primary" ? "portfolio:type-racer:high-score" : `portfolio:type-racer:high-score:${instanceId}`;
   const words = phrase.split(" ");
   const [entry, setEntry] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -1876,7 +1876,7 @@ function snakeTailClass(snake: SnakeCell[], index: number) {
   return " is-tail-facing-down";
 }
 
-function SnakeGame() {
+function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
   const [snake, setSnake] = useState<SnakeCell[]>(initialSnake);
   const [food, setFood] = useState<SnakeCell>({ x: 2, y: 2 });
   const [score, setScore] = useState(0);
@@ -1894,9 +1894,10 @@ function SnakeGame() {
   const crashTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const stored = Number.parseInt(window.localStorage.getItem("portfolio:snake:high-score") || "0", 10);
+    const highScoreKey = instanceId === "primary" ? "portfolio:snake:high-score" : `portfolio:snake:high-score:${instanceId}`;
+    const stored = Number.parseInt(window.localStorage.getItem(highScoreKey) || "0", 10);
     if (Number.isFinite(stored)) setHighScore(stored);
-  }, []);
+  }, [instanceId]);
 
   const shouldHideSnakeCursor = isPointerInsideSnake && (isControlLeaving || status === "playing" || status === "crashing");
 
@@ -2026,7 +2027,8 @@ function SnakeGame() {
       setScore(nextScore);
       setHighScore((currentHigh) => {
         const nextHigh = Math.max(currentHigh, nextScore);
-        window.localStorage.setItem("portfolio:snake:high-score", String(nextHigh));
+        const highScoreKey = instanceId === "primary" ? "portfolio:snake:high-score" : `portfolio:snake:high-score:${instanceId}`;
+        window.localStorage.setItem(highScoreKey, String(nextHigh));
         return nextHigh;
       });
       if (nextSnake.length === snakeGridSize * snakeGridSize) {
@@ -2063,65 +2065,84 @@ function SnakeGame() {
   );
 }
 
-export function LabPreview() {
+export function LabPreview({ instanceId = "primary", hidden = false }: { instanceId?: string; hidden?: boolean }) {
   const [isTitleRevealed, setIsTitleRevealed] = useState(false);
   const [isLabActionRevealed, setIsLabActionRevealed] = useState(false);
+  const isFollowupCopy = instanceId === "duplicate" || instanceId === "third";
+  const headingId = `lab-preview-heading-${instanceId}`;
 
   return (
-    <section className={`lab-preview${isTitleRevealed ? " lab-preview--title-revealed" : ""}`} id="lab&tools" aria-labelledby="lab-preview-heading">
+    <section hidden={hidden} className={`lab-preview${isFollowupCopy ? " lab-preview--duplicate" : ""}${instanceId === "third" ? " lab-preview--third" : ""}${isTitleRevealed ? " lab-preview--title-revealed" : ""}`} id={instanceId === "primary" ? "lab&tools" : `lab&tools-${instanceId}`} aria-labelledby={headingId}>
       <div className="lab-grid">
         <div className="lab-grid__intro">
           <div className="lab-grid__title-fit">
-            <RevealTitle id="lab-preview-heading" lines={["I like to create tools & interactive stuff"]} onRevealComplete={() => setIsTitleRevealed(true)} onRevealSettled={() => setIsLabActionRevealed(true)} />
+            <RevealTitle id={headingId} lines={["I like to create tools & interactive stuff"]} onRevealComplete={() => setIsTitleRevealed(true)} onRevealSettled={() => setIsLabActionRevealed(true)} />
           </div>
           <Link
             className={`button button--secondary lab-grid__cta reveal-following-action${isLabActionRevealed ? " is-revealed" : ""}`}
             to="/lab"
             tabIndex={isLabActionRevealed ? undefined : -1}
             aria-hidden={!isLabActionRevealed}
-          ><span className="liquid-button__surface">Explore interaction lab <ArrowUpRightIcon /></span></Link>
+          ><span className="liquid-button__surface">Explore interaction lab <ArrowRightIcon /></span></Link>
         </div>
-        <VisualMemoryGame />
+        <VisualMemoryGame instanceId={instanceId} />
         <DrawingPad />
-        <TypeRacer />
-        <SnakeGame />
-        <LabCalendar />
+        {isFollowupCopy ? <div className="lab-preview__placeholder lab-preview__placeholder--7 lab-preview__photo"><img src={publicAsset("images/lab-cat.jpeg")} alt="A tabby cat sitting in sunlight by a window" loading="lazy" decoding="async" /></div> : null}
+        <TypeRacer instanceId={instanceId} />
+        <SnakeGame instanceId={instanceId} />
+        <LabCalendar instanceId={instanceId} />
         <CarShowcase />
       </div>
     </section>
   );
 }
 
-export function ExperienceSection() {
+function ExperienceList() {
   return (
-    <section className="experience-section" id="experience" aria-labelledby="experience-heading">
-      <div className="experience-section__intro">
-        <RevealTitle id="experience-heading" lines={["Career"]} />
-        <a className="button button--secondary" href={publicAsset("resume/felipe-salazar-cv.pdf")} target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
-      </div>
-      <ol className="experience-list experience-list--index">
-        {experience.map((item) => (
-          <li key={item.id}>
-            <div className="experience-list__identity">
-              <span className="experience-list__logo" role="img" aria-label={`${item.company} initials`}><span aria-hidden="true">{item.initials}</span></span>
-              <div className="experience-list__identity-copy">
-                <p className="experience-list__company-name">{item.company}</p>
-                <p className="experience-list__role">{item.title}</p>
-              </div>
-            </div>
-            <p className="experience-list__contribution">{item.summary}</p>
-            <p className="experience-list__years">{item.years}</p>
-          </li>
-        ))}
-        <li className="experience-list__education">
+    <SpotlightGrid className="experience-spotlight-grid">
+    <ol className="experience-list experience-list--index" aria-label="Career experience">
+      {experience.map((item) => (
+        <li key={item.id} className="spotlight-card career-spotlight-card">
+          <span className="spotlight-card__glow" aria-hidden="true" />
+          <span className="spotlight-card__face" aria-hidden="true" />
           <div className="experience-list__identity">
-            <img className="experience-list__university-logo" src={publicAsset("images/uniandes-logo.svg")} alt="Universidad de los Andes" width={300} height={126} loading="lazy" />
-            <p className="experience-list__degree">Bachelor’s degree in Design</p>
+            <span className={`experience-list__logo experience-list__logo--${item.logoVariant}`} aria-hidden="true"><img src={publicAsset(item.logo)} alt="" loading="lazy" decoding="async" /></span>
+            <div className="experience-list__identity-copy">
+              <p className="experience-list__company-name">{item.company}</p>
+              <p className="experience-list__role">{item.title}</p>
+            </div>
           </div>
-          <p className="experience-list__contribution">Universidad de Los Andes</p>
-          <p className="experience-list__years">2024</p>
+          <p className="experience-list__contribution">{item.summary}</p>
+          <p className="experience-list__years">{item.years}</p>
         </li>
-      </ol>
+      ))}
+      <li className="experience-list__education spotlight-card career-spotlight-card">
+        <span className="spotlight-card__glow" aria-hidden="true" />
+        <span className="spotlight-card__face" aria-hidden="true" />
+        <div className="experience-list__identity">
+          <span className="experience-list__logo experience-list__logo--uniandes" aria-hidden="true"><img src={publicAsset("images/uniandes-logo-128.webp")} alt="" width={128} height={128} loading="lazy" decoding="async" /></span>
+          <p className="experience-list__degree">Bachelor’s degree in Design</p>
+        </div>
+        <p className="experience-list__contribution">Universidad de Los Andes</p>
+        <p className="experience-list__years">2024</p>
+      </li>
+    </ol>
+    </SpotlightGrid>
+  );
+}
+
+export function ExperienceSection() {
+  const [isCareerTitleSettled, setIsCareerTitleSettled] = useState(false);
+
+  return (
+    <section className="experience-section" id="experience" aria-label="Career and education">
+      <div className={`experience-section__set${isCareerTitleSettled ? " experience-section__set--title-settled" : ""}`}>
+        <div className="experience-section__intro">
+          <RevealTitle id="experience-heading" lines={["Career"]} onRevealSettled={() => setIsCareerTitleSettled(true)} />
+          <a className="button button--secondary" href={publicAsset("resume/felipe-salazar-cv.pdf")} target="_blank" rel="noreferrer"><span className="liquid-button__surface">View my CV <ArrowUpRightIcon /></span></a>
+        </div>
+        <ExperienceList />
+      </div>
     </section>
   );
 }

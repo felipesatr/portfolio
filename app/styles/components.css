@@ -1603,7 +1603,17 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   opacity: 0 !important;
 }
 
-[data-cursor-pill-active] {
+.fluid-cursor--pill-highlight[data-cursor-underline] {
+  background: #fff;
+  transition:
+    transform 230ms cubic-bezier(0.22, 0.75, 0.25, 1),
+    inline-size 230ms cubic-bezier(0.22, 0.75, 0.25, 1),
+    block-size 230ms cubic-bezier(0.22, 0.75, 0.25, 1),
+    border-radius 230ms cubic-bezier(0.22, 0.75, 0.25, 1),
+    opacity 100ms linear;
+}
+
+[data-cursor-pill-active]:not([data-cursor-underline]) {
   position: relative;
   z-index: 1;
   color: var(--cursor-ink) !important;
@@ -2561,7 +2571,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 /* Give the curved antialiasing the extra half pixel it needs to read as
    strongly as the straight sides of this native rounded gradient border. */
-.service-summary-card.spotlight-card {
+:is(.service-summary-card, .career-spotlight-card).spotlight-card {
   border-width: 2.5px;
   color: var(--service-card-ink, var(--text));
   background-image:
@@ -2586,7 +2596,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   background-size: 100% 100%;
 }
 
-.service-summary-card.spotlight-card::before {
+:is(.service-summary-card, .career-spotlight-card).spotlight-card::before {
   display: none;
 }
 
@@ -2637,7 +2647,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 
 /* Diffuse a second radial border layer behind the card face. This follows the
    nested [data-glow] layer from the reference; the card's border glow is separate. */
-.service-summary-card .spotlight-card__glow {
+:is(.service-summary-card, .career-spotlight-card) .spotlight-card__glow {
   display: block;
   z-index: -1;
   inset: 0;
@@ -2648,7 +2658,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   border: 0;
 }
 
-.service-summary-card .spotlight-card__glow::before {
+:is(.service-summary-card, .career-spotlight-card) .spotlight-card__glow::before {
   display: block;
   inset: -10px;
   border: 10px solid transparent;
@@ -2671,7 +2681,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   mask-composite: intersect;
 }
 
-.service-summary-card .spotlight-card__face {
+:is(.service-summary-card, .career-spotlight-card) .spotlight-card__face {
   display: block;
   inset: 2.5px;
   border-radius: calc(var(--radius-card) - 2.5px);
@@ -3101,6 +3111,40 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   padding-block: 0;
   /* Measured Lab starts H28; its 10.5 rows plus this gap place Career at H41. */
   margin-block-end: calc(2.5 * var(--grid-row));
+}
+
+/* The second Lab copy places the sketch at H42 and keeps its lower grid balanced. */
+.lab-preview--duplicate {
+  /* Move Memory and Drawing together from H41.5 to H42. */
+  --lab-one-row: 1;
+  --lab-two-row: 1;
+  /* Keep Type Racer directly below the shifted Memory card with its gutter. */
+  --lab-middle-row: 4.5;
+  --lab-bottom-row: 5;
+  --lab-viewer-height-correction: calc(0.0625 * var(--grid-row));
+  min-block-size: calc(11 * var(--grid-row));
+}
+
+/* End the duplicate drawing card at H45; Snake keeps its existing anchored position. */
+.lab-preview--duplicate .lab-preview__placeholder--2 {
+  block-size: calc(3 * var(--grid-row));
+}
+
+@media (min-width: 761px) {
+  .lab-preview--third {
+    /* Follow the original Lab copy with only its standard section gutter. */
+    inset-block-start: auto;
+    margin-block-start: 0;
+  }
+
+  .lab-preview--third .lab-preview__placeholder--2 {
+    block-size: calc((2.5 * var(--grid-row)) - var(--lab-half-card-gap));
+  }
+
+  .lab-preview--third .lab-preview__placeholder--7 {
+    inset-block-start: calc(((var(--lab-two-row) + 2.5) * var(--grid-row)) + var(--lab-half-card-gap));
+    block-size: calc((3.05 * var(--grid-row)) - var(--lab-half-card-gap));
+  }
 }
 
 .lab-preview h2,
@@ -3784,12 +3828,19 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 /* Restore 06's desktop grid placement after the shared card base styles. */
 .lab-preview__placeholder--6 {
   position: absolute;
-  /* Start at H32 minus the shared Lab-card gutter. */
-  inset-block-start: calc((5 * var(--grid-row)) - var(--lab-card-gap));
+  /* Start below the middle row, with the shared Lab-card gutter. */
+  inset-block-start: calc(((var(--lab-bottom-row) + 0.5) * var(--grid-row)) - var(--lab-card-gap));
   inset-inline-start: 0;
   inline-size: calc((3.5 * var(--layout-column)) - var(--lab-half-card-gap));
-  /* Preserve the H37.5 lower edge. */
+  /* Preserve the same five-and-a-half-row height as the lower demos shift. */
   block-size: calc((5.5 * var(--grid-row)) + var(--lab-card-gap));
+}
+
+.lab-preview--duplicate .lab-preview__placeholder--6 {
+  /* Align the 3D viewer with Type Racer in the second copy. */
+  inset-block-start: calc((var(--lab-middle-row) * var(--grid-row)) + var(--lab-card-gap));
+  /* Tiny proportional correction matches the calendar's rendered lower edge. */
+  block-size: calc(((var(--lab-middle-row-span) + 4) * var(--grid-row)) + var(--lab-viewer-height-correction));
 }
 
 /* 04 begins below 02; 05 follows Type Racer. Each outer measurement uses the
@@ -3797,12 +3848,28 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 .lab-snake {
   position: absolute;
   /* Start directly after 02, leaving only the shared card gap. */
-  inset-block-start: calc((4.5 * var(--grid-row)) + var(--lab-half-card-gap));
+  inset-block-start: calc(((var(--lab-two-row) + 4.5) * var(--grid-row)) + var(--lab-half-card-gap));
   inset-inline-start: calc((var(--lab-two-column) * var(--layout-column)) + var(--lab-half-card-gap));
   /* Match 02's exact column span and gutter treatment. */
   inline-size: calc((var(--lab-top-column-span) * var(--layout-column)) - var(--lab-half-card-gap));
   /* Match Visual Memory's outer height. */
   block-size: calc(var(--lab-top-row-span) * var(--grid-row));
+}
+
+.lab-preview--duplicate .lab-snake {
+  /* Align its bottom with the calendar and 3D viewer, preserving its height. */
+  inset-block-start: calc(((var(--lab-middle-row) + var(--lab-middle-row-span) + 4 - var(--lab-top-row-span) + 0.05) * var(--grid-row)) + var(--lab-card-gap));
+}
+
+.lab-preview__placeholder--7 {
+  position: absolute;
+  inset-block-start: calc(((var(--lab-two-row) + 3) * var(--grid-row)) + var(--lab-card-gap));
+  inset-inline-start: calc((var(--lab-two-column) * var(--layout-column)) + var(--lab-half-card-gap));
+  inline-size: calc((var(--lab-top-column-span) * var(--layout-column)) - var(--lab-half-card-gap));
+  /* Fill the available space while keeping a standard card gap on both sides. */
+  block-size: calc((2.55 * var(--grid-row)) - var(--lab-card-gap));
+  border-radius: var(--radius-card);
+  background: var(--soft);
 }
 
 .lab-calendar {
@@ -5110,10 +5177,22 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
 }
 
 .references-grid .reference-card {
-  min-block-size: 22rem;
-  padding: var(--space-6);
-  border: var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: calc(3.5 * var(--grid-row) + 1rem);
+  padding: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  background: var(--service-card-bg, var(--soft));
+  color: var(--service-card-ink, var(--text));
 }
+
+:root[data-theme="dark-cyan"] .references-section { --service-card-bg: #371adb; --service-card-ink: #fff; }
+:root[data-theme="dark"] .references-section { --service-card-bg: #2a006a; --service-card-ink: #fff; }
+.references-grid .reference-card > :is(span, p) { color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
+.references-grid .reference-card blockquote { color: var(--service-card-ink, var(--text)); }
 
 .contact-cta {
   color: var(--text-body);
@@ -6270,6 +6349,7 @@ h6 { font-size: var(--type-h6) !important; }
   .lab-preview__placeholder--4,
   .lab-preview__placeholder--5,
   .lab-preview__placeholder--6,
+  .lab-preview__placeholder--7,
   .lab-snake,
   .lab-calendar {
     position: static;
@@ -6309,6 +6389,7 @@ h6 { font-size: var(--type-h6) !important; }
   .lab-preview__placeholder--1 { order: 2; }
   .lab-preview__placeholder--3 { order: 3; }
   .lab-preview__placeholder--2 { order: 4; }
+  .lab-preview__placeholder--7 { order: 4.5; }
   .lab-preview__placeholder-group { order: 5; }
   .lab-snake { order: 5; }
   .lab-calendar { order: 6; }
@@ -6751,7 +6832,8 @@ h6 { font-size: var(--type-h6) !important; }
 }
 
 /* Career rows occupy V5–V10; the preceding section owns H41. */
-.home-page .experience-section { grid-template-columns: calc(2 * var(--layout-column)) minmax(0, 1fr); gap: var(--space-5); border-block-end: 0; padding-block-end: 0; margin-block-end: calc(2 * var(--grid-row)); }
+.home-page .experience-section { border-block-end: 0; padding-block-end: 0; margin-block-end: calc(2 * var(--grid-row)); }
+.home-page .experience-section__set { display: grid; grid-template-columns: calc(2 * var(--layout-column)) minmax(0, 1fr); gap: var(--space-5); min-inline-size: 0; }
 .home-page .contact-cta { border-block-start: 0; }
 .home-page .experience-section__intro { display: grid; align-content: start; justify-items: start; gap: 0; }
 .home-page .experience-section__intro .button { margin-block-start: 2.375rem; }
@@ -6763,18 +6845,25 @@ h6 { font-size: var(--type-h6) !important; }
 .home-page .experience-section .experience-list .experience-list__company-name { color: inherit; font-size: 16px; font-weight: 700; }
 .home-page .experience-section .experience-list .experience-list__role { display: block; color: var(--service-card-ink, var(--text)); }
 .home-page .experience-section .experience-list .experience-list__contribution { grid-column: 2; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
-.home-page .experience-section .experience-list .experience-list__years { grid-column: 3; color: var(--service-card-ink, var(--text)); font: 400 14.5px / 1.5 var(--font-body); text-align: end; text-transform: none; }
-.home-page .experience-list__logo { flex: 0 0 1.75rem; inline-size: 1.75rem; border-radius: 0.35rem; font: 400 9px / 1 var(--font-body); text-transform: none; }
-.home-page .experience-section .experience-list .experience-list__education { block-size: calc(0.6 * var(--grid-row)); min-block-size: calc(0.6 * var(--grid-row)); }
-.home-page .experience-list__university-logo { flex: 0 0 3.5rem; inline-size: 3.5rem; block-size: auto; object-fit: contain; }
+.home-page .experience-section .experience-list .experience-list__years { grid-column: 3; color: var(--service-card-ink, var(--text)); font: 400 12px / 1.5 var(--font-body); text-align: end; text-transform: none; }
+.home-page .experience-list__logo { display: grid; flex: 0 0 4rem; place-items: center; inline-size: 4rem; block-size: 4rem; overflow: hidden; border: 0; border-radius: 0.625rem; background: #fff; }
+.home-page .experience-list__logo img { display: block; inline-size: 100%; block-size: 100%; object-fit: contain; }
+.home-page .experience-list__logo--nmg { background: #0047bb; }
+.home-page .experience-list__logo--galgo { background: #000; }
+.home-page .experience-list__logo--galgo img { transform: scale(1.12); }
+.home-page .experience-list__logo--une { padding-inline: 0.25rem; background: #fff; }
+.home-page .experience-list__logo--uniandes { flex-basis: 4rem; inline-size: 4rem; block-size: 2.5rem; margin: 0; overflow: visible; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.home-page .experience-section .experience-list .experience-list__logo--uniandes img { flex: none; inline-size: 1.75rem; block-size: 1.75rem; }
+.home-page .experience-section .experience-list .experience-list__education { block-size: calc(0.5625 * var(--grid-row)); min-block-size: calc(0.5625 * var(--grid-row)); padding-block: 0.4375rem; }
 .home-page .experience-section .experience-list .experience-list__degree { color: var(--service-card-ink, var(--text)); }
+html.soft-reveal-ready .home-page .experience-section__set:not(.experience-section__set--title-settled) .experience-list > li { opacity: 0; filter: blur(10px); pointer-events: none; }
 @media (min-width: 761px) and (max-width: 1599px) {
   .home-page .experience-section__intro h2 { --type-h2: min(calc(var(--grid-row) / 1.06), calc(0.68 * var(--layout-column))); }
   .home-page .experience-section .experience-list li { block-size: auto; }
   .home-page .experience-section .experience-list .experience-list__education { block-size: auto; }
 }
 @media (max-width: 760px) {
-  .home-page .experience-section { grid-template-columns: minmax(0,1fr); gap: var(--space-6); }
+  .home-page .experience-section__set { grid-template-columns: minmax(0,1fr); gap: var(--space-6); }
   .home-page .experience-section .experience-list li { grid-template-columns: minmax(0, 1fr) auto; align-items: start; block-size: auto; }
   .home-page .experience-section .experience-list__identity { grid-column: 1; }
   .home-page .experience-section .experience-list .experience-list__contribution { grid-column: 1 / -1; }

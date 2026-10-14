@@ -47,7 +47,6 @@ const softRevealSelector = [
   ".making-case-study__path",
   ".making-case-study__stages > li",
   ".not-found > *",
-  ".site-footer > *",
 ].join(",");
 
 export function SoftRevealObserver() {
@@ -71,6 +70,7 @@ export function SoftRevealObserver() {
       : null;
 
     const register = (element: Element) => {
+      if (element.closest("[data-no-reveal]")) return;
       if (observed.has(element) || element.classList.contains("reveal-title") || element.classList.contains("reveal-text")) return;
 
       observed.add(element);

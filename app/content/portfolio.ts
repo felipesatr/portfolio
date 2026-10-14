@@ -270,7 +270,8 @@ export const experience: ExperienceItem[] = [
     id: '01',
     title: 'Web Designer & Developer / Team Lead',
     company: 'Nationwide Marketing Group',
-    initials: 'NMG',
+    logo: 'images/nmg-logo-128.webp',
+    logoVariant: 'nmg',
     summary:
       'Migrated 70+ CMS websites and built pages with HTML, CSS and JavaScript. Led delivery, training, UX/UI and SEO improvements.',
     years: 'Mar 2024 – Present',
@@ -280,7 +281,8 @@ export const experience: ExperienceItem[] = [
     id: '02',
     title: 'Visual Designer & AI Strategist',
     company: 'Industrias Galgo Global',
-    initials: 'IGG',
+    logo: 'images/galgo-logo-400-128.webp',
+    logoVariant: 'galgo',
     summary:
       'Led the Philaac S.A.S. rebrand and designed product labels. Created AI-assisted imagery and video for social campaigns.',
     years: 'Feb 2025 – May 2025',
@@ -290,7 +292,8 @@ export const experience: ExperienceItem[] = [
     id: '03',
     title: 'Lead Designer',
     company: 'UNE Consultores de Seguros',
-    initials: 'UNE',
+    logo: 'images/une-logo-128.webp',
+    logoVariant: 'une',
     summary:
       'Refreshed the logo and visual identity, aligning color, typography and digital design with the brand’s strategy.',
     years: 'Jan 2024 – Mar 2024',

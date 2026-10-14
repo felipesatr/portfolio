@@ -38,7 +38,7 @@ const periods = ["AM", "PM"];
 function cursorTool(element: HTMLElement, entering: boolean) {
   window.dispatchEvent(new CustomEvent(entering ? "portfolio-stack-tool-enter" : "portfolio-stack-tool-leave", { detail: element }));
 }
-function Wheel({ label, values, value, onChange, compact = false }: { label: string; values: string[]; value: number; onChange: (value: number) => void; compact?: boolean }) {
+function Wheel({ label, values, value, onChange, compact = false, idPrefix = "calendar" }: { label: string; values: string[]; value: number; onChange: (value: number) => void; compact?: boolean; idPrefix?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const destination = useRef<number | null>(null);
   const initial = useRef(value);
@@ -49,7 +49,7 @@ function Wheel({ label, values, value, onChange, compact = false }: { label: str
   useLayoutEffect(() => {
     if (ref.current) ref.current.scrollTop = initial.current * 36;
   }, []);
-  return <div className={`calendar-wheel${compact ? " is-compact" : ""}`} role="listbox" aria-label={label} aria-activedescendant={`calendar-${label}-${value}`} tabIndex={0} data-lenis-prevent ref={ref}
+  return <div className={`calendar-wheel${compact ? " is-compact" : ""}`} role="listbox" aria-label={label} aria-activedescendant={`${idPrefix}-${label}-${value}`} tabIndex={0} data-lenis-prevent ref={ref}
     onWheel={() => { destination.current = null; }} onTouchStart={() => { destination.current = null; }} onScroll={(event) => {
       const index = Math.max(0, Math.min(values.length - 1, Math.round(event.currentTarget.scrollTop / 36)));
       if (destination.current !== null && Math.abs(event.currentTarget.scrollTop - destination.current * 36) > 1) return;
@@ -64,12 +64,12 @@ function Wheel({ label, values, value, onChange, compact = false }: { label: str
       onChange(next);
       scrollToValue(next);
     }}>
-    {values.map((text, index) => <button key={text} id={`calendar-${label}-${index}`} type="button" role="option" aria-selected={index === value} tabIndex={-1}
+    {values.map((text, index) => <button key={text} id={`${idPrefix}-${label}-${index}`} type="button" role="option" aria-selected={index === value} tabIndex={-1}
       onClick={() => { onChange(index); scrollToValue(index); }}>{text}</button>)}
   </div>;
 }
 
-export function LabCalendar() {
+export function LabCalendar({ instanceId = "primary" }: { instanceId?: string }) {
   const todayKey = useSyncExternalStore(subscribeDay, todaySnapshot, serverDay);
   const today = fromDateKey(todayKey || "2000-01-01");
   const tasks = useSyncExternalStore(subscribeTasks, readTasks, serverTasks);
@@ -324,7 +324,9 @@ export function LabCalendar() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) remove();
     else removeTimers.current.push(setTimeout(remove, 220));
   };
-  return <article ref={root} className="lab-preview__placeholder lab-preview__placeholder--5 lab-calendar" aria-label="Interactive calendar"
+  const idPrefix = `calendar-${instanceId}`;
+  const taskInputId = `calendar-task-text-${instanceId}`;
+  return <article id={`lab-calendar-${instanceId}`} ref={root} className="lab-preview__placeholder lab-preview__placeholder--5 lab-calendar" aria-label="Interactive calendar"
     data-calendar-phase={phase} data-picker-changed={pickerChanged || undefined} data-pill-reveal={pillReveal || undefined} data-calendar-overlay={editor ? "editor" : pickerVisible ? "picker" : undefined}
     onPointerDown={() => root.current?.removeAttribute("data-calendar-keyboard")} onKeyDown={(event) => {
       if (event.key === "Tab") root.current?.setAttribute("data-calendar-keyboard", "");
@@ -402,16 +404,16 @@ export function LabCalendar() {
           }
         }}>
         {editor ? <form onSubmit={save}>
-          <div className="calendar-editor-header"><label className="calendar-editor-label" htmlFor="calendar-task-text">Task <span>{fromDateKey(editor.date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span></label><button type="button" className="calendar-editor-close" aria-label="Cancel task" onClick={closeEditor}><Plus strokeWidth={2.5} /></button></div>
-          <input id="calendar-task-text" ref={input} placeholder="What would you like to do?" value={text} maxLength={180} required onChange={(event) => setText(event.target.value)} />
+          <div className="calendar-editor-header"><label className="calendar-editor-label" htmlFor={taskInputId}>Task <span>{fromDateKey(editor.date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span></label><button type="button" className="calendar-editor-close" aria-label="Cancel task" onClick={closeEditor}><Plus strokeWidth={2.5} /></button></div>
+          <input id={taskInputId} ref={input} placeholder="What would you like to do?" value={text} maxLength={180} required onChange={(event) => setText(event.target.value)} />
           <div className="calendar-editor-footer"><button type="button" className="calendar-time-pill" aria-label={`Task time ${displayTime(editor.time)}`} aria-expanded={timeOpen} onClick={() => setTimeOpen(!timeOpen)}><Clock strokeWidth={1.5} /><span>{displayTime(editor.time)}</span></button><button type="submit" className="calendar-confirm" disabled={!text.trim() || editorClosing || !slotAvailable}><Check strokeWidth={1.5} /> Done</button></div>
           {!slotAvailable ? <span className="visually-hidden" role="status">This hour already has four tasks. Choose another hour.</span> : null}
           <div className="calendar-time-expansion" inert={!timeOpen}><div><div className="calendar-time-wheels">
-            <Wheel compact label="hour" values={hourValues} value={timeParts(editor.time).hour} onChange={(hour) => setEditor((value) => value && ({ ...value, time: timeFromParts(hour, timeParts(value.time).minute, timeParts(value.time).period) }))} />
-            <Wheel compact label="minute" values={minuteValues} value={timeParts(editor.time).minute} onChange={(minute) => setEditor((value) => value && ({ ...value, time: timeFromParts(timeParts(value.time).hour, minute, timeParts(value.time).period) }))} />
-            <Wheel compact label="period" values={periods} value={timeParts(editor.time).period} onChange={(period) => setEditor((value) => value && ({ ...value, time: timeFromParts(timeParts(value.time).hour, timeParts(value.time).minute, period) }))} />
+            <Wheel idPrefix={idPrefix} compact label="hour" values={hourValues} value={timeParts(editor.time).hour} onChange={(hour) => setEditor((value) => value && ({ ...value, time: timeFromParts(hour, timeParts(value.time).minute, timeParts(value.time).period) }))} />
+            <Wheel idPrefix={idPrefix} compact label="minute" values={minuteValues} value={timeParts(editor.time).minute} onChange={(minute) => setEditor((value) => value && ({ ...value, time: timeFromParts(timeParts(value.time).hour, minute, timeParts(value.time).period) }))} />
+            <Wheel idPrefix={idPrefix} compact label="period" values={periods} value={timeParts(editor.time).period} onChange={(period) => setEditor((value) => value && ({ ...value, time: timeFromParts(timeParts(value.time).hour, timeParts(value.time).minute, period) }))} />
           </div></div></div>
-        </form> : <><div className="calendar-picker-wheels"><Wheel label="year" values={years} value={draftYear - today.getFullYear() + 100} onChange={(index) => setDraftYear(today.getFullYear() - 100 + index)} /><Wheel label="month" values={monthNames} value={draftMonth} onChange={setDraftMonth} /></div>
+        </form> : <><div className="calendar-picker-wheels"><Wheel idPrefix={idPrefix} label="year" values={years} value={draftYear - today.getFullYear() + 100} onChange={(index) => setDraftYear(today.getFullYear() - 100 + index)} /><Wheel idPrefix={idPrefix} label="month" values={monthNames} value={draftMonth} onChange={setDraftMonth} /></div>
           <div className="calendar-picker-actions"><button type="button" onClick={closePicker} aria-label="Cancel month selection"><Xmark strokeWidth={1.5} /></button><button type="button" disabled={phase === "picker-closing"} onClick={commitMonth} aria-label="Use selected month and year"><Check strokeWidth={1.5} /> Done</button></div></>}
       </div>
     </div> : null}

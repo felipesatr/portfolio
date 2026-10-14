@@ -19,6 +19,7 @@ import "./styles/components.css";
 import "./styles/utilities.css";
 import "./styles/motion.css";
 import "./styles/lab-calendar.css";
+import "./styles/comparison-experiments.css";
 
 const earlyPreferenceScript = `
   (() => {

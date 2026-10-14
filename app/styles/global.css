@@ -52,6 +52,16 @@ button {
   color: inherit;
 }
 
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+[role="button"],
+.button,
+.outlined-link {
+  font-size: 12.5px !important;
+}
+
 :focus-visible {
   outline: var(--focus-ring);
   outline-offset: 4px;
@@ -113,7 +123,7 @@ main {
   inset-inline: 0.4375rem;
   block-size: var(--scrollbar-height, 0);
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text) 42%, var(--page));
+  background: var(--scrollbar-thumb);
   cursor: grab;
   translate: 0 var(--scrollbar-top, 0);
   transition:
@@ -124,12 +134,12 @@ main {
 }
 
 .site-scrollbar__thumb:hover {
-  background: color-mix(in srgb, var(--primary) 82%, var(--text));
+  background: var(--scrollbar-thumb-hover);
   scale: 1.25 1;
 }
 
 .site-scrollbar--dragging .site-scrollbar__thumb {
-  background: var(--primary-hover);
+  background: var(--scrollbar-thumb-active);
   cursor: grabbing;
   scale: 1.25 1;
 }

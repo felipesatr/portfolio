@@ -612,17 +612,64 @@ export function FluidCursor() {
         "h4",
         "h5",
         "h6",
+        "p",
+        "blockquote",
+        "span",
+        "small",
+        "strong",
+        "em",
+        "cite",
         ".section-index",
       ].join(", ");
       const nextNegativeMaskTargets = Array.from(document.querySelectorAll<HTMLElement>(negativeMaskSelector))
         .filter((element) => {
           if (textMask.contains(element)) return false;
           if (element.matches("button, .button")) return false;
-          if (
-            element.hasAttribute("data-fluid-cursor-negative-mask") ||
-            element.hasAttribute("data-fluid-cursor-native-ink")
-          ) return true;
-          return !element.closest("button, .button");
+          const explicitlyMasked = element.hasAttribute("data-fluid-cursor-negative-mask") ||
+            element.hasAttribute("data-fluid-cursor-native-ink");
+          if (explicitlyMasked) return !element.closest("button, .button");
+
+          // Headings already used this rule before paragraph masking was
+          // introduced. In particular, some display headings are focusable
+          // themselves, so their own tabindex must not suppress the mask.
+          if (element.matches("h1, h2, h3, h4, h5, h6, .section-index")) {
+            return !element.closest("button, .button");
+          }
+
+          // Pick up standalone inline copy (labels, metadata, and short CTA
+          // text) without creating overlapping clones for inline markup inside
+          // a paragraph, quote, or heading. Nested inline groups are handled
+          // by their innermost text-bearing element instead.
+          if (element.matches("span, small, strong, em, cite")) {
+            if (!element.textContent?.trim()) return false;
+            if (element.closest("h1, h2, h3, h4, h5, h6, p, blockquote, .section-index")) return false;
+            if (Array.from(element.querySelectorAll("span, small, strong, em, cite")).some((child) => child.textContent?.trim())) return false;
+          }
+
+          // The default mask is for static copy. Preserve native text on links,
+          // controls, hover tools, live status, and popup content.
+          if (element.closest([
+            "a", "button", "input", "select", "textarea", "summary", "[tabindex]:not([tabindex='-1'])",
+            "[role=button]", "[role=link]", "[role=menuitem]",
+            "[role=status]", "[aria-hidden='true']",
+            "[data-cursor-tool]", "[data-cursor-pill]", "[data-fluid-cursor-surface]",
+            "[aria-haspopup]", "[aria-live]", "[popover]", "dialog", "[role=dialog]",
+            "[role=alertdialog]", "[role=tooltip]", ".fluid-cursor", ".modal", ".popover",
+            ".lab-preview__placeholder", ".lab-visual-memory", ".lab-etch", ".lab-type-racer",
+            ".lab-snake", ".lab-calendar", ".lab-car", ".lab-draw",
+            ".project-preview", ".calendar-editor", ".calendar-picker", ".work-filter-float",
+          ].join(", "))) return false;
+          // Explicit text targets inside a paragraph own their own mask and
+          // must not be covered by a second, flattened paragraph clone.
+          if (element.querySelector("[data-fluid-cursor-negative-mask], [data-fluid-cursor-native-ink]")) return false;
+
+          // Some custom hover interactions do not expose a semantic role.
+          // Keep their text native whenever the target or an ancestor uses a
+          // pointer cursor to advertise that interaction.
+          for (let ancestor: HTMLElement | null = element; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+            if (window.getComputedStyle(ancestor).cursor === "pointer") return false;
+          }
+          return true;
         })
         .map((element) => ({ element, rect: element.getBoundingClientRect() }));
       const nextNegativeElements = new Set(nextNegativeMaskTargets.map(({ element }) => element));
@@ -694,10 +741,16 @@ export function FluidCursor() {
       return animatedRuns.length > 0 ? animatedRuns : [element];
     };
 
-    const usesNativeTextInk = (element: HTMLElement) => (
-      element.hasAttribute("data-fluid-cursor-native-ink") ||
-      element.matches("h1, h2, h3, h4, h5, h6, .section-index")
-    );
+    const usesNativeTextInk = (element: HTMLElement) => {
+      // Spotlight cards are isolated/stacked below the fixed cursor. Their
+      // headings must use the global overlay clone, just like card body copy,
+      // so the masked glyphs can paint above the cursor instead of being
+      // trapped in the card's stacking context. Keep explicit native targets
+      // and the rest of the heading system on the original glyph path.
+      if (element.closest(".spotlight-card")) return false;
+      return element.hasAttribute("data-fluid-cursor-native-ink") ||
+        element.matches("h1, h2, h3, h4, h5, h6, .section-index");
+    };
 
     const nativeTextPaintRunsFor = (element: HTMLElement) => {
       const animatedRuns = Array.from(element.querySelectorAll<HTMLElement>(
@@ -1111,6 +1164,9 @@ export function FluidCursor() {
     const pillRectFor = (element: HTMLElement) => {
       const label = element.querySelector<HTMLElement>("[data-cursor-pill-label]");
       const rect = (label ?? element).getBoundingClientRect();
+      if (element.hasAttribute("data-cursor-underline")) {
+        return { left: rect.left, top: rect.bottom + 2, width: rect.width, height: 2 };
+      }
       const isAudienceLabel = element.matches(".hero-audience button");
       const paddingInline = isAudienceLabel ? 13 : 9;
       const paddingBlock = 5;
@@ -1156,6 +1212,7 @@ export function FluidCursor() {
       if (activePill) setPillLayer(activePill, false);
       activePill = null;
       activePillTransform = "";
+      fallback.removeAttribute("data-cursor-underline");
 
       fallback.style.inlineSize = `${currentRect.width}px`;
       fallback.style.blockSize = `${currentRect.height}px`;
@@ -1171,7 +1228,7 @@ export function FluidCursor() {
       toolMorphStartWidth = currentRect.width;
       toolMorphStartHeight = currentRect.height;
       toolMorphStartRadius = Number.parseFloat(currentStyle.borderRadius) || currentRect.height / 2;
-      toolMorphNearSquareSize = currentRect.height * 0.95;
+      toolMorphNearSquareSize = Math.max(currentRect.height, currentRect.height <= 3 ? cursorRadius * 2 : 0) * 0.95;
       toolMorphLargeBallSize = toolMorphNearSquareSize * 0.95;
       toolMorphing = true;
       fallback.classList.add("fluid-cursor--tool-morph");
@@ -1216,6 +1273,7 @@ export function FluidCursor() {
       fallback.style.removeProperty("box-shadow");
       if (activePill) setPillLayer(activePill, false);
       activePill = nextPill;
+      fallback.toggleAttribute("data-cursor-underline", nextPill.hasAttribute("data-cursor-underline"));
       setPillLayer(nextPill, true);
 
       const rect = pillRectFor(nextPill);
@@ -1239,8 +1297,10 @@ export function FluidCursor() {
       // Use the same cursor-to-tooltip handoff: first draw one unrotated ball,
       // then morph it into the anchored destination on the next paint.
       if (!isChangingPill) {
-        cursor.x = pointer.x;
-        cursor.y = pointer.y;
+        if (!nextPill.hasAttribute("data-cursor-underline")) {
+          cursor.x = pointer.x;
+          cursor.y = pointer.y;
+        }
         cursor.vx = 0;
         cursor.vy = 0;
         fallback.classList.add("fluid-cursor--visible", "fluid-cursor--liquid-handoff");
@@ -1250,7 +1310,7 @@ export function FluidCursor() {
           fallback.classList.remove("fluid-cursor--liquid-handoff");
           fallback.classList.add("fluid-cursor--tool-entering");
           applyPill();
-          toolEntryTimer = window.setTimeout(() => fallback.classList.remove("fluid-cursor--tool-entering"), 460);
+          toolEntryTimer = window.setTimeout(() => fallback.classList.remove("fluid-cursor--tool-entering"), nextPill.hasAttribute("data-cursor-underline") ? 230 : 460);
         });
       } else {
         applyPill();
@@ -1926,7 +1986,9 @@ export function FluidCursor() {
         fallback.style.inlineSize = `${morphWidth}px`;
         fallback.style.blockSize = `${morphHeight}px`;
         fallback.style.borderRadius = `${Math.min(morphRadius, smallerSide / 2)}px`;
-        fallback.style.padding = `${0.75 * inverseProgress}rem ${0.85 * inverseProgress}rem`;
+        fallback.style.padding = toolMorphStartHeight <= 3
+          ? "0"
+          : `${0.75 * inverseProgress}rem ${0.85 * inverseProgress}rem`;
         fallback.style.boxShadow = "none";
 
         // A rectangle stays level. As it becomes circular, blend in the same
@@ -2295,7 +2357,7 @@ export function FluidCursor() {
       refreshTargets();
       if (!activeTool) startLoop();
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"] });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "hidden"] });
     /* The fallback reads --cursor directly from CSS, while WebGL receives a
        numeric uniform. Observe stylesheet replacement too (including Vite
        hot updates) so both rendering paths always use the same token. */

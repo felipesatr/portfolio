@@ -50,7 +50,8 @@ export interface ExperienceItem {
   id: string;
   title: string;
   company: string;
-  initials?: string;
+  logo: string;
+  logoVariant: "nmg" | "galgo" | "une";
   summary: string;
   years: string;
   placeholder: boolean;

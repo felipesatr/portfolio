@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, ty
 import { Link } from "react-router";
 import { audienceContent } from "~/content/portfolio";
 import type { Audience } from "~/content/types";
-import { FaceIdIcon, SendDiagonalSolidIcon } from "./icons";
+import { ArrowRightIcon, FaceIdIcon } from "./icons";
 
 // Reveal wrappers are intentionally metric-neutral. Their only job is to clip
 // the animated words; authored line breaks and the heading-fit formula remain
@@ -173,6 +173,7 @@ export function Hero() {
   const [hasCompletedInitialReveal, setHasCompletedInitialReveal] = useState(!startsWithDocumentIntro);
   const frameRef = useRef<number | null>(null);
   const fittedSizesRef = useRef(new Map<Audience, number>());
+  const heroRef = useRef<HTMLElement>(null);
   const selectedContent = audienceContent.find((item) => item.id === selectedAudience) ?? audienceContent[0];
   const outgoingContent = outgoingAudience
     ? audienceContent.find((item) => item.id === outgoingAudience) ?? null
@@ -244,6 +245,9 @@ export function Hero() {
 
   const recordFitSize = useCallback((audience: Audience, size: number) => {
     fittedSizesRef.current.set(audience, size);
+    // Footer comparisons inherit the actual fitted H1 size, including audience
+    // switches and responsive/font changes, without becoming additional H1s.
+    (heroRef.current?.closest(".home-page") as HTMLElement | null)?.style.setProperty("--hero-title-size", `${size}px`);
   }, []);
 
   const finishAudienceTransition = () => {
@@ -254,6 +258,7 @@ export function Hero() {
 
   return (
     <section
+      ref={heroRef}
       id="hero"
       className={`hero${useH03HeadlineLayoutTest ? " hero--headline-h03-test" : ""}`}
       aria-labelledby="hero-heading"
@@ -302,6 +307,7 @@ export function Hero() {
                   <span>Learn more about</span>
                   <span className="hero-about-button__face" aria-hidden="true"><FaceIdIcon size={18} /></span>
                   <span>me</span>
+                  <ArrowRightIcon />
                 </span>
               </Link>
               <Link
@@ -311,7 +317,7 @@ export function Hero() {
               >
                 <span className="liquid-button__surface">
                   <span>Let&apos;s talk!</span>
-                  <SendDiagonalSolidIcon />
+                  <ArrowRightIcon />
                 </span>
               </Link>
             </div>

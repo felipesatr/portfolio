@@ -1,5 +1,5 @@
 import type { Route } from "./+types/contact";
-import { ArrowUpRightIcon } from "~/components/icons";
+import { ArrowRightIcon, ArrowUpRightIcon } from "~/components/icons";
 import { PageHeader } from "~/components/page-header";
 import { routeMeta, siteContent } from "~/content/site";
 import { publicAsset } from "~/lib/public-asset";
@@ -18,7 +18,7 @@ export default function Contact() {
       />
       <section className="contact-directory" aria-labelledby="contact-directory-heading">
         <h2 id="contact-directory-heading" className="visually-hidden">Contact directory</h2>
-        <a href={`mailto:${siteContent.email}`}><span>Email</span><strong>Email address placeholder</strong><ArrowUpRightIcon /></a>
+        <a href={`mailto:${siteContent.email}`}><span>Email</span><strong>Email address placeholder</strong><ArrowRightIcon /></a>
         <a href={publicAsset("resume/felipe-salazar-cv.pdf")} target="_blank" rel="noreferrer"><span>Resume</span><strong>Felipe Salazar · CV (PDF)</strong><ArrowUpRightIcon /></a>
         <div aria-disabled="true"><span>LinkedIn</span><strong>Profile URL placeholder</strong></div>
         <div aria-disabled="true"><span>GitHub</span><strong>Profile URL placeholder</strong></div>

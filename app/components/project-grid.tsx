@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { projectTags, type Project } from "~/content/types";
 import { useProjectFilter, type ProjectFilter } from "~/hooks/use-project-filter";
 import { publicAsset } from "~/lib/public-asset";
-import { ArrowUpRightIcon, FilterIcon } from "./icons";
+import { ArrowRightIcon, FilterIcon } from "./icons";
 import { RevealText, RevealTitle } from "./motion-reveal";
 
 interface ProjectGridProps {
@@ -56,7 +56,7 @@ function ProjectCard({ project, index, duplicate = false, variableSize = false, 
       <span className="project-card__number">Project {String(index + 1).padStart(2, "0")} · Placeholder</span>
       <strong>{project.title}</strong>
       <span>{project.summary}</span>
-      <span className="project-card__action">View project <ArrowUpRightIcon /></span>
+      <span className="project-card__action">View project <ArrowRightIcon /></span>
     </span>
   );
 
@@ -496,7 +496,7 @@ function ProjectPreview({ preview, expanded, closing, onClose, onTransformEnd }:
             <ul className="tag-list" aria-label={`Tags for ${preview.project.title}`}>
               {preview.project.tags.map((tag) => <li key={tag}>{tag}</li>)}
             </ul>
-            <Link className="button button--primary" to={`/work/${preview.project.slug}`}><span className="liquid-button__surface">Open full case study <ArrowUpRightIcon /></span></Link>
+            <Link className="button button--primary" to={`/work/${preview.project.slug}`}><span className="liquid-button__surface">Open full case study <ArrowRightIcon /></span></Link>
           </div>
         </header>
 
@@ -633,7 +633,7 @@ export function ProjectGrid({ projects, heading = "Selected work", headingId = "
               to="/work"
               tabIndex={isAllProjectsActionRevealed ? undefined : -1}
               aria-hidden={!isAllProjectsActionRevealed}
-            ><span className="liquid-button__surface">View all projects <ArrowUpRightIcon /></span></Link>
+            ><span className="liquid-button__surface">View all projects <ArrowRightIcon /></span></Link>
           </div>
         </>
       ) : (

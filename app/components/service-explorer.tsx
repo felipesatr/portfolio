@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { services, type Service } from "~/content/services";
-import { ArrowUpRightIcon, AutomationIcon, CodeIcon, InterfaceIcon } from "./icons";
+import { ArrowRightIcon, AutomationIcon, CodeIcon, InterfaceIcon } from "./icons";
 
 function ServiceIcon({ service }: { service: Service }) {
   if (service.icon === "code") return <CodeIcon size={30} />;
@@ -74,7 +74,7 @@ function ServicePanel({ openService, expanded, onClose }: { openService: OpenSer
           <h3>Scope boundary</h3>
           <p>{service.boundary}</p>
         </div>
-        <Link className="outlined-link" to="/contact">Discuss a project <ArrowUpRightIcon /></Link>
+        <Link className="outlined-link" to="/contact">Discuss a project <ArrowRightIcon /></Link>
       </div>
       <button ref={closeRef} type="button" className="service-panel__close" onClick={onClose} aria-label="Close service details"><span aria-hidden="true">×</span></button>
     </div>
@@ -122,7 +122,7 @@ export function ServiceExplorer() {
           <span className="service-explorer__icon"><ServiceIcon service={service} /></span>
           <strong>{service.title}</strong>
           <span>{service.summary}</span>
-          <span className="service-explorer__action">Open details <ArrowUpRightIcon /></span>
+          <span className="service-explorer__action">Open details <ArrowRightIcon /></span>
         </button>
       ))}
       {openService && typeof document !== "undefined" ? createPortal(<ServicePanel openService={openService} expanded={expanded} onClose={close} />, document.body) : null}

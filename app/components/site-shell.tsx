@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { siteContent } from "~/content/site";
 import { publicAsset } from "~/lib/public-asset";
 import { LayoutGridOverlay, LayoutGridToggle } from "./layout-grid-overlay";
 import { ScrollToTop } from "./scroll-to-top";
@@ -8,7 +7,8 @@ import { SiteScrollbar } from "./site-scrollbar";
 import { SoftRevealObserver } from "./soft-reveal-observer";
 import { ThemeControl } from "./theme-control";
 import { FluidCursor } from "./fluid-cursor";
-import { LanguageIcon } from "./icons";
+import { ArrowUpRightIcon, LanguageIcon } from "./icons";
+import { ENABLE_LAB_VIEW_TEST, LabViewTest, type ComparisonViewState, type LabView } from "./lab-view-test";
 
 const navigation = [
   { label: "Home", href: "/" },
@@ -24,16 +24,19 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
 
   return (
     <nav className={className} aria-label="Primary navigation">
-      {navigation.map((item) => (
-        <NavLink
-          key={item.href}
-          to={item.href}
-          end={item.href === "/"}
-          className={({ isActive }) => `nav-link${isActive ? " nav-link--active" : ""}`}
-        >
-          <span data-cursor-pill={usesPillCursor ? "" : undefined} data-cursor-pill-label={usesPillCursor ? "" : undefined} data-fluid-cursor-native-ink>{item.label}</span>
-        </NavLink>
-      ))}
+      {navigation.map((item) => {
+        const label = item.href === "/lab" && usesPillCursor ? "Lab & tools" : item.label;
+        return (
+          <NavLink
+            key={item.href}
+            to={item.href}
+            end={item.href === "/"}
+            className={({ isActive }) => `nav-link${isActive ? " nav-link--active" : ""}`}
+          >
+            <span data-cursor-pill={usesPillCursor ? "" : undefined} data-cursor-pill-label={usesPillCursor ? "" : undefined} data-fluid-cursor-native-ink>{label}</span>
+          </NavLink>
+        );
+      })}
       <a className="nav-link" href={publicAsset("resume/felipe-salazar-cv.pdf")} target="_blank" rel="noreferrer">
         <span data-cursor-pill={usesPillCursor ? "" : undefined} data-cursor-pill-label={usesPillCursor ? "" : undefined} data-fluid-cursor-native-ink>Resume</span> <span className="visually-hidden">PDF, opens in a new tab</span>
       </a>
@@ -48,27 +51,65 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
   );
 }
 
+function SiteFooterCard() {
+  const [bogotaTime, setBogotaTime] = useState(() => formatBogotaTime());
+
+  useLayoutEffect(() => {
+    const updateTime = () => setBogotaTime(formatBogotaTime());
+    updateTime();
+    let intervalId = 0;
+    const firstTick = window.setTimeout(() => {
+      updateTime();
+      intervalId = window.setInterval(updateTime, 60_000);
+    }, 60_000 - (Date.now() % 60_000));
+    return () => {
+      window.clearTimeout(firstTick);
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  return (
+    <div className="site-footer__card site-footer__card--narrow">
+      <div>
+        <span>Designed &amp; coded with care</span>
+        <strong>© {new Date().getFullYear()} Felipe Salazar • All rights reserved</strong>
+      </div>
+      <div className="site-footer__site-info">
+        <span>Site details</span>
+        <div className="site-footer__site-links">
+          <NavLink to="/privacy" data-cursor-pill data-cursor-underline>Privacy policy <ArrowUpRightIcon size={14} /></NavLink>
+          <span aria-hidden="true">•</span>
+          <NavLink to="/accessibility" data-cursor-pill data-cursor-underline>Accessibility statement <ArrowUpRightIcon size={14} /></NavLink>
+        </div>
+      </div>
+      <div className="site-footer__local-time">
+        <span>Local time</span>
+        <strong>{bogotaTime} UTC−5 • Bogotá, Colombia</strong>
+      </div>
+    </div>
+  );
+}
+
+function formatBogotaTime() {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Bogota",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
 function SiteFooter() {
   return (
-    <footer className="site-footer">
-      <div>
-        <strong>{siteContent.name}</strong>
-        <span>{siteContent.title}</span>
-      </div>
-      <nav aria-label="Footer navigation">
-        {navigation.map((item) => (
-          <NavLink key={item.href} to={item.href}><span data-fluid-cursor-native-ink>{item.label}</span></NavLink>
-        ))}
-        <NavLink to="/privacy"><span data-fluid-cursor-native-ink>Privacy</span></NavLink>
-        <NavLink to="/accessibility"><span data-fluid-cursor-native-ink>Accessibility statement</span></NavLink>
-      </nav>
-      <span>V0 · Built for keyboard access, readable contrast, and reduced motion. <NavLink to="/accessibility">Read the accessibility statement</NavLink>.</span>
+    <footer className="site-footer" data-no-reveal>
+      <SiteFooterCard />
     </footer>
   );
 }
 
 export function SiteShell() {
   const [isGridVisible, setIsGridVisible] = useState(false);
+  const [labView, setLabView] = useState<LabView>(null);
   const [routePhase, setRoutePhase] = useState<"idle" | "exiting" | "entering">("idle");
   const location = useLocation();
   const navigate = useNavigate();
@@ -156,6 +197,8 @@ export function SiteShell() {
     </div>
   );
 
+  const comparisonViews: ComparisonViewState = { labView, setLabView };
+
   return (
     <div className="site-frame" onClickCapture={handleInternalNavigation}>
       <a className="skip-link" href="#main-content">Skip to main content</a>
@@ -184,10 +227,13 @@ export function SiteShell() {
 
       <div className={`page-surface page-surface--${routePhase}`}>
         <main id="main-content" tabIndex={-1}>
-          <Outlet />
+          <Outlet context={comparisonViews} />
         </main>
         <SiteFooter />
       </div>
+      {ENABLE_LAB_VIEW_TEST && location.pathname === "/" ? (
+        <LabViewTest labView={labView} setLabView={setLabView} />
+      ) : null}
       <ScrollToTop />
       <SiteScrollbar />
       <FluidCursor />

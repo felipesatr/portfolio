@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router";
 import type { Route } from "./+types/project-detail";
-import { ArrowUpRightIcon } from "~/components/icons";
+import { ArrowRightIcon } from "~/components/icons";
 import { RevealTitle } from "~/components/motion-reveal";
 import { workProjects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
@@ -54,7 +54,7 @@ export default function ProjectDetail() {
         <section><p className="section-index">04</p><RevealTitle lines={["Execution"]} /><p>Show responsive behavior, semantic structure, accessibility, content handling, quality checks, and the path from design to finished interface.</p></section>
         <section><p className="section-index">05</p><RevealTitle lines={["Outcome and reflection"]} /><p>Use qualified outcomes when measurements are unavailable. Include what changed, what was learned, and what would be improved next.</p></section>
       </div>
-      <Link className="outlined-link case-study__next" to="/work">Return to project index <ArrowUpRightIcon /></Link>
+      <Link className="outlined-link case-study__next" to="/work">Return to project index <ArrowRightIcon /></Link>
     </article>
   );
 }

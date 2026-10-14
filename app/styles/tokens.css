@@ -34,6 +34,10 @@
   --cta-outline-active: var(--primary);
   --accent: var(--primary);
   --focus: var(--primary);
+  /* Scrollbar roles resolve through each theme's current palette. */
+  --scrollbar-thumb: var(--service-card-bg, var(--soft));
+  --scrollbar-thumb-hover: var(--secondary);
+  --scrollbar-thumb-active: var(--secondary);
   --cursor: #1e2022;
   --cursor-ink: #f0f5f9;
   --theme-light: #f0f5f9;

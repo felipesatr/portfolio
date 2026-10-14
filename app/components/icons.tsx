@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ArrowUpRight,
   CodeBrackets,
+  Copy,
   Download,
   Expand,
   FilterAlt,
@@ -38,7 +39,7 @@ const sharedProps = {
 } as const;
 
 export function ArrowUpRightIcon({ size = 18, className }: IconProps) {
-  return <ArrowUpRight {...sharedProps} className={className} width={size} height={size} />;
+  return <ArrowUpRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
 }
 
 export function ArrowDownIcon({ size = 18, className }: IconProps) {
@@ -54,7 +55,11 @@ export function ArrowLeftIcon({ size = 18, className }: IconProps) {
 }
 
 export function ArrowRightIcon({ size = 18, className }: IconProps) {
-  return <ArrowRight {...sharedProps} className={className} width={size} height={size} />;
+  return <ArrowRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
+}
+
+export function CopyIcon({ size = 18, className }: IconProps) {
+  return <Copy {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
 }
 
 export function ArrowLeftCircleIcon({ size = 18, className }: IconProps) {

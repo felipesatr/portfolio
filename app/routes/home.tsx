@@ -3,7 +3,8 @@ import { useOutletContext } from "react-router";
 import { ContactCta } from "~/components/contact-cta";
 import { Hero } from "~/components/hero";
 import { ENABLE_LAB_VIEW_TEST, type ComparisonViewState } from "~/components/lab-view-test";
-import { ExperienceSection, LabPreview, ReferencesSection, SkillsSection } from "~/components/home-sections";
+import { ExperienceSection, LabPreview, SkillsSection } from "~/components/home-sections";
+import { KindWordsSections } from "~/components/kind-words";
 import { ProjectGrid } from "~/components/project-grid";
 import { projects } from "~/content/portfolio";
 import { routeMeta } from "~/content/site";
@@ -19,7 +20,7 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { labView } = useOutletContext<ComparisonViewState>();
+  const { labView, kindWordsView } = useOutletContext<ComparisonViewState>();
   return (
     <div className="home-page">
       <Hero />
@@ -28,7 +29,7 @@ export default function Home() {
       <LabPreview hidden={ENABLE_LAB_VIEW_TEST && labView === 2} />
       <LabPreview instanceId="third" hidden={ENABLE_LAB_VIEW_TEST && labView === 1} />
       <ExperienceSection />
-      <ReferencesSection />
+      <KindWordsSections view={kindWordsView} />
       <ContactCta />
     </div>
   );

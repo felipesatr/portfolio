@@ -1,6 +1,7 @@
 // Temporary comparison aid. Set this to false to restore both sections and
 // remove the controls; no layout or game-state changes need to be undone.
 import type { Dispatch, SetStateAction } from "react";
+import type { KindWordsView } from "./kind-words-test";
 
 export const ENABLE_LAB_VIEW_TEST = true;
 export type LabView = 1 | 2 | null;
@@ -8,6 +9,8 @@ export type LabView = 1 | 2 | null;
 export interface ComparisonViewState {
   labView: LabView;
   setLabView: Dispatch<SetStateAction<LabView>>;
+  kindWordsView: KindWordsView;
+  setKindWordsView: Dispatch<SetStateAction<KindWordsView>>;
 }
 
 type LabViewTestProps = {

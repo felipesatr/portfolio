@@ -615,7 +615,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   color: var(--muted);
   background: transparent;
   font-size: 17.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.015em;
   line-height: 1.2;
   cursor: pointer;
@@ -2462,7 +2462,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --service-backglow-alpha: 0.28;
 }
 
-:root[data-theme="dark-cyan"] .service-summary-grid {
+:root[data-theme="dark-cyan"] :is(.service-summary-grid, .kind-words-sections) {
   --service-card-bg: #371adb;
   --service-card-ink: #ffffff;
   --service-card-muted: #c2d9ff;
@@ -2473,7 +2473,7 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
   --service-card-ink: #ffffff;
 }
 
-:root[data-theme="dark"] .service-summary-grid {
+:root[data-theme="dark"] :is(.service-summary-grid, .kind-words-sections) {
   --service-card-bg: #2a006a;
 }
 

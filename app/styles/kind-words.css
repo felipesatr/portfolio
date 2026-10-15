@@ -1,0 +1,290 @@
+/* Isolated comparison layouts. The home container is V3–V10: three columns
+   belong to the heading and four to the component, with no boundary gutter. */
+.kind-words-sections {
+  --kw-bg: var(--service-card-bg, var(--soft));
+  --kw-ink: var(--service-card-ink, var(--text));
+  --kw-muted: color-mix(in srgb, var(--kw-ink) 72%, var(--kw-bg) 28%);
+  --kw-accent: var(--secondary, var(--primary));
+  --kw-active-ink: color-mix(in srgb, var(--kw-ink) 85%, var(--kw-accent) 15%);
+  --kw-line: color-mix(in srgb, var(--kw-ink) 18%, transparent);
+  --kw-raised: color-mix(in srgb, var(--kw-bg) 88%, var(--kw-ink) 12%);
+  --kw-shadow: color-mix(in srgb, var(--page) 65%, transparent);
+  min-inline-size: 0;
+}
+.home-page .kind-words-section {
+  display: grid;
+  grid-template-columns: calc(3 * var(--layout-column)) minmax(0, 1fr);
+  align-items: start;
+  padding: 0;
+  margin-block: 0 calc(2 * var(--grid-row));
+  min-inline-size: 0;
+}
+.home-page .kind-words-section[hidden] { display: none; }
+.kind-words-intro { padding-inline-end: 1.5rem; min-inline-size: 0; }
+.kind-words-intro h2 { font-size: var(--type-h2); }
+.kw-variant-label { display: block; margin-block-start: 1rem; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+.kind-words-test {
+  position: fixed; inset-block-start: 4rem; inset-inline-end: 2rem; z-index: 95;
+  display: grid; grid-template-columns: repeat(5, 26px); gap: 5px;
+}
+.kind-words-test .rail-circle-control { inline-size: 26px; block-size: 26px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+
+.kw-frame {
+  --kw-pad: clamp(24px, 1.7vw, 32px);
+  position: relative;
+  min-inline-size: 0;
+  inline-size: 100%;
+  block-size: var(--kw-block-size, calc(var(--kw-rows) * var(--grid-row)));
+  padding: var(--kw-pad);
+  border-radius: var(--radius-card);
+  color: var(--kw-ink);
+  background: var(--kw-bg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  isolation: isolate;
+  overflow: clip;
+  container-type: inline-size;
+}
+.kw-frame :is(p, blockquote, strong, small) { color: inherit; }
+.kw-frame :is(p, blockquote) { margin: 0; max-inline-size: none; }
+.kw-frame button { cursor: pointer; font-family: inherit; }
+.kw-frame :focus-visible { outline: 2px solid var(--kw-accent); outline-offset: 4px; }
+.kw-natural { display: flex; flex-direction: column; gap: 16px; min-inline-size: 0; min-block-size: calc(var(--kw-rows) * var(--grid-row) - 2 * var(--kw-pad)); }
+.kw-unit-probe { position: absolute; block-size: var(--grid-row); inline-size: 0; visibility: hidden; pointer-events: none; }
+.kw-preview-label { display: block; color: var(--kw-muted); font-size: 10px; line-height: 1.4; letter-spacing: normal; }
+.kw-portrait { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: center; }
+.kw-author { display: flex; align-items: center; gap: var(--space-2); font-size: 14.5px; line-height: 1.4; }
+.kw-author > .kw-portrait { flex: 0 0 36px; inline-size: 36px; block-size: 36px; border-radius: 50%; }
+.kw-author > div { min-inline-size: 0; }
+.kw-author strong { display: block; font-weight: 700; }
+.kw-author span { display: block; color: var(--kw-muted); font-size: 12.5px; }
+.kw-quote-slot { position: relative; display: grid; min-inline-size: 0; font-family: var(--font-heading); font-size: 24px; font-weight: 400; line-height: 1.25; letter-spacing: normal; }
+.kw-quote-slot > blockquote { grid-area: 1 / 1; font: inherit; }
+.kw-quote-reserve { visibility: hidden; pointer-events: none; user-select: none; }
+.kw-quote-active { animation: kw-quote-in 350ms ease both; }
+.kw-quote-active--reveal { animation: none; }
+.kw-reveal-word { display: inline-block; animation: kw-word-in 600ms cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--kw-word) * 23ms); }
+@keyframes kw-quote-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes kw-word-in { from { opacity: 0; filter: blur(5px); transform: translateY(5px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+.kw-arrows { display: flex; align-items: center; gap: 8px; }
+.kw-arrows button { display: grid; place-items: center; inline-size: 32px; block-size: 32px; border: 0; border-radius: var(--radius-pill); background: var(--secondary); color: var(--secondary-ink); padding: 0; transition: transform 200ms ease, background 200ms ease; }
+.kw-arrows button:hover { background: var(--secondary-active, var(--secondary-hover)); }
+.kw-arrows button:hover { transform: scale(1.08); }
+.kw-arrows svg { pointer-events: none; }
+.kw-stars { display: inline-flex; gap: 2px; color: var(--kw-ink); font-size: 15px; letter-spacing: 0; white-space: nowrap; }
+.kw-stars__empty { color: var(--kw-line); }
+.kw-avatars { display: flex; gap: 10px; align-items: center; }
+.kw-avatars button { position: relative; flex: 0 0 auto; inline-size: 46px; block-size: 46px; border: 0; border-radius: 50%; background: transparent; padding: 0; }
+.kw-avatars img { border-radius: 50%; opacity: 0.38; filter: grayscale(1); transition: opacity 280ms ease, filter 280ms ease, transform 280ms ease; }
+.kw-avatars button[aria-pressed="true"] img { opacity: 1; filter: grayscale(0); }
+.kw-avatars button:hover img { opacity: 0.8; }
+.kw-avatar-ring { position: absolute; inset: -4px; inline-size: calc(100% + 8px); block-size: calc(100% + 8px); overflow: visible; transform: rotate(-90deg); }
+.kw-avatar-ring circle { fill: none; stroke: var(--kw-accent); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 176; animation: kw-ring 6.5s linear infinite; }
+@keyframes kw-ring { from { stroke-dashoffset: 172; } to { stroke-dashoffset: 0; } }
+.kw-dots { display: flex; align-items: center; gap: 7px; }
+.kw-dots button { position: relative; inline-size: 5px; block-size: 5px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--kw-line); transition: width 300ms ease, background 300ms ease; }
+.kw-dots button::before { content: ""; position: absolute; inset: -8px -3px; }
+.kw-dots button[aria-pressed="true"] { inline-size: 17px; background: var(--kw-accent); }
+
+/* 01 · One site card, with an animated theme-accent avatar ring. */
+.kw-frame--1 .kw-quote-slot { font-size: clamp(22px, 5.6cqw, 26px); }
+.kw-frame--1 .kw-avatars { margin-block-start: auto; padding-block-start: 8px; }
+.kw-frame--1 .kw-author { text-transform: none; letter-spacing: normal; }
+.kw-frame--1 .kw-author > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
+.kw-frame--1 .kw-author :is(strong, span) { font-size: 12.5px; }
+
+/* 02 · Inline, independently focusable quotes; attribution space is reserved. */
+.kw-flow { color: var(--kw-muted); font-family: var(--font-body); font-size: clamp(24px, 5.8cqw, 28px); line-height: 1.3; }
+.kw-flow__item { display: inline; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; text-align: start; transition: color 260ms ease, filter 260ms ease, opacity 260ms ease; }
+/* Native buttons are atomic inline boxes; spans let each quote continue on
+   the preceding line and wrap across line boxes as part of one paragraph. */
+.kw-flow__item[role="button"] { font-size: inherit !important; cursor: pointer; }
+.kw-flow__item > .kw-portrait { display: inline-block; inline-size: 24px; block-size: 24px; margin-inline-end: 5px; border-radius: 50%; vertical-align: -2px; }
+.kw-flow__attribution { display: inline-block; margin-inline: 5px 2px; color: var(--kw-active-ink); font: 700 10px / 1.3 var(--font-body); vertical-align: baseline; opacity: 0; transition: opacity 240ms ease; }
+.kw-flow__attribution small { display: block; font-size: 9px; }
+.kw-flow--focused .kw-flow__item { opacity: .27; filter: blur(3px); }
+.kw-flow--focused .kw-flow__item.is-focused { color: var(--kw-ink); opacity: 1; filter: none; }
+.kw-flow__item.is-focused .kw-flow__attribution { opacity: 1; }
+.kw-show-more { display: flex; align-items: center; justify-content: center; align-self: center; gap: 8px; margin-block-start: auto; padding: 9px 16px; border: 1px solid var(--kw-line); border-radius: var(--radius-pill); background: transparent; color: var(--kw-ink); font-size: 12.5px; }
+.kw-show-more:hover { background: var(--kw-raised); }
+.kw-show-more svg { transform: rotate(-90deg); }
+.kw-show-more[aria-expanded="true"] svg { transform: rotate(90deg); }
+
+/* 03 · Theme-accent progress tracks and a progressive text reveal. */
+.kw-progress-content { display: flex; flex: 1; flex-direction: column; gap: 20px; }
+.kw-progress-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.kw-frame--3 .kw-arrows button { inline-size: 32px; block-size: 32px; }
+.kw-progress-tracks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.kw-progress-tracks button { position: relative; padding: 0; block-size: 3px; border: 0; border-radius: var(--radius-pill); background: var(--kw-line); overflow: visible; }
+.kw-progress-tracks button::before { content: ""; position: absolute; inset: -8px 0; }
+.kw-progress-tracks span { display: block; inline-size: 100%; block-size: 100%; border-radius: inherit; background: var(--kw-accent); transform-origin: left; animation: kw-progress 6.5s linear both; }
+.is-paused .kw-progress-tracks span { animation-play-state: paused; }
+@keyframes kw-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.kw-frame--3 .kw-quote-slot { font-size: clamp(24px, 5.8cqw, 28px); }
+.kw-frame--3 .kw-author { margin-block-start: auto; }
+.kw-playback { align-self: start; padding: 0; border: 0; background: transparent; color: var(--kw-muted); font-size: 12.5px; }
+
+/* 04 · Five portraits retain their positions as focus moves through the reel. */
+.kw-frame--4 .kw-natural { align-items: center; gap: 18px; }
+.kw-frame--4 .kw-preview-label { align-self: start; }
+.kw-portrait-reel { position: relative; inline-size: 100%; block-size: clamp(128px, 37cqw, 190px); margin-block: 4px 8px; }
+.kw-portrait-reel > button { position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: 24%; aspect-ratio: 3 / 4; padding: 0; border: 0; border-radius: 6px; overflow: hidden; background: transparent; transform: translate(-50%, -50%) translateX(calc(var(--kw-offset) * 91%)) scale(calc(1 - var(--kw-distance) * .14)); opacity: calc(1 - var(--kw-distance) * .25); filter: blur(calc(var(--kw-distance) * 1.3px)); z-index: calc(5 - var(--kw-distance)); transition: transform 550ms cubic-bezier(.2,.7,.2,1), opacity 550ms ease, filter 550ms ease; }
+.kw-frame--4 .kw-quote-slot { font-size: clamp(20px, 4.8cqw, 23px); text-align: center; }
+.kw-frame--4 .kw-author { text-align: center; }
+.kw-frame--4 .kw-arrows { margin-block-start: auto; }
+
+/* 05 · A fan of cards using the site's shared neutral surface. */
+.kw-frame--5 { --kw-pad: 20px; }
+.kw-fan-controls { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.kw-fan-controls .kw-preview-label { max-inline-size: 150px; }
+.kw-fan-window { margin-inline: calc(-1 * var(--kw-pad)); overflow: clip; padding-block: 18px 28px; }
+.kw-fan { display: grid; place-items: center; padding-inline: var(--kw-pad); }
+.kw-fan-card { grid-area: 1 / 1; align-self: stretch; display: flex; flex-direction: column; gap: var(--space-3); inline-size: 60%; min-block-size: 282px; padding: 20px; border: 1px solid var(--kw-line); border-radius: var(--radius-card); background: var(--kw-bg); box-shadow: 0 10px 18px var(--kw-shadow); color: var(--kw-ink); transform-origin: 50% 100%; transform: translateX(calc(var(--kw-offset) * 81%)) translateY(calc(var(--kw-distance) * 9px)) rotate(calc(var(--kw-offset) * 6deg)) scale(calc(1 - var(--kw-distance) * .07)); opacity: calc(1 - var(--kw-distance) * .26); transition: transform 650ms cubic-bezier(.22,.75,.2,1), opacity 550ms ease; }
+.kw-fan-card__header { display: flex; justify-content: space-between; align-items: start; gap: 8px; font-size: 8px; }
+.kw-fan-card .kw-stars { font-size: 9px; gap: 0; }
+.kw-fan-card blockquote { font-family: var(--font-heading); font-size: clamp(18px, 4.2cqw, 21px); font-weight: 400; line-height: 1.3; letter-spacing: normal; overflow-wrap: normal; }
+.kw-fan-card mark { padding: 0; color: inherit; background: var(--kw-raised); }
+.kw-fan-card .kw-author { margin-block-start: auto; padding-block-start: 12px; border-block-start: 1px solid var(--kw-line); font-size: 12.5px; }
+.kw-fan-card .kw-author span { font-size: 11px; }
+.kw-fan-card .kw-author > .kw-portrait { flex-basis: 26px; inline-size: 26px; block-size: 26px; }
+.kw-pagination { display: flex; align-items: center; gap: 18px; margin-block-start: auto; font-size: 11px; color: var(--kw-muted); }
+
+/* 06 · Editorial quote and expanding author rows. */
+.kw-editorial-head { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 22px; color: var(--kw-muted); font: 11px / 1.4 var(--font-body); }
+.kw-editorial-head > * { padding-block-end: 12px; border-block-end: 1px solid var(--kw-line); }
+.kw-editorial-columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 22px; }
+.kw-frame--6 .kw-quote-slot { align-self: start; font-size: clamp(24px, 5.7cqw, 28px); line-height: 1.3; }
+.kw-author-list { min-inline-size: 0; }
+.kw-author-list button { display: block; inline-size: 100%; padding: 13px 0; border: 0; border-block-end: 1px solid var(--kw-line); background: transparent; color: var(--kw-muted); text-align: start; font-size: 14.5px; }
+.kw-author-list strong { font-weight: 700; }
+.kw-author-list__detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 400ms ease, opacity 280ms ease, margin 400ms ease; }
+.kw-author-list__detail > div { min-block-size: 0; overflow: hidden; font-size: 11px; line-height: 1.4; }
+.kw-author-list__detail small { display: block; color: var(--kw-muted); font-size: 11px; }
+.kw-author-list__detail > .kw-portrait { display: none; inline-size: 44px; block-size: 44px; margin-block-start: 9px; }
+.kw-author-list [aria-pressed="true"] { color: var(--kw-ink); }
+.kw-author-list [aria-pressed="true"] .kw-author-list__detail { grid-template-rows: 1fr; opacity: 1; margin-block-start: 8px; }
+.kw-author-list [aria-pressed="true"] .kw-portrait { display: block; animation: kw-quote-in 400ms ease both; }
+
+/* 07 · Endless duplicated tracks, row focus, and width-stable typing states. */
+.kw-frame--7 { --kw-pad: 24px; }
+.kw-frame--7 .kw-natural { justify-content: center; gap: 18px; }
+.kw-reactions { display: grid; gap: 18px; margin-inline: calc(-1 * var(--kw-pad)); overflow: clip; padding-block: 7px; }
+.kw-reaction-row { min-inline-size: 0; opacity: .54; filter: blur(1.3px); transition: opacity 250ms ease, filter 250ms ease; }
+.kw-reaction-row.is-focused { opacity: 1; filter: none; }
+.kw-reaction-track { display: flex; inline-size: max-content; animation: kw-marquee 44s linear infinite; }
+.kw-reaction-row:nth-child(even) .kw-reaction-track { animation-direction: reverse; animation-duration: 51s; }
+.kw-reaction-row:where(:hover, :focus-visible) .kw-reaction-track { animation-play-state: paused; }
+.kw-reaction-copy { display: flex; gap: 12px; padding-inline-end: 12px; }
+.kw-reaction-pill { position: relative; display: inline-flex; align-items: center; gap: 8px; block-size: 40px; padding: 4px 13px 4px 4px; border: 1px solid var(--kw-line); border-radius: var(--radius-pill); background: var(--kw-raised); color: var(--kw-ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.kw-reaction-pill .kw-portrait { flex: 0 0 32px; inline-size: 32px; block-size: 32px; border-radius: 50%; }
+.kw-reaction-message { animation: kw-message 9s linear infinite; }
+.kw-typing { position: absolute; inset-inline-start: 45px; inset-block-start: 50%; display: flex; gap: 3px; transform: translateY(-50%); opacity: 0; animation: kw-typing-visibility 9s linear infinite; }
+.kw-typing i { inline-size: 3px; block-size: 3px; border-radius: 50%; background: var(--kw-ink); animation: kw-dot-bounce 800ms ease infinite alternate; }
+.kw-typing i:nth-child(2) { animation-delay: 130ms; }
+.kw-typing i:nth-child(3) { animation-delay: 260ms; }
+.kw-reaction-pill:nth-child(even) :is(.kw-reaction-message, .kw-typing) { animation-delay: -4s; }
+.kw-reaction-row:nth-child(even) .kw-reaction-pill :is(.kw-reaction-message, .kw-typing) { animation-delay: -2s; }
+@keyframes kw-marquee { to { transform: translateX(-50%); } }
+@keyframes kw-message { 0%, 67%, 100% { opacity: 1; } 73%, 92% { opacity: 0; } }
+@keyframes kw-typing-visibility { 0%, 67%, 100% { opacity: 0; } 73%, 92% { opacity: 1; } }
+@keyframes kw-dot-bounce { to { transform: translateY(-2px); opacity: .4; } }
+
+/* 08 · Layered cards keep side controls and shadows inside the stage. */
+.kw-frame--8 { --kw-pad: 20px; }
+.kw-frame--8 .kw-natural { justify-content: center; }
+.kw-stack-window { margin-inline: calc(-1 * var(--kw-pad)); padding: 18px var(--kw-pad) 30px; overflow: clip; }
+.kw-stack { position: relative; display: grid; place-items: center; }
+.kw-stack-card { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 16px; align-self: stretch; inline-size: 76%; min-block-size: 230px; padding: 28px; border: 1px solid var(--kw-line); border-radius: var(--radius-card); background: var(--kw-bg); box-shadow: 0 14px 28px var(--kw-shadow); transform: translateX(calc(var(--kw-offset) * 24%)) scale(calc(1 - var(--kw-distance) * .14)); opacity: calc(1 - var(--kw-distance) * .7); filter: blur(calc(var(--kw-distance) * .5px)); transition: transform 550ms cubic-bezier(.2,.7,.2,1), opacity 450ms ease, filter 450ms ease, box-shadow 450ms ease; }
+.kw-stack-card blockquote { font-size: 16px; line-height: 1.45; font-weight: 400; }
+.kw-stack-card .kw-author { margin-block-start: auto; }
+.kw-stack .kw-arrows { position: absolute; z-index: 4; inset-inline: 1%; inset-block-start: calc(50% - 16px); justify-content: space-between; pointer-events: none; }
+.kw-stack .kw-arrows button { pointer-events: auto; inline-size: 29px; block-size: 29px; }
+.kw-frame--8 .kw-dots { justify-content: center; }
+.kw-frame--8 .kw-dots [aria-pressed="true"] { background: var(--kw-accent); }
+
+/* 09 · A compact centered quote, stars, and four author avatars. */
+.kw-frame--9 .kw-natural { align-items: center; justify-content: center; gap: 15px; text-align: center; }
+.kw-frame--9 .kw-preview-label { font-size: 10px; }
+.kw-frame--9 .kw-stars { font-size: 12px; }
+.kw-frame--9 .kw-quote-slot { font-size: clamp(18px, 4.5cqw, 21px); line-height: 1.35; }
+.kw-frame--9 .kw-author { justify-content: center; }
+.kw-frame--9 .kw-avatars { justify-content: center; gap: 8px; }
+.kw-frame--9 .kw-avatars button { inline-size: 32px; block-size: 32px; }
+.kw-frame--9 .kw-avatars [aria-pressed="true"] img { transform: scale(1.12); }
+
+/* 10 · Client selection and a portrait confined to the list's bounds. */
+.kw-client-head { display: flex; align-items: center; justify-content: space-between; padding-block-end: 10px; border-block-end: 1px solid var(--kw-line); color: var(--kw-muted); font-size: 11px; letter-spacing: normal; }
+.kw-client-columns { display: grid; grid-template-columns: minmax(0, 58fr) minmax(0, 42fr); gap: 18px; }
+.kw-client-list { position: relative; min-inline-size: 0; overflow: clip; }
+.kw-client-list > button { display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: 8px; align-content: center; inline-size: 100%; min-block-size: calc(var(--grid-row) / 2); padding: 8px 0; border: 0; border-block-end: 1px solid var(--kw-line); background: transparent; color: var(--kw-ink); text-align: start; }
+.kw-client-list strong { font-family: var(--font-heading); font-size: clamp(19px, 4.7cqw, 23px); font-weight: 400; letter-spacing: normal; line-height: 1.2; }
+.kw-client-index { color: var(--kw-muted); font-size: 10px; align-self: center; }
+.kw-client-list small { grid-column: 2; margin-block-start: 4px; color: var(--kw-muted); font-size: 10px; letter-spacing: normal; }
+.kw-client-list [aria-pressed="true"] :is(strong, small, .kw-client-index) { color: var(--kw-active-ink); }
+.kw-client-list [aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--kw-accent); }
+.kw-client-list [aria-pressed="true"] strong { transform: translateX(4px); }
+.kw-client-list strong { transition: transform 240ms ease, color 240ms ease; }
+.kw-client-quote { padding-inline-start: 16px; border-inline-start: 1px solid var(--kw-line); min-inline-size: 0; }
+.kw-client-quote .kw-quote-slot { font-size: clamp(15px, 3.6cqw, 17px); line-height: 1.5; letter-spacing: 0; }
+.kw-client-quote > i { display: block; inline-size: 20px; block-size: 2px; margin-block: 20px 12px; border-radius: var(--radius-pill); background: var(--kw-accent); }
+.kw-client-quote .kw-author { font-size: 12.5px; }
+.kw-client-quote .kw-author span { font-size: 11px; }
+.kw-floating-portrait { position: absolute; z-index: 3; inset: 0 auto auto 0; inline-size: clamp(90px, 23cqw, 110px); aspect-ratio: 3 / 4; opacity: 0; pointer-events: none; transition: opacity 180ms ease; will-change: transform; }
+.kw-floating-portrait.is-visible { opacity: 1; }
+.kw-floating-portrait .kw-portrait { border-radius: 5px; }
+.kw-touch-portrait { display: none; inline-size: 70px; aspect-ratio: 3 / 4; }
+
+@media (max-width: 100rem) and (min-width: 80.001rem) {
+  .kind-words-intro h2 { --type-h2: min(calc(var(--grid-row) / 1.06), calc(.83 * var(--layout-column))); }
+}
+@media (max-width: 80rem) {
+  .kind-words-test { inset-block-start: 8rem; }
+  .home-page .kind-words-section { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-inline: clamp(1.125rem, 5.8vw, 4.4rem); }
+  .kind-words-intro { padding: 0; }
+  .kind-words-intro h2 { font-size: clamp(48px, 8vw, 80px); }
+  .kw-frame { max-inline-size: 680px; block-size: auto; }
+  .kw-natural { min-block-size: calc(var(--kw-rows) * var(--grid-row) - 2 * var(--kw-pad)); }
+}
+@media (max-width: 38rem) {
+  .kind-words-test { inset-inline-end: 1rem; gap: 4px; }
+  .kw-frame { --kw-pad: 22px; }
+  .kw-natural { min-block-size: 0; }
+  .kw-frame--1 .kw-avatars { margin-block-start: 8px; }
+  .kw-frame--2 { padding-block: 26px; }
+  .kw-flow { font-size: 24px; }
+  .kw-frame--3 .kw-quote-slot { font-size: 24px; }
+  .kw-frame--4 .kw-natural { gap: 16px; }
+  .kw-portrait-reel { min-block-size: 120px; }
+  .kw-frame--5 { --kw-pad: 16px; }
+  .kw-fan-card { inline-size: 72%; min-block-size: 282px; padding: 18px; }
+  .kw-fan-card blockquote { font-size: 18px; }
+  .kw-fan-card__header { flex-wrap: wrap; }
+  .kw-editorial-head, .kw-editorial-columns { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .kw-editorial-head > span:last-child { display: none; }
+  .kw-author-list__detail { grid-template-columns: minmax(0, 1fr) 44px; column-gap: 10px; }
+  .kw-author-list__detail .kw-portrait { grid-column: 2; grid-row: 1; margin: 0; }
+  .kw-frame--7 { --kw-pad: 18px; padding-block: 24px; }
+  .kw-reactions { gap: 18px; }
+  .kw-stack-card { inline-size: 78%; padding: 22px; }
+  .kw-stack-card blockquote { font-size: 15px; }
+  .kw-frame--8 { --kw-pad: 16px; }
+  .kw-frame--9 { padding-block: 28px; }
+  .kw-client-columns { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .kw-client-list > button { min-block-size: 54px; }
+  .kw-client-list strong { font-size: 23px; }
+  .kw-client-quote { padding-inline-start: 0; padding-block-start: 20px; border-inline-start: 0; border-block-start: 1px solid var(--kw-line); }
+  .kw-client-quote .kw-quote-slot { font-size: 17px; }
+}
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .kw-floating-portrait { display: none; }
+  .kw-touch-portrait { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kw-frame *, .kw-frame *::before { animation: none !important; transition: none !important; }
+  .kw-quote-active, .kw-reveal-word { opacity: 1; filter: none; transform: none; }
+  .kw-avatar-ring circle { stroke-dashoffset: 0; }
+  .kw-typing { display: none; }
+  .kw-reaction-message { opacity: 1; }
+  .kw-progress-tracks span { transform: scaleX(1); }
+}

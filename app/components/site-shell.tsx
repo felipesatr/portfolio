@@ -9,6 +9,7 @@ import { ThemeControl } from "./theme-control";
 import { FluidCursor } from "./fluid-cursor";
 import { ArrowUpRightIcon, LanguageIcon } from "./icons";
 import { ENABLE_LAB_VIEW_TEST, LabViewTest, type ComparisonViewState, type LabView } from "./lab-view-test";
+import { ENABLE_KIND_WORDS_TEST, KindWordsTest, type KindWordsView } from "./kind-words-test";
 
 const navigation = [
   { label: "Home", href: "/" },
@@ -110,6 +111,7 @@ function SiteFooter() {
 export function SiteShell() {
   const [isGridVisible, setIsGridVisible] = useState(false);
   const [labView, setLabView] = useState<LabView>(null);
+  const [kindWordsView, setKindWordsView] = useState<KindWordsView>(null);
   const [routePhase, setRoutePhase] = useState<"idle" | "exiting" | "entering">("idle");
   const location = useLocation();
   const navigate = useNavigate();
@@ -197,7 +199,7 @@ export function SiteShell() {
     </div>
   );
 
-  const comparisonViews: ComparisonViewState = { labView, setLabView };
+  const comparisonViews: ComparisonViewState = { labView, setLabView, kindWordsView, setKindWordsView };
 
   return (
     <div className="site-frame" onClickCapture={handleInternalNavigation}>
@@ -233,6 +235,9 @@ export function SiteShell() {
       </div>
       {ENABLE_LAB_VIEW_TEST && location.pathname === "/" ? (
         <LabViewTest labView={labView} setLabView={setLabView} />
+      ) : null}
+      {ENABLE_KIND_WORDS_TEST && location.pathname === "/" ? (
+        <KindWordsTest view={kindWordsView} setView={setKindWordsView} />
       ) : null}
       <ScrollToTop />
       <SiteScrollbar />

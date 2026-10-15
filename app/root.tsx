@@ -20,6 +20,7 @@ import "./styles/utilities.css";
 import "./styles/motion.css";
 import "./styles/lab-calendar.css";
 import "./styles/comparison-experiments.css";
+import "./styles/kind-words.css";
 
 const earlyPreferenceScript = `
   (() => {

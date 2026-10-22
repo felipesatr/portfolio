@@ -2,7 +2,6 @@
    the h4–h6 visual scale without skipping its semantic heading hierarchy. */
 :root { --about-title-h3-size: var(--type-h3); }
 .about-rebuild {
-  --about-gutter: var(--space-5);
   --about-line-ink: color-mix(in srgb, var(--muted) 38%, var(--page));
   --type-h1: var(--type-h4);
   --type-h2: var(--type-h5);
@@ -21,7 +20,6 @@
 .about-rebuild :is(.about-eyebrow, .about-draft-note) { font-size: var(--type-small); }
 .about-rebuild .about-eyebrow { color: var(--muted); font-weight: 700; line-height: 1.4; }
 .about-rebuild .about-draft-note { color: var(--muted); line-height: 1.5; }
-.about-rebuild .about-lead { font-size: var(--type-body-large); line-height: 1.5; }
 
 .about-hero { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); row-gap: 1.5rem; }
 .about-hero > .reveal-title { --type-h2: var(--about-title-h3-size); grid-column: 1 / 9; grid-row: 1; align-self: start; min-block-size: 0; margin-block-end: 0; line-height: 1.06; }
@@ -41,27 +39,21 @@
 /* Headers sit above their content instead of stranding a large title in an
    otherwise empty left column. Only the copy keeps a readable line length. */
 .about-section { display: grid; gap: var(--space-5); min-inline-size: 0; align-items: start; }
-.about-section__intro { display: grid; justify-items: start; gap: var(--space-3); }
-.about-section__intro:has(> .button) { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--about-gutter); }
-.about-section__intro:has(> .button) > :not(.button) { grid-column: 1; }
-.about-section__intro > .button { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
-.about-section__intro h2 { max-inline-size: 100%; }
 .about-section__content { min-inline-size: 0; }
 .about-story-values { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 2.5fr); column-gap: calc(0.5 * var(--layout-column)); align-items: start; margin-block-start: calc(var(--grid-row) - var(--space-7)); }
 .about-history { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: var(--space-5); inline-size: calc(4 * var(--layout-column)); max-inline-size: 100%; min-inline-size: 0; }
 .about-history > h2 { --type-h2: var(--about-title-h3-size); grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
 .about-history > .reveal-title { min-block-size: 0; line-height: 1.06; }
 .about-timeline { --timeline-gap: calc(2 * var(--space-5)); position: relative; inset-block-start: -7px; display: grid; grid-column: 1 / -1; grid-row: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; column-gap: var(--timeline-gap); margin: 0; }
-.about-timeline::before { content: ""; position: absolute; z-index: 1; inset-block-start: 0; inset-inline-start: calc(50% - 1px); inline-size: 2px; block-size: var(--timeline-line-end, 100%); background: linear-gradient(to bottom, var(--page), color-mix(in srgb, var(--muted) 38%, var(--page)) 20px); mix-blend-mode: normal; filter: none; opacity: 1; pointer-events: none; }
 .about-timeline__column { display: flex; flex-direction: column; gap: 24px; min-inline-size: 0; margin: 0; padding: 0; list-style: none; }
 .about-timeline__column--left { grid-column: 1; grid-row: 1; padding-block-start: calc(1.25 * var(--grid-row)); }
 .about-timeline__column--right { grid-column: 2; grid-row: 1; }
 .about-timeline__column > li { position: relative; min-inline-size: 0; max-inline-size: none; }
 .about-timeline__column--right > li { margin-inline-end: calc(-1 * var(--spotlight-border-size, 2px)); }
-.about-timeline__column > li::before { content: ""; position: absolute; z-index: 1; inset-block-start: calc(var(--space-6) - 10px); inline-size: calc(var(--timeline-gap) / 4 + 2.5px); block-size: 9px; border-block-end: 2px solid color-mix(in srgb, var(--muted) 38%, var(--page)); mix-blend-mode: normal; filter: none; opacity: 1; pointer-events: none; }
-.about-timeline__column--left > li::before { inset-inline-end: calc(-1 * (var(--timeline-gap) / 2 + 1px)); border-inline-end: 2px solid color-mix(in srgb, var(--muted) 38%, var(--page)); border-end-end-radius: var(--radius-card); }
-.about-timeline__column--right > li::before { inset-inline-start: calc(-1 * (var(--timeline-gap) / 2 + 1px)); border-inline-start: 2px solid color-mix(in srgb, var(--muted) 38%, var(--page)); border-end-start-radius: var(--radius-card); }
-.about-timeline__column > li::after { content: ""; position: absolute; z-index: 2; inset-block-start: calc(var(--space-6) - 6px); inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--service-card-ink, var(--text)); }
+/* Unpainted geometry probes resolve rem/calc offsets for AboutTimelineDrawing. */
+.about-timeline::before { content: ""; position: absolute; inset-inline-start: calc(50% - 1px); inline-size: 2px; opacity: 0; pointer-events: none; }
+.about-timeline__column > li::before { content: ""; position: absolute; inset-block-start: calc(var(--space-6) - 10px); opacity: 0; pointer-events: none; }
+.about-timeline__column > li::after { content: ""; position: absolute; inset-block-start: calc(var(--space-6) - 6px); inline-size: 8px; block-size: 8px; opacity: 0; pointer-events: none; }
 .about-timeline__column--left > li::after { inset-inline-end: calc(-1 * var(--timeline-gap) / 4 - 3.5px); }
 .about-timeline__column--right > li::after { inset-inline-start: calc(-1 * var(--timeline-gap) / 4 - 3.5px); }
 /* Managed groups share the homepage's fade/unblur, with explicit sequencing.
@@ -69,7 +61,6 @@
 .soft-reveal-ready [data-about-motion] .soft-reveal-target { transition-delay: var(--about-reveal-delay, 0ms); }
 .soft-reveal-ready .about-rebuild .soft-reveal-target { transition-duration: 360ms, 420ms; transition-delay: var(--about-reveal-delay, 0ms); }
 .soft-reveal-ready [data-about-motion] .soft-reveal-target:not(.is-soft-revealed) { transition: none; }
-.about-timeline::before, .about-timeline__column > li::before, .about-timeline__column > li::after { opacity: 0 !important; }
 .about-timeline__drawing { position: absolute; z-index: 2; inset-block: 0; inset-inline-start: calc(50% - var(--timeline-gap) / 2); inline-size: var(--timeline-gap); pointer-events: none; }
 .about-timeline__drawing svg { display: block; inline-size: 100%; block-size: 100%; overflow: visible; }
 .about-timeline__stroke { stroke: var(--about-line-ink); }
@@ -89,13 +80,12 @@
 .about-rebuild :is(.about-timeline__card, .about-value-copy) p { font-size: 16px; font-weight: 400; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
 .about-rebuild :is(.about-timeline__card, .about-value-copy) p strong { font-weight: 400; color: var(--service-card-ink, var(--text)); }
 .about-card h3 { color: inherit; }
-.about-rebuild .about-card :is(.about-eyebrow, .about-draft-note, .about-entry-number, .about-career__dates) { color: var(--service-card-muted, var(--muted)); }
+.about-rebuild .about-card :is(.about-eyebrow, .about-draft-note) { color: var(--service-card-muted, var(--muted)); }
 .about-rebuild .about-card :is(h2, strong) { color: inherit; }
 /* Keep the portrait in the introduction, not below the full career story. */
 .about-portrait { display: flex; flex-direction: column; gap: var(--space-3); min-inline-size: 0; margin: 0; }
 .about-portrait__image { position: relative; block-size: calc(5 * var(--grid-row)); overflow: hidden; border-radius: var(--radius-card); background: var(--service-card-bg, var(--soft)); }
 .about-portrait img { position: absolute; inset: 0; display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: center 18%; }
-.about-portrait figcaption { color: var(--muted); font-size: var(--type-small); }
 .about-values-section { display: grid; gap: var(--space-5); min-inline-size: 0; }
 .about-values-section > .reveal-title { --type-h2: var(--type-h5); min-block-size: 0; line-height: 1.15; margin: 0; }
 .about-values-list { display: grid; gap: var(--space-5); }
@@ -104,25 +94,14 @@
 .about-value-copy { display: grid; gap: var(--space-3); min-inline-size: 0; color: var(--service-card-ink, var(--text)); }
 .about-value-divider { display: block; inline-size: 100%; block-size: 2px; color: var(--about-line-ink); mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent); }
 .about-value-divider svg { display: block; inline-size: 100%; block-size: 100%; }
-.about-entry-list { display: grid; gap: var(--space-4); }
-.about-entry-list > li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-3); max-inline-size: none; }
-.about-entry-list > li > div { display: grid; gap: var(--space-2); }
-.about-entry-list h3, .about-career h3, .about-story > div > h3, .about-interests h3 { --type-h3: var(--type-body-large); font-family: var(--font-body); font-weight: 700; line-height: 1.3; }
-.about-entry-number { font-size: var(--type-small); font-variant-numeric: tabular-nums; line-height: 1.65; }
+.about-career h3, .about-interests h3 { --type-h3: var(--type-body-large); font-family: var(--font-body); font-weight: 700; line-height: 1.3; }
 
-.about-career { display: grid; gap: var(--space-3); }
-.about-rebuild .about-career__item { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--about-gutter); align-items: start; }
-.about-career__identity { display: flex; gap: var(--space-3); align-items: center; }
-.about-career__identity > div { display: grid; min-inline-size: 0; gap: var(--space-1); }
-.about-career__identity p, .about-career__dates { font-size: var(--type-small); }
-.about-career__dates { grid-column: 1; }
-.about-career__item > p:last-child { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.about-career { display: grid; gap: 1.25rem; container-type: inline-size; }
 .about-career__logo { display: grid; flex: 0 0 3rem; inline-size: 3rem; block-size: 3rem; border-radius: 0.625rem; overflow: hidden; background: white; }
 .about-career__logo img { inline-size: 100%; block-size: 100%; object-fit: contain; }
 .about-career__logo--nmg { background: #0047bb; }
 .about-career__logo--galgo { background: #000; }
 .about-career__logo--une { padding-inline: 0.25rem; }
-
 
 .about-rebuild .about-interests { grid-column: 1 / 7; margin-inline: 0 calc(.5 * var(--space-4)); grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
 .about-interests > div { display: grid; align-content: start; gap: var(--space-3); }
@@ -140,8 +119,7 @@
 .about-media__art--book { block-size: 5rem; }
 .about-media__title { font-weight: 700; }
 
-/* Keep the shared CTA's behaviour and two lines, but not its hero scale or
-   oversized vertical padding. The homepage and other routes are untouched. */
+/* Match the shared homepage CTA title scale. */
 .about-rebuild .contact-cta { padding-block: var(--space-5) var(--space-7); }
 .about-rebuild .contact-cta h2.footer-title { inline-size: 100%; max-inline-size: 100%; font-size: var(--type-display-hero) !important; line-height: 1.06; }
 .about-rebuild .footer-contact-row { inline-size: 100%; margin-block-start: var(--space-5); }
@@ -170,24 +148,19 @@
   .about-timeline__column--left > li:nth-child(2) { order: 4; }
   .about-timeline__column--right > li:nth-child(3) { order: 5; }
   .about-timeline::before { inset-inline-start: 0; }
-  .about-timeline__drawing { inset-inline-start: -4px; inline-size: 32px; }
-  .about-timeline__column > li::before { inset-inline-start: calc(-1 * var(--space-5)); inset-inline-end: auto; inline-size: calc(var(--space-5) / 2 + 2px); }
-  .about-timeline__column--left > li::before, .about-timeline__column--right > li::before { border-inline-start: 2px solid color-mix(in srgb, var(--muted) 38%, var(--page)); border-inline-end: 0; border-block-end: 2px solid color-mix(in srgb, var(--muted) 38%, var(--page)); border-end-start-radius: var(--radius-card); border-end-end-radius: 0; }
   .about-timeline__column > li::after { inset-inline-start: calc(-1 * var(--space-5) / 2 - 3px); inset-inline-end: auto; }
+  .about-timeline__drawing { inset-inline-start: -4px; inline-size: 32px; }
   .about-portrait__image { flex: none; block-size: calc(5 * var(--grid-row)); min-block-size: 0; }
   .about-portrait img { object-position: center 22%; }
   .about-rebuild .about-interests { grid-column: 1 / -1; margin-inline: 0; grid-template-columns: minmax(0, 1fr); }
   .about-personal-row { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
   .about-personal-row > .about-media--music, .about-personal-row > .about-media--book { grid-column: 1; margin-inline: 0; }
-  .about-career__item > p:last-child { grid-column: 1 / -1; grid-row: auto; }
   .about-career__dates { grid-column: 2; grid-row: 1; text-align: end; }
 }
 @media (max-width: 38rem) {
   .about-rebuild { --type-h1: var(--type-h5); --type-h2: var(--type-h6); }
-  .about-section__intro:has(> .button), .about-values-list { grid-template-columns: minmax(0, 1fr); }
-  .about-section__intro > .button { grid-column: 1; grid-row: auto; margin-block-start: var(--space-2); }
+  .about-values-list { grid-template-columns: minmax(0, 1fr); }
   .about-rebuild .about-card { padding: var(--space-4); }
-  .about-rebuild .about-career__item { grid-template-columns: minmax(0, 1fr); }
   .about-career__dates { grid-column: 1; grid-row: auto; text-align: start; }
   .about-portrait__image { block-size: calc(4.5 * var(--grid-row)); }
 }
@@ -202,10 +175,6 @@
 @media (min-width: 80.001rem) {
   .about-experience-section { margin-block-start: calc(.5 * var(--grid-row)); block-size: calc(4 * var(--grid-row)); grid-template-rows: max-content max-content max-content; row-gap: 0; align-content: space-between; }
 }
-.about-experience-section .about-career__item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-.about-experience-section .about-career__item > .about-career__dates { grid-column: 2; grid-row: 1; margin: 0; white-space: nowrap; text-align: end; align-self: center; }
-.about-experience-section .about-career__identity { min-inline-size: 0; }
-.about-experience-section .about-career__identity p { color: var(--service-card-muted, var(--muted)); }
 .distance-globe { min-inline-size: 0; display: grid; gap: var(--globe-caption-gap, var(--space-3)); color: var(--text); }
 @media (min-width: 80.001rem) { .distance-globe { inline-size: min(100%, calc(5 * var(--grid-row))); justify-self: start; } }
 .distance-globe__stage { position: relative; isolation: isolate; aspect-ratio: 1; inline-size: 100%; }
@@ -242,15 +211,12 @@
 @media (max-width: 38rem) {
   .about-experience__heading { grid-template-columns: minmax(0, 1fr); }
   .about-experience__action { flex-wrap: wrap; }
-  .about-experience-section .about-career__item { grid-template-columns: minmax(0, 1fr); }
-  .about-experience-section .about-career__item > .about-career__dates { grid-column: 1; grid-row: 2; text-align: start; }
 }
 @media (prefers-reduced-motion: reduce) {
   .distance-globe__canvas, .distance-globe__label, .globe-label__expansion { transition: none; }
 }
 
 /* External career logos with compact, shared spotlight-card text surfaces. */
-.about-career { gap: 1.25rem; container-type: inline-size; }
 .about-career__entry { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; align-items: center; min-inline-size: 0; }
 .about-career__entry:not(.about-career__entry--degree), .about-career__entry:not(.about-career__entry--degree) .about-career__logo { block-size: 52px; }
 .about-career__entry .about-career__logo { inline-size: 48px; block-size: 48px; }
@@ -267,15 +233,14 @@
 .about-career__top { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
 .about-career__company { display: flex; align-items: center; gap: 8px; min-inline-size: 0; line-height: 1.25; }
 .about-career__top h3 { margin: 0; font-size: 16px; }
-.about-career__role { margin: 0; font-size: 14.5px; text-align: right; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
-.about-career__copy > p { font-size: 16px; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
+.about-career__role { margin: 0; font-size: 14.5px; text-align: right; flex-shrink: 0; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
 .about-career__top .about-career__dates { margin: 0; font-size: 14.5px; white-space: nowrap; color: color-mix(in srgb, var(--service-card-ink, var(--text)) 72%, var(--service-card-bg, var(--soft)) 28%); }
-.about-career__role { flex-shrink: 0; }
 .about-career__entry--degree .about-career__top h3 { --type-h3: 14.5px; font-size: 14.5px; line-height: 1.25; }
 .about-career__entry--degree :is(.about-career__role, .about-career__dates) { line-height: 1.25; }
 .about-career__entry--degree .about-career__company > span { font-size: 14.5px; }
 .about-rebuild .about-career__entry--degree :is(.about-career__role, .about-career__dates) { font-size: 12.5px; }
 @container (max-width: 640px) {
+  .about-career__entry:not(.about-career__entry--degree) { block-size: auto; min-block-size: 52px; }
   .about-rebuild .about-career__copy { block-size: auto; min-block-size: 52px; padding-block: 6px; }
   .about-rebuild .about-career__entry.about-career__entry--degree > .about-career__copy.spotlight-card { min-block-size: var(--degree-height); }
   .about-career__top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -288,7 +253,7 @@
 }
 @media (max-width: 80rem) {
   .about-career__entry--degree { block-size: auto; grid-template-rows: auto; }
-  .about-rebuild .about-career__entry.about-career__entry--degree > .about-career__copy.spotlight-card { block-size: auto; max-block-size: none; }
+  .about-rebuild .about-career__entry.about-career__entry--degree > .about-career__copy.spotlight-card { block-size: auto; max-block-size: none; grid-template-rows: auto; }
 }
 @media (max-width: 700px) {
   .about-career__top { display: flex; flex-wrap: wrap; gap: 8px; }

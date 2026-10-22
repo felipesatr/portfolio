@@ -9,3 +9,6 @@
 
 # Local preview process output
 /.preview-*.log
+
+# Local screenshots and build verification output
+/artifacts/

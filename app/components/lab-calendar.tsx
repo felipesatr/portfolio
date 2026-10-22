@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from "react";
-import { Plus, Trash, NavArrowLeft, Check, Xmark, Clock } from "iconoir-react";
+import { IconPlus as Plus, IconTrash as Trash, IconChevronLeft as NavArrowLeft, IconCheck as Check, IconX as Xmark, IconClock as Clock, IconCaretUpFilled, IconCaretDownFilled } from "@tabler/icons-react";
 import { dateKey, fromDateKey, monthNames, monthWeeks, timeParts, timeFromParts, displayTime, canAddTask, type CalendarTask } from "~/lib/calendar";
 import { createCalendarTaskStore } from "~/lib/calendar-store";
 
@@ -377,7 +377,7 @@ export function LabCalendar({ instanceId = "primary" }: { instanceId?: string })
           })}</div>
         </div>
       </div><div className="calendar-scrollbar" data-lenis-prevent aria-label="Calendar hours scrollbar">
-        <button type="button" aria-label="Scroll hours up" onClick={() => agenda.current?.scrollBy({ top: -44, behavior: "smooth" })}><span data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><svg viewBox="0 0 10 8" aria-hidden="true"><path d="M5 1 9 6.5H1Z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg></span></button>
+        <button type="button" aria-label="Scroll hours up" onClick={() => agenda.current?.scrollBy({ top: -44, behavior: "smooth" })}><span data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><IconCaretUpFilled aria-hidden="true" /></span></button>
         <div ref={scrollTrack} className="calendar-scroll-track" onPointerDown={(event) => {
           const node = agenda.current, track = scrollTrack.current;
           if (!node || !track) return;
@@ -390,7 +390,7 @@ export function LabCalendar({ instanceId = "primary" }: { instanceId?: string })
         }} onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId) && agenda.current) agenda.current.scrollTop = Number(event.currentTarget.dataset.dragScroll) + (event.clientY - Number(event.currentTarget.dataset.dragY)) * Number(event.currentTarget.dataset.dragRatio); }} onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
           <span ref={scrollThumb} className="calendar-scroll-thumb" data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><svg viewBox="0 0 6 100" preserveAspectRatio="none"><rect width="6" height="100" rx="3" fill="currentColor" /></svg></span>
         </div>
-        <button type="button" aria-label="Scroll hours down" onClick={() => agenda.current?.scrollBy({ top: 44, behavior: "smooth" })}><span data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><svg viewBox="0 0 10 8" aria-hidden="true"><path d="M1 1.5H9L5 7Z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg></span></button>
+        <button type="button" aria-label="Scroll hours down" onClick={() => agenda.current?.scrollBy({ top: 44, behavior: "smooth" })}><span data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><IconCaretDownFilled aria-hidden="true" /></span></button>
       </div></div> : null}
     </div>
     <span className="visually-hidden" role="status">{storageNotice || (weekMode ? `Week of ${weeks[selectedRow][0].toLocaleDateString()}. Selected ${selected}.` : `${monthNames[monthIndex]} ${year}`)}</span>

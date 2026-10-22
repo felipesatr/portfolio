@@ -166,10 +166,12 @@ export function Hero() {
   // The server renders the headline before its first reveal. The early head
   // script marks that same state before hydration; later SPA visits start ready.
   const startsWithDocumentIntro = typeof document === "undefined" || document.documentElement.dataset.documentIntro === "pending";
+  const startsWithHomeRouteIntro = typeof document !== "undefined" && document.documentElement.dataset.homeRouteIntro === "pending";
+  const startsWithHeroIntro = startsWithDocumentIntro || startsWithHomeRouteIntro;
   const [selectedAudience, setSelectedAudience] = useState<Audience>("anyone");
   const [outgoingAudience, setOutgoingAudience] = useState<Audience | null>(null);
   const [outgoingSize, setOutgoingSize] = useState<number | null>(null);
-  const [isMoving, setIsMoving] = useState(!startsWithDocumentIntro);
+  const [isMoving, setIsMoving] = useState(!startsWithHeroIntro);
   const [hasCompletedInitialReveal, setHasCompletedInitialReveal] = useState(!startsWithDocumentIntro);
   const frameRef = useRef<number | null>(null);
   const fittedSizesRef = useRef(new Map<Audience, number>());
@@ -211,6 +213,7 @@ export function Hero() {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     frameRef.current = window.requestAnimationFrame(() => {
+      delete document.documentElement.dataset.homeRouteIntro;
       setIsMoving(true);
       if (!wordRevealEnabled || reduceMotion) {
         setOutgoingAudience(null);

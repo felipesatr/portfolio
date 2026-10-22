@@ -4335,7 +4335,6 @@ body.car-showcase-expanded .lab-grid > :not(.lab-car) {
   stroke-width: 11;
 }
 
-
 .lab-etch__knob--horizontal,
 .lab-etch__knob--horizontal:active { cursor: ew-resize; }
 
@@ -5801,94 +5800,10 @@ h6 { font-size: var(--type-h6) !important; }
   margin: 0 clamp(1.125rem, 5.8vw, 4.4rem) var(--space-9);
 }
 
-.about-intro,
-.process-section,
-.about-details,
-.about-experience {
-  padding: var(--space-9) clamp(1.125rem, 5.8vw, 4.4rem);
-}
-
-.about-intro {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-8);
-  background: var(--soft);
-}
-
-.about-intro > div {
-  display: grid;
-  align-content: start;
-  gap: var(--space-5);
-}
-
-.about-intro h2 {
-  max-inline-size: 17ch;
-}
-
-.about-experience .section-heading-row span {
-  color: var(--muted);
-  font-size: var(--step--1);
-  text-transform: uppercase;
-}
-
-.experience-list--timeline li {
-  grid-template-columns: 2.5rem minmax(12rem, 0.8fr) minmax(16rem, 1.4fr) 9rem;
-}
-
-.process-section {
-  display: grid;
-  grid-template-columns: 0.8fr 1.3fr;
-  gap: var(--space-8);
-  background: var(--inverse-bg);
-  color: var(--inverse-muted);
-}
-
-.process-section h2,
-.process-section h3 {
-  color: var(--inverse-text);
-}
-
 .process-section__intro {
   display: grid;
   align-content: start;
   gap: var(--space-5);
-}
-
-.process-section ol {
-  border-block-end: 1px solid color-mix(in srgb, var(--inverse-muted) 45%, transparent);
-}
-
-.process-section li {
-  display: grid;
-  grid-template-columns: 2rem 11rem 1fr;
-  gap: var(--space-4);
-  padding-block: var(--space-5);
-  border-block-start: 1px solid color-mix(in srgb, var(--inverse-muted) 45%, transparent);
-}
-
-.process-section li > span {
-  color: var(--inverse-muted);
-  font-size: var(--type-caption);
-}
-
-.about-details {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-5);
-}
-
-.about-details article {
-  display: grid;
-  align-content: start;
-  gap: var(--space-4);
-  min-block-size: 18rem;
-  padding: var(--space-5);
-  border: var(--border);
-  border-radius: var(--radius-card);
-}
-
-.about-details h2 {
-  font-size: var(--step-2);
 }
 
 .lab-page {
@@ -6310,20 +6225,15 @@ h6 { font-size: var(--type-h6) !important; }
     justify-self: stretch;
     inline-size: 100%;
   }
-
-  .hero__primary,
-  .lab-preview__header,
-  .making-of,
-  .page-header,
-  .case-study__header,
-  .about-intro,
-  .process-section,
-  .lab-index__item {
+.hero__primary,
+.lab-preview__header,
+.making-of,
+.page-header,
+.case-study__header,
+.lab-index__item {
     grid-template-columns: 1fr;
   }
-
-  .lab-grid,
-  .about-details {
+.lab-grid {
     grid-template-columns: 1fr;
   }
 
@@ -6517,9 +6427,7 @@ h6 { font-size: var(--type-h6) !important; }
   .project-preview__media:nth-of-type(even) {
     min-block-size: 19rem;
   }
-
-  .experience-list li,
-  .experience-list--timeline li {
+.experience-list li {
     grid-template-columns: 2.5rem minmax(10rem, 0.8fr) minmax(12rem, 1.5fr);
   }
 
@@ -6715,23 +6623,13 @@ h6 { font-size: var(--type-h6) !important; }
     align-items: start;
     flex-direction: column;
   }
-
-  .experience-list li,
-  .experience-list--timeline li {
+.experience-list li {
     grid-template-columns: 2rem 1fr;
     gap: var(--space-3);
   }
 
   .experience-list li > p,
   .experience-list small {
-    grid-column: 2;
-  }
-
-  .process-section li {
-    grid-template-columns: 2rem 1fr;
-  }
-
-  .process-section li p {
     grid-column: 2;
   }
 
@@ -6868,158 +6766,15 @@ html.soft-reveal-ready .home-page .experience-section__set:not(.experience-secti
   --type-h3: var(--step-1);
 }
 
-.about-page .process-section {
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-}
-
-.about-page .process-section ol {
-  margin: 0;
-  list-style: none;
-}
-
-.about-page .process-section li {
-  grid-template-columns: 2.5rem minmax(9rem, 0.7fr) minmax(0, 1.3fr);
-  align-items: start;
-}
-
-.about-page .process-section li h3 {
-  margin: 0;
-  font-size: var(--type-body-large);
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-.about-page .process-section li p {
-  grid-column: auto;
-  max-inline-size: none;
-  margin: 0;
-}
-
-.about-experience .experience-list--timeline li {
-  grid-template-columns: 2.5rem minmax(12rem, 0.8fr) minmax(16rem, 1.4fr) 9rem;
-  align-items: start;
-  min-block-size: 0;
-}
-
 .about-experience__role {
   display: grid;
   align-content: start;
   gap: var(--space-2);
 }
 
-.about-experience .experience-list h3 {
-  margin: 0;
-  font-size: var(--type-body-large);
-  letter-spacing: normal;
-  text-transform: none;
-}
-
 .about-experience__company {
   color: var(--muted);
   font-size: var(--type-label);
-}
-
-.about-experience .experience-list li > p {
-  max-inline-size: 52ch;
-}
-
-.about-experience .experience-list small {
-  font-weight: 500;
-  text-align: end;
-}
-
-.about-page .about-details {
-  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
-}
-
-.about-page .about-details article {
-  min-block-size: 17rem;
-  border-color: transparent;
-  background: var(--soft);
-}
-
-.about-page .about-details article h2 {
-  max-inline-size: 19ch;
-}
-
-.about-inline-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  justify-self: start;
-  margin-block-start: var(--space-2);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.about-inline-link svg {
-  transition: transform 220ms var(--ease-out);
-}
-
-.about-inline-link:hover svg {
-  transform: translateX(0.2rem);
-}
-
-.about-next {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-7);
-  margin: 0 clamp(1.125rem, 5.8vw, 4.4rem) var(--space-9);
-  padding-block: var(--space-7);
-  border-block-start: var(--border);
-}
-
-.about-next > div {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.about-next h2 {
-  font-size: var(--step-2);
-}
-
-@media (max-width: 75rem) {
-  .about-experience .experience-list--timeline li {
-    grid-template-columns: 2.5rem minmax(10rem, 0.8fr) minmax(12rem, 1.5fr);
-  }
-
-  .about-experience .experience-list small {
-    grid-column: 2 / -1;
-    text-align: start;
-  }
-}
-
-@media (max-width: 56rem) {
-  .about-page .about-details {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 42rem) {
-  .about-page .process-section li {
-    grid-template-columns: 2rem minmax(0, 1fr);
-  }
-
-  .about-page .process-section li h3,
-  .about-page .process-section li p {
-    grid-column: 2;
-  }
-
-  .about-next {
-    align-items: start;
-    flex-direction: column;
-  }
-
-  .about-experience .experience-list--timeline li {
-    grid-template-columns: 2rem minmax(0, 1fr);
-    gap: var(--space-3);
-  }
-
-  .about-experience .experience-list li > p,
-  .about-experience .experience-list small {
-    grid-column: 2;
-  }
 }
 
 @media (max-width: 760px) {

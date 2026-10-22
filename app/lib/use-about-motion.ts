@@ -19,11 +19,10 @@ export function useAboutMotion(timelineRef: RefObject<HTMLDivElement | null>) {
     if (!page || !story || !heading || !timeline) return;
 
     const intro = [...page.querySelectorAll<HTMLElement>(".about-hero__introduction, .about-portrait")];
-    const labels = [...story.querySelectorAll<HTMLElement>(".about-section__intro > p")];
     const milestones = [...timeline.querySelectorAll<HTMLElement>(".about-timeline__card")]
       .sort((a, b) => Number(a.parentElement?.dataset.softRevealIndex) - Number(b.parentElement?.dataset.softRevealIndex));
     const values = [...story.querySelectorAll<HTMLElement>(".about-value-item")];
-    const targets = [...intro, ...labels, ...milestones, ...values];
+    const targets = [...intro, ...milestones, ...values];
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let introComplete = false;
     let storyInView = false;
@@ -63,7 +62,6 @@ export function useAboutMotion(timelineRef: RefObject<HTMLDivElement | null>) {
       if (!introComplete || !storyInView || storyStarted) return;
       storyStarted = true;
       story.classList.add("is-about-story-started");
-      labels.forEach((label) => show(label));
       page.dataset.aboutMotionPhase = "story-headings";
       setStoryVisible(true);
     };

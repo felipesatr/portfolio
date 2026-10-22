@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { testimonials } from "~/content/portfolio";
 import { publicAsset } from "~/lib/public-asset";
-import { ArrowLeftIcon, ArrowRightIcon, NavArrowLeftIcon } from "./icons";
+import { ArrowLeftIcon, ArrowRightIcon } from "./icons";
 import { RevealTitle } from "./motion-reveal";
 import { ENABLE_KIND_WORDS_TEST, type KindWordsView } from "./kind-words-test";
 
@@ -62,7 +62,7 @@ function QuoteSlot({ active, count = references.length, reveal = false }: { acti
 
 // Natural content determines height, then rounds up to a half horizontal-grid
 // unit. Measurements ignore the animated quote because its reserves set size.
-function Frame({ variant, rows, children, expanded = false }: { variant: number; rows: number; children: ReactNode; expanded?: boolean }) {
+function Frame({ variant, rows, children }: { variant: number; rows: number; children: ReactNode }) {
   const stage = useRef<HTMLDivElement>(null);
   const natural = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -90,8 +90,8 @@ function Frame({ variant, rows, children, expanded = false }: { variant: number;
     measure();
     void document.fonts.ready.then(schedule);
     return () => { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [rows, expanded]);
-  return <div ref={stage} className={`kw-frame kw-frame--${variant}${expanded ? " kw-frame--expanded" : ""}`} style={{ "--kw-rows": rows } as CSSProperties} data-no-reveal>
+  }, [rows]);
+  return <div ref={stage} className={`kw-frame kw-frame--${variant}`} style={{ "--kw-rows": rows } as CSSProperties} data-no-reveal>
     <i className="kw-unit-probe" aria-hidden="true" />
     <div ref={natural} className="kw-natural">{children}</div>
   </div>;
@@ -100,19 +100,6 @@ function Frame({ variant, rows, children, expanded = false }: { variant: number;
 function CompactCard() {
   const [active, setActive] = useState(0);
   return <Frame variant={1} rows={3}><PreviewLabel /><QuoteSlot active={active} count={3} /><Attribution person={references[active]} /><AvatarTabs active={active} onSelect={setActive} count={3} ring /></Frame>;
-}
-
-function InlineQuotes() {
-  const [focused, setFocused] = useState<number | null>(null);
-  const [expanded, setExpanded] = useState(false);
-  return <Frame variant={2} rows={5} expanded={expanded}><PreviewLabel />
-    <div className={`kw-flow${focused !== null ? " kw-flow--focused" : ""}`} onMouseLeave={() => setFocused(null)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(null); }}>
-      {references.slice(0, expanded ? 5 : 3).map((person, index) => <Fragment key={person.id}><span role="button" tabIndex={0} className={`kw-flow__item${focused === index ? " is-focused" : ""}`} onMouseEnter={() => setFocused(index)} onFocus={() => setFocused(index)} onClick={() => setFocused(index)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setFocused(index); } }} aria-label={`${person.name}: ${person.quote}`}>
-        <Portrait person={person} />{person.quote}<span className="kw-flow__attribution">{person.name}<small>Unpublished</small></span>
-      </span>{" "}</Fragment>)}
-    </div>
-    <button className="kw-show-more" type="button" aria-expanded={expanded} onClick={() => { setExpanded(!expanded); setFocused(null); }}>{expanded ? "Show less" : "Show more"}<NavArrowLeftIcon size={13} /></button>
-  </Frame>;
 }
 
 function ProgressSlider() {
@@ -152,48 +139,6 @@ function PortraitCarousel() {
   </Frame>;
 }
 
-function FanCarousel() {
-  const [active, setActive] = useState(0);
-  return <Frame variant={5} rows={4.5}><div className="kw-fan-controls"><PreviewLabel /><Arrows onPrevious={() => setActive(wrap(active - 1))} onNext={() => setActive(wrap(active + 1))} /></div>
-    <div className="kw-fan-window"><div className="kw-fan">
-      {references.map((person, index) => {
-        const offset = wrap(index - active + 2) - 2;
-        return <article key={person.id} className={`kw-fan-card kw-pastel-${index}`} aria-hidden={index !== active} style={{ "--kw-offset": offset, "--kw-distance": Math.abs(offset), zIndex: 5 - Math.abs(offset) } as CSSProperties}>
-          <div className="kw-fan-card__header"><span>Reference preview</span><Stars /></div>
-          <blockquote>“{person.quote.split(" ").map((word, wordIndex) => <Fragment key={wordIndex}>{wordIndex >= 6 && wordIndex <= 9 ? <mark>{word}</mark> : word}{" "}</Fragment>)}”</blockquote>
-          <Attribution person={person} portrait />
-        </article>;
-      })}
-    </div></div><div className="kw-pagination"><span>{String(active + 1).padStart(2, "0")} / 05</span><Dots active={active} onSelect={setActive} /></div>
-  </Frame>;
-}
-
-function AuthorList() {
-  const [active, setActive] = useState(0);
-  return <Frame variant={6} rows={5}><div className="kw-editorial-head"><PreviewLabel /><span>{active + 1} / 4</span></div><div className="kw-editorial-columns">
-    <QuoteSlot active={active} count={4} reveal />
-    <div className="kw-author-list" role="group" aria-label="Choose a reference">{references.slice(0, 4).map((person, index) => <button type="button" key={person.id} aria-pressed={active === index} onClick={() => setActive(index)}>
-      <strong>{person.name}</strong><div className="kw-author-list__detail"><div><span>{person.role}</span><small>Pending approval</small></div><Portrait person={person} /></div>
-    </button>)}</div>
-  </div></Frame>;
-}
-
-const reactions = [
-  ["Clear communication", "Thoughtful process", "Attention to detail"],
-  ["A reliable teammate", "Responsive", "Carefully considered"],
-  ["Easy to work with", "From idea to delivery", "Always curious"],
-  ["Practical solutions", "A fresh perspective", "Collaborative"],
-  ["Quality matters", "Keeps things moving", "Happy to help"],
-];
-function ReactionMarquee() {
-  const [focused, setFocused] = useState(2);
-  return <Frame variant={7} rows={4}><PreviewLabel /><div className="kw-reactions" onMouseLeave={() => setFocused(2)}>
-    {reactions.map((row, rowIndex) => <div className={`kw-reaction-row${focused === rowIndex ? " is-focused" : ""}`} key={rowIndex} onMouseEnter={() => setFocused(rowIndex)} tabIndex={0} onFocus={() => setFocused(rowIndex)} onBlur={() => setFocused(2)} aria-label={`Sample reactions: ${row.join(", ")}`}>
-      <div className="kw-reaction-track">{[0, 1].map((copy) => <div className="kw-reaction-copy" key={copy} aria-hidden={copy === 1}>{[...row, ...row].map((text, index) => <span key={index} className="kw-reaction-pill"><Portrait person={references[wrap(index + rowIndex)]} /><span className="kw-reaction-message">{text}</span><span className="kw-typing" aria-hidden="true"><i /><i /><i /></span></span>)}</div>)}</div>
-    </div>)}
-  </div></Frame>;
-}
-
 function LayeredCards() {
   const [active, setActive] = useState(0);
   return <Frame variant={8} rows={3.5}><PreviewLabel /><div className="kw-stack-window"><div className="kw-stack">
@@ -203,11 +148,6 @@ function LayeredCards() {
     })}
     <Arrows onPrevious={() => setActive(wrap(active - 1, 3))} onNext={() => setActive(wrap(active + 1, 3))} />
   </div></div><Dots active={active} onSelect={setActive} count={3} /></Frame>;
-}
-
-function CenteredQuote() {
-  const [active, setActive] = useState(0);
-  return <Frame variant={9} rows={3}><PreviewLabel /><Stars /><QuoteSlot active={active} count={4} /><Attribution person={references[active]} /><AvatarTabs active={active} onSelect={setActive} count={4} /></Frame>;
 }
 
 function ClientList() {
@@ -252,12 +192,17 @@ function ClientList() {
   </div><div className="kw-touch-portrait" aria-hidden="true"><Portrait person={references[active]} /></div></Frame>;
 }
 
-const variants = [CompactCard, InlineQuotes, ProgressSlider, PortraitCarousel, FanCarousel, AuthorList, ReactionMarquee, LayeredCards, CenteredQuote, ClientList];
+const variants = [
+  { number: 1, Component: CompactCard },
+  { number: 3, Component: ProgressSlider },
+  { number: 4, Component: PortraitCarousel },
+  { number: 8, Component: LayeredCards },
+  { number: 10, Component: ClientList },
+];
 
 export function KindWordsSections({ view }: { view: KindWordsView }) {
   return <div className="kind-words-sections" id="references">
-    {variants.map((Component, index) => {
-      const number = index + 1;
+    {variants.map(({ number, Component }) => {
       const hidden = ENABLE_KIND_WORDS_TEST && view !== null && view !== number;
       return <section key={number} className="kind-words-section" id={`kind-words-variant-${number}`} hidden={hidden} data-kind-words-variant={number} aria-labelledby={`kind-words-heading-${number}`}>
         <div className="kind-words-intro"><RevealTitle id={`kind-words-heading-${number}`} lines={["Kind words"]} /><span className="kw-variant-label">Layout {String(number).padStart(2, "0")}</span></div>

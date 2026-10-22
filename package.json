@@ -13,7 +13,9 @@
     "dev": "react-router dev",
     "preview": "vite preview",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --max-warnings=0",
+    "test": "node scripts/test-globe.mjs && node scripts/calendar.test.mjs && node scripts/calendar-store.test.mjs",
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
     "@tabler/icons-react": "^3.49.0",

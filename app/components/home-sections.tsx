@@ -1,13 +1,14 @@
 import { Link } from "react-router";
 import { createPortal, flushSync } from "react-dom";
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
-import { Download } from "iconoir-react";
+import { Fragment, useEffect, useEffectEvent, useRef, useState, type CSSProperties } from "react";
+import { IconDownload as Download } from "@tabler/icons-react";
 import type { BufferGeometry, Material, Object3D, Texture } from "three";
 import { experience, testimonials } from "~/content/portfolio";
 import { services, type Service } from "~/content/services";
 import { publicAsset } from "~/lib/public-asset";
+import { useStoredScore } from "~/lib/use-stored-score";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, ExpandIcon, AutomationIcon, CodeIcon, HeartIcon, InfoCircleIcon, InterfaceIcon, NavArrowLeftIcon, PlayIcon, RestartIcon, SparkIcon, StrategyIcon } from "./icons";
-import { RevealTitle, SoftBlurText } from "./motion-reveal";
+import { RevealTitle } from "./motion-reveal";
 import { SpotlightCard, SpotlightGrid } from "./spotlight-card";
 import { LabCalendar } from "./lab-calendar";
 
@@ -291,6 +292,23 @@ function DrawingPad() {
     return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   };
 
+  const beginStroke = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0 && event.button !== 2) return;
+    event.preventDefault();
+    const point = pointFromEvent(event);
+    drawingPointer.current = event.pointerId;
+    previousPoint.current = point;
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    // A click without a drag should still leave a visible mark.
+    const context = event.currentTarget.getContext("2d");
+    if (!context) return;
+    context.beginPath();
+    context.arc(point.x, point.y, context.lineWidth / 2, 0, Math.PI * 2);
+    context.fillStyle = context.strokeStyle;
+    context.fill();
+  };
+
   const endStroke = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (drawingPointer.current !== event.pointerId) return;
     drawingPointer.current = null;
@@ -306,12 +324,8 @@ function DrawingPad() {
         aria-label="Draw here with your pointer"
         onPointerEnter={() => document.documentElement.classList.add("draw-cursor-hidden")}
         onPointerLeave={() => document.documentElement.classList.remove("draw-cursor-hidden")}
-        onPointerDown={(event) => {
-          const point = pointFromEvent(event);
-          drawingPointer.current = event.pointerId;
-          previousPoint.current = point;
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
+        onContextMenu={(event) => event.preventDefault()}
+        onPointerDown={beginStroke}
         onPointerMove={(event) => {
           if (drawingPointer.current !== event.pointerId || !previousPoint.current) return;
           const point = pointFromEvent(event);
@@ -475,10 +489,10 @@ function CarShowcase() {
     return () => document.body.classList.remove("car-showcase-expanded");
   }, [isExpanding, isExpanded]);
 
+  const closeOnEscape = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === "Escape") closeExpanded();
+  });
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeExpanded();
-    };
     window.addEventListener("keydown", closeOnEscape);
     return () => {
       window.removeEventListener("keydown", closeOnEscape);
@@ -1588,7 +1602,7 @@ function TypeRacer({ instanceId = "primary" }: { instanceId?: string }) {
   const [elapsed, setElapsed] = useState(0);
   const [resetElapsed, setResetElapsed] = useState<number | null>(null);
   const [completionTime, setCompletionTime] = useState<number | null>(null);
-  const [highScore, setHighScore] = useState<number | null>(null);
+  const [highScore, recordBestTime] = useStoredScore(highScoreKey, "min");
   const [arrivingWordIndex, setArrivingWordIndex] = useState<number | null>(null);
   const [isInputPlaceholderVisible, setIsInputPlaceholderVisible] = useState(true);
   const [isInputVanishActive, setIsInputVanishActive] = useState(false);
@@ -1620,27 +1634,6 @@ function TypeRacer({ instanceId = "primary" }: { instanceId?: string }) {
     const interval = window.setInterval(() => setElapsed(Date.now() - startedAt), 100);
     return () => window.clearInterval(interval);
   }, [completionTime, startedAt]);
-
-  useEffect(() => {
-    if (!isComplete || !startedAt || completionTime !== null) return;
-    const finishedAt = Date.now() - startedAt;
-    setElapsed(finishedAt);
-    setCompletionTime(finishedAt);
-  }, [completionTime, isComplete, startedAt]);
-
-  useEffect(() => {
-    const savedScore = Number(window.localStorage.getItem(highScoreKey));
-    if (Number.isFinite(savedScore) && savedScore > 0) setHighScore(savedScore);
-  }, [highScoreKey]);
-
-  useEffect(() => {
-    if (completionTime === null) return;
-    setHighScore((current) => {
-      if (current !== null && current <= completionTime) return current;
-      window.localStorage.setItem(highScoreKey, String(completionTime));
-      return completionTime;
-    });
-  }, [completionTime, highScoreKey]);
 
   const clearInputCursorFade = () => {
     if (inputFadeTimer.current !== null) window.clearTimeout(inputFadeTimer.current);
@@ -1822,7 +1815,7 @@ function TypeRacer({ instanceId = "primary" }: { instanceId?: string }) {
         <span data-fluid-cursor-native-ink>{isComplete ? "Done!" : `${entry.length}/${phrase.length}`}</span>
       </p>
       <div className={`lab-type-racer__input-wrap${isInputPlaceholderVisible ? " is-placeholder-visible" : ""}${isInputVanishActive ? " is-vanishing" : ""}`}>
-        <input ref={inputRef} aria-label="Type the displayed phrase" value={entry} onPointerEnter={() => { isPointerInsideInput.current = true; }} onPointerLeave={() => { isPointerInsideInput.current = false; inputClickPoint.current = null; clearInputCursorFade(); showTypeCursor(); }} onPointerDown={(event) => { inputClickPoint.current = { x: event.clientX, y: event.clientY }; hideTypeCursor(); }} onChange={(event) => { if (isInputVanishActive) { cancelInputVanish(); setIsInputVanishActive(false); setIsInputPlaceholderVisible(true); } const nextEntry = event.target.value; const previousWordIndex = entry ? entry.split(" ").length - 1 : -1; const nextWordIndex = nextEntry ? nextEntry.split(" ").length - 1 : -1; if (nextWordIndex > previousWordIndex) setArrivingWordIndex(nextWordIndex); else if (nextWordIndex < previousWordIndex) setArrivingWordIndex(null); if (resetElapsed !== null) { cancelTimerReset(); setElapsed(0); } if (!startedAt && nextEntry) setStartedAt(Date.now()); setEntry(nextEntry); scheduleInputCursorFade(); }} placeholder="Type it here" spellCheck="false" autoCapitalize="off" autoComplete="off" />
+        <input ref={inputRef} aria-label="Type the displayed phrase" value={entry} onPointerEnter={() => { isPointerInsideInput.current = true; }} onPointerLeave={() => { isPointerInsideInput.current = false; inputClickPoint.current = null; clearInputCursorFade(); showTypeCursor(); }} onPointerDown={(event) => { inputClickPoint.current = { x: event.clientX, y: event.clientY }; hideTypeCursor(); }} onChange={(event) => { if (isInputVanishActive) { cancelInputVanish(); setIsInputVanishActive(false); setIsInputPlaceholderVisible(true); } const nextEntry = event.target.value; const previousWordIndex = entry ? entry.split(" ").length - 1 : -1; const nextWordIndex = nextEntry ? nextEntry.split(" ").length - 1 : -1; if (nextWordIndex > previousWordIndex) setArrivingWordIndex(nextWordIndex); else if (nextWordIndex < previousWordIndex) setArrivingWordIndex(null); if (resetElapsed !== null) { cancelTimerReset(); setElapsed(0); } const now = Date.now(); if (!startedAt && nextEntry) setStartedAt(now); if (nextEntry === phrase && completionTime === null) { const finishedAt = Math.max(1, now - (startedAt ?? now)); setElapsed(finishedAt); setCompletionTime(finishedAt); recordBestTime(finishedAt); } setEntry(nextEntry); scheduleInputCursorFade(); }} placeholder="Type it here" spellCheck="false" autoCapitalize="off" autoComplete="off" />
         <canvas ref={inputVanishCanvasRef} className="lab-type-racer__vanish" aria-hidden="true" />
       </div>
     </article>
@@ -1877,10 +1870,12 @@ function snakeTailClass(snake: SnakeCell[], index: number) {
 }
 
 function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
+  const highScoreKey = instanceId === "primary" ? "portfolio:snake:high-score" : `portfolio:snake:high-score:${instanceId}`;
   const [snake, setSnake] = useState<SnakeCell[]>(initialSnake);
   const [food, setFood] = useState<SnakeCell>({ x: 2, y: 2 });
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [savedHighScore, recordHighScore] = useStoredScore(highScoreKey, "max");
+  const highScore = savedHighScore ?? 0;
   const [status, setStatus] = useState<"ready" | "playing" | "crashing" | "lost" | "won">("ready");
   const [isPointerInsideSnake, setIsPointerInsideSnake] = useState(false);
   const [isControlLeaving, setIsControlLeaving] = useState(false);
@@ -1892,12 +1887,6 @@ function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
   const foodRef = useRef(food);
   const controlTimer = useRef<number | null>(null);
   const crashTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    const highScoreKey = instanceId === "primary" ? "portfolio:snake:high-score" : `portfolio:snake:high-score:${instanceId}`;
-    const stored = Number.parseInt(window.localStorage.getItem(highScoreKey) || "0", 10);
-    if (Number.isFinite(stored)) setHighScore(stored);
-  }, [instanceId]);
 
   const shouldHideSnakeCursor = isPointerInsideSnake && (isControlLeaving || status === "playing" || status === "crashing");
 
@@ -1953,7 +1942,7 @@ function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
     }, 180);
   };
 
-  const requestDirection = (next: SnakeDirection) => {
+  const requestDirection = useEffectEvent((next: SnakeDirection) => {
     const opposite: Record<SnakeDirection, SnakeDirection> = { up: "down", down: "up", left: "right", right: "left" };
     if (status === "crashing") return;
     if (status !== "playing") {
@@ -1970,7 +1959,7 @@ function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
     const priorDirection = directionQueue.current.at(-1) ?? direction.current;
     if (next === priorDirection || opposite[priorDirection] === next) return;
     directionQueue.current.push(next);
-  };
+  });
 
   useEffect(() => {
     const keys: Record<string, SnakeDirection> = {
@@ -2025,12 +2014,7 @@ function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
 
       const nextScore = nextSnake.length - initialSnake().length;
       setScore(nextScore);
-      setHighScore((currentHigh) => {
-        const nextHigh = Math.max(currentHigh, nextScore);
-        const highScoreKey = instanceId === "primary" ? "portfolio:snake:high-score" : `portfolio:snake:high-score:${instanceId}`;
-        window.localStorage.setItem(highScoreKey, String(nextHigh));
-        return nextHigh;
-      });
+      recordHighScore(nextScore);
       if (nextSnake.length === snakeGridSize * snakeGridSize) {
         setStatus("won");
         return;
@@ -2040,7 +2024,7 @@ function SnakeGame({ instanceId = "primary" }: { instanceId?: string }) {
       setFood(nextFood);
     }, snakeStepMs);
     return () => window.clearInterval(timer);
-  }, [status]);
+  }, [status, recordHighScore]);
 
   return (
     <article className="lab-preview__placeholder lab-preview__placeholder--5 lab-snake" aria-label="Snake game" onPointerEnter={() => setIsPointerInsideSnake(true)} onPointerLeave={() => { setIsPointerInsideSnake(false); boardActive.current = false; }}>

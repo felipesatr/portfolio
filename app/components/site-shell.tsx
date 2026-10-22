@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { NavLink, Outlet, useHref, useLocation, useNavigate } from "react-router";
 import { publicAsset } from "~/lib/public-asset";
 import { LayoutGridOverlay, LayoutGridToggle } from "./layout-grid-overlay";
 import { ScrollToTop } from "./scroll-to-top";
@@ -117,6 +117,7 @@ export function SiteShell() {
   const [routePhase, setRoutePhase] = useState<"idle" | "exiting" | "entering">("idle");
   const location = useLocation();
   const navigate = useNavigate();
+  const homeHref = useHref("/");
   const routeTimer = useRef(0);
   const routeFrames = useRef([0, 0]);
   const routeTransitionPending = useRef(false);
@@ -167,12 +168,9 @@ export function SiteShell() {
     if (!anchor || anchor.target && anchor.target !== "_self" || anchor.hasAttribute("download")) return;
     const next = new URL(anchor.href, window.location.href);
     if (next.origin !== window.location.origin) return;
-    const browserPath = window.location.pathname;
-    const basePath = browserPath.endsWith(location.pathname)
-      ? browserPath.slice(0, browserPath.length - location.pathname.length)
-      : "";
-    const nextPath = basePath && next.pathname.startsWith(`${basePath}/`)
-      ? next.pathname.slice(basePath.length)
+    const basePath = new URL(homeHref, window.location.href).pathname.replace(/\/+$/, "");
+    const nextPath = basePath && (next.pathname === basePath || next.pathname.startsWith(`${basePath}/`))
+      ? next.pathname.slice(basePath.length) || "/"
       : next.pathname;
     const isHomeDestination = nextPath === "/" && next.search === "" && next.hash === "";
     if (isHomeDestination && location.pathname === "/") {

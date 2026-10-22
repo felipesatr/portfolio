@@ -1,5 +1,5 @@
 /* Footer CTA layout and the reversible Lab section selector. */
-.home-page .contact-cta {
+:is(.home-page, .about-rebuild) .contact-cta {
   --footer-cta-column-span: 6;
   padding-block: var(--grid-row);
   border: 0;
@@ -7,7 +7,7 @@
   background: var(--page);
 }
 
-.home-page .contact-cta .footer-title {
+:is(.home-page, .about-rebuild) .contact-cta .footer-title {
   inline-size: calc(var(--footer-cta-column-span) * var(--layout-column));
   max-inline-size: 100%;
   margin: 0;
@@ -26,7 +26,7 @@
   text-wrap: balance;
 }
 
-.home-page .contact-cta .footer-title[data-fluid-cursor-native-paint] {
+:is(.home-page, .about-rebuild) .contact-cta .footer-title[data-fluid-cursor-native-paint] {
   padding: 0.16em !important;
   margin: -0.16em !important;
 }
@@ -144,7 +144,7 @@
 :root[data-theme="dark"] { --scrollbar-thumb: #2a006a; }
 
 @media (max-width: 42rem) {
-  .home-page .contact-cta .footer-title {
+  :is(.home-page, .about-rebuild) .contact-cta .footer-title {
     inline-size: 100%;
     max-inline-size: 11ch;
   }

@@ -1,31 +1,31 @@
 import {
-  AppleImac2021,
-  ArrowDown,
-  ArrowLeft,
-  ArrowLeftCircle,
-  ArrowRight,
-  ArrowUp,
-  ArrowUpRight,
-  CodeBrackets,
-  Copy,
-  Download,
-  Expand,
-  FilterAlt,
-  FaceId,
-  Heart,
-  InfoCircle,
-  Language,
-  LightBulb,
-  MagicWand,
-  NavArrowLeft,
-  Play,
-  Refresh,
-  SendDiagonalSolid,
-  Sparks,
-  SunLight,
-  Trash,
-  ViewGrid,
-} from "iconoir-react";
+  IconDeviceDesktop,
+  IconArrowDown,
+  IconArrowLeft,
+  IconCircleArrowLeft,
+  IconArrowRight,
+  IconArrowUp,
+  IconArrowUpRight,
+  IconCode,
+  IconCopy,
+  IconDownload,
+  IconMaximize,
+  IconFilter,
+  IconFaceId,
+  IconHeart,
+  IconInfoCircle,
+  IconLanguage,
+  IconBulb,
+  IconChevronLeft,
+  IconPlayerPlay,
+  IconRefresh,
+  IconSend,
+  IconSparkles,
+  IconSun,
+  IconTrash,
+  IconLayoutGrid,
+} from "@tabler/icons-react";
+import { RoundedTablerWand } from "./rounded-tabler-wand";
 
 interface IconProps {
   size?: number;
@@ -39,104 +39,104 @@ const sharedProps = {
 } as const;
 
 export function ArrowUpRightIcon({ size = 18, className }: IconProps) {
-  return <ArrowUpRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
+  return <IconArrowUpRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
 }
 
 export function ArrowDownIcon({ size = 18, className }: IconProps) {
-  return <ArrowDown {...sharedProps} className={className} width={size} height={size} />;
+  return <IconArrowDown {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowUpIcon({ size = 18, className }: IconProps) {
-  return <ArrowUp {...sharedProps} className={className} width={size} height={size} />;
+  return <IconArrowUp {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowLeftIcon({ size = 18, className }: IconProps) {
-  return <ArrowLeft {...sharedProps} className={className} width={size} height={size} />;
+  return <IconArrowLeft {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ArrowRightIcon({ size = 18, className }: IconProps) {
-  return <ArrowRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
+  return <IconArrowRight {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
 }
 
 export function CopyIcon({ size = 18, className }: IconProps) {
-  return <Copy {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
+  return <IconCopy {...sharedProps} strokeWidth={2.5} className={className} width={size} height={size} />;
 }
 
 export function ArrowLeftCircleIcon({ size = 18, className }: IconProps) {
-  return <ArrowLeftCircle {...sharedProps} className={className} width={size} height={size} />;
+  return <IconCircleArrowLeft {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function NavArrowLeftIcon({ size = 18, className }: IconProps) {
-  return <NavArrowLeft {...sharedProps} className={className} width={size} height={size} />;
+  return <IconChevronLeft {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function ExpandIcon({ size = 18, className }: IconProps) {
-  return <Expand {...sharedProps} className={className} width={size} height={size} />;
+  return <IconMaximize {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function GridIcon({ size = 18, className }: IconProps) {
-  return <ViewGrid {...sharedProps} className={className} width={size} height={size} />;
+  return <IconLayoutGrid {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function FilterIcon({ size = 18, className }: IconProps) {
-  return <FilterAlt {...sharedProps} className={className} width={size} height={size} />;
+  return <IconFilter {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function FaceIdIcon({ size = 18, className }: IconProps) {
-  return <FaceId {...sharedProps} className={className} width={size} height={size} />;
+  return <IconFaceId {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function SendDiagonalSolidIcon({ size = 18, className }: IconProps) {
-  return <SendDiagonalSolid {...sharedProps} className={className} width={size} height={size} />;
+  return <IconSend {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function LanguageIcon({ size = 18, className }: IconProps) {
-  return <Language {...sharedProps} className={className} width={size} height={size} />;
+  return <IconLanguage {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function SunIcon({ size = 18, className }: IconProps) {
-  return <SunLight {...sharedProps} className={className} width={size} height={size} />;
+  return <IconSun {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function TrashIcon({ size = 18, className }: IconProps) {
-  return <Trash {...sharedProps} className={className} width={size} height={size} />;
+  return <IconTrash {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function InfoCircleIcon({ size = 18, className }: IconProps) {
-  return <InfoCircle {...sharedProps} className={className} width={size} height={size} />;
+  return <IconInfoCircle {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function HeartIcon({ size = 18, className }: IconProps) {
-  return <Heart {...sharedProps} className={className} width={size} height={size} />;
+  return <IconHeart {...sharedProps} className={className} width={size} height={size} />;
 }
 export function PlayIcon({ size = 18, className }: IconProps) {
-  return <Play {...sharedProps} className={className} width={size} height={size} />;
+  return <IconPlayerPlay {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function DownloadIcon({ size = 18, className }: IconProps) {
-  return <Download {...sharedProps} className={className} width={size} height={size} />;
+  return <IconDownload {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function RestartIcon({ size = 18, className }: IconProps) {
-  return <Refresh {...sharedProps} className={className} width={size} height={size} />;
+  return <IconRefresh {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function InterfaceIcon({ size = 28, className }: IconProps) {
-  return <AppleImac2021 {...sharedProps} className={className} width={size} height={size} />;
+  return <IconDeviceDesktop {...sharedProps} strokeWidth={1.8} className={className} width={size} height={size} />;
 }
 
 export function CodeIcon({ size = 28, className }: IconProps) {
-  return <CodeBrackets {...sharedProps} className={className} width={size} height={size} />;
+  return <IconCode {...sharedProps} strokeWidth={1.8} className={className} width={size} height={size} />;
 }
 
 export function StrategyIcon({ size = 28, className }: IconProps) {
-  return <LightBulb {...sharedProps} className={className} width={size} height={size} />;
+  return <IconBulb {...sharedProps} strokeWidth={1.8} className={className} width={size} height={size} />;
 }
 
 export function SparkIcon({ size = 28, className }: IconProps) {
-  return <Sparks {...sharedProps} className={className} width={size} height={size} />;
+  return <IconSparkles {...sharedProps} className={className} width={size} height={size} />;
 }
 
 export function AutomationIcon({ size = 28, className }: IconProps) {
-  return <MagicWand {...sharedProps} className={className} width={size} height={size} />;
+  return <RoundedTablerWand {...sharedProps} strokeWidth={1.8} className={className} width={size} height={size} />;
 }

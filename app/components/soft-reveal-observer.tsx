@@ -31,6 +31,16 @@ const softRevealSelector = [
   ".service-panel__section",
   ".project-preview__story > *",
   ".about-intro > div",
+  ".about-experience .experience-list > li",
+  ".about-next > *",
+  ".about-rebuild .about-card:not(.about-timeline__card)",
+  ".about-section__intro > *",
+  ".about-preferences__note",
+  ".about-experience__heading > *",
+  ".about-career__entry",
+  ".about-process-steps > li",
+  ".about-process-section__action",
+  ".distance-globe",
   ".process-section__intro",
   ".process-section li",
   ".about-details article",
@@ -59,18 +69,25 @@ export function SoftRevealObserver() {
     const intersectionObserver = !reduceMotion && "IntersectionObserver" in window
       ? new IntersectionObserver(
           (entries) => {
+            const aboutIndexes = new Map<Element, number>();
             entries.forEach((entry) => {
               if (!entry.isIntersecting) return;
+              if (entry.target.closest('.about-rebuild')) {
+                const parent = entry.target.parentElement;
+                const index = parent ? aboutIndexes.get(parent) ?? 0 : 0;
+                if (parent) aboutIndexes.set(parent, index + 1);
+                (entry.target as HTMLElement).style.setProperty('--about-reveal-delay', `${index * 45}ms`);
+              }
               entry.target.classList.add("is-soft-revealed");
               intersectionObserver?.unobserve(entry.target);
             });
           },
-          { rootMargin: "0px 0px -8%", threshold: 0.08 },
+          location.pathname === '/about' ? { rootMargin: '0px', threshold: 0 } : { rootMargin: "0px 0px -8%", threshold: 0.08 },
         )
       : null;
 
     const register = (element: Element) => {
-      if (element.closest("[data-no-reveal]")) return;
+      if (element.closest("[data-no-reveal], [data-about-motion]")) return;
       if (observed.has(element) || element.classList.contains("reveal-title") || element.classList.contains("reveal-text")) return;
 
       observed.add(element);

@@ -1,11 +1,12 @@
 import type { CSSProperties, ElementType, ReactNode, RefObject } from "react";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
-function useRevealOnView<T extends HTMLElement>() {
+function useRevealOnView<T extends HTMLElement>(enabled = true) {
   const ref = useRef<T>(null);
   const [isRevealed, setIsRevealed] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return;
     const element = ref.current;
     if (!element) return;
 
@@ -26,7 +27,7 @@ function useRevealOnView<T extends HTMLElement>() {
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [enabled]);
 
   return { ref, isRevealed };
 }
@@ -80,6 +81,8 @@ interface RevealTitleProps {
   live?: "polite" | "assertive";
   onRevealComplete?: () => void;
   onRevealSettled?: () => void;
+  revealWhen?: boolean;
+  speed?: number;
 }
 
 function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, enabled: boolean) {
@@ -134,8 +137,9 @@ function useAutoFitTitle(ref: RefObject<HTMLElement | null>, content: string, en
   }, [content, enabled, ref]);
 }
 
-export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live, onRevealComplete, onRevealSettled }: RevealTitleProps) {
-  const { ref, isRevealed } = useRevealOnView<HTMLElement>();
+export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, live, onRevealComplete, onRevealSettled, revealWhen, speed = 1 }: RevealTitleProps) {
+  const { ref, isRevealed: revealedOnView } = useRevealOnView<HTMLElement>(revealWhen === undefined);
+  const isRevealed = revealWhen ?? revealedOnView;
   const hasCompleted = useRef(false);
   const hasSettled = useRef(false);
   const onRevealSettledRef = useRef(onRevealSettled);
@@ -167,9 +171,9 @@ export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, 
 
     // Let a dependent element take the very next word slot, rather than
     // waiting for the final word's long settling transition to finish.
-    const timer = window.setTimeout(completeReveal, totalWords * 42 + 192);
+    const timer = window.setTimeout(completeReveal, (totalWords * 42 + 192) / speed);
     return () => window.clearTimeout(timer);
-  }, [completeReveal, isRevealed, onRevealComplete, totalWords]);
+  }, [completeReveal, isRevealed, onRevealComplete, totalWords, speed]);
 
   useEffect(() => {
     if (!isRevealed || !onRevealSettledRef.current) return;
@@ -179,9 +183,9 @@ export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, 
     }
 
     // Wait for the final word's 42ms stagger plus its 680ms settle transition.
-    const timer = window.setTimeout(settleReveal, Math.max(0, totalWords - 1) * 42 + 680);
+    const timer = window.setTimeout(settleReveal, (Math.max(0, totalWords - 1) * 42 + 680) / speed);
     return () => window.clearTimeout(timer);
-  }, [isRevealed, settleReveal, totalWords]);
+  }, [isRevealed, settleReveal, totalWords, speed]);
 
   return (
     <Heading
@@ -189,6 +193,7 @@ export function RevealTitle({ as = "h2", autoFit = false, className, id, lines, 
       id={id}
       className={`${className ? `${className} ` : ""}reveal-title${autoFit ? " reveal-title--auto-fit" : ""}${isRevealed ? " is-revealed" : ""}`}
       aria-live={live}
+      style={{ "--reveal-title-duration": `${680 / speed}ms`, "--reveal-title-stagger": `${42 / speed}ms` } as CSSProperties}
     >
       {lines.map((line, lineIndex) => (
         <Fragment key={`${line}-${lineIndex}`}>

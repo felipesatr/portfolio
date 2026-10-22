@@ -6862,6 +6862,166 @@ html.soft-reveal-ready .home-page .experience-section__set:not(.experience-secti
   .home-page .experience-section .experience-list li { block-size: auto; }
   .home-page .experience-section .experience-list .experience-list__education { block-size: auto; }
 }
+
+/* About page: story first, with the existing portfolio type and card tokens. */
+.about-page {
+  --type-h3: var(--step-1);
+}
+
+.about-page .process-section {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.about-page .process-section ol {
+  margin: 0;
+  list-style: none;
+}
+
+.about-page .process-section li {
+  grid-template-columns: 2.5rem minmax(9rem, 0.7fr) minmax(0, 1.3fr);
+  align-items: start;
+}
+
+.about-page .process-section li h3 {
+  margin: 0;
+  font-size: var(--type-body-large);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.about-page .process-section li p {
+  grid-column: auto;
+  max-inline-size: none;
+  margin: 0;
+}
+
+.about-experience .experience-list--timeline li {
+  grid-template-columns: 2.5rem minmax(12rem, 0.8fr) minmax(16rem, 1.4fr) 9rem;
+  align-items: start;
+  min-block-size: 0;
+}
+
+.about-experience__role {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.about-experience .experience-list h3 {
+  margin: 0;
+  font-size: var(--type-body-large);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.about-experience__company {
+  color: var(--muted);
+  font-size: var(--type-label);
+}
+
+.about-experience .experience-list li > p {
+  max-inline-size: 52ch;
+}
+
+.about-experience .experience-list small {
+  font-weight: 500;
+  text-align: end;
+}
+
+.about-page .about-details {
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
+}
+
+.about-page .about-details article {
+  min-block-size: 17rem;
+  border-color: transparent;
+  background: var(--soft);
+}
+
+.about-page .about-details article h2 {
+  max-inline-size: 19ch;
+}
+
+.about-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  margin-block-start: var(--space-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.about-inline-link svg {
+  transition: transform 220ms var(--ease-out);
+}
+
+.about-inline-link:hover svg {
+  transform: translateX(0.2rem);
+}
+
+.about-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-7);
+  margin: 0 clamp(1.125rem, 5.8vw, 4.4rem) var(--space-9);
+  padding-block: var(--space-7);
+  border-block-start: var(--border);
+}
+
+.about-next > div {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.about-next h2 {
+  font-size: var(--step-2);
+}
+
+@media (max-width: 75rem) {
+  .about-experience .experience-list--timeline li {
+    grid-template-columns: 2.5rem minmax(10rem, 0.8fr) minmax(12rem, 1.5fr);
+  }
+
+  .about-experience .experience-list small {
+    grid-column: 2 / -1;
+    text-align: start;
+  }
+}
+
+@media (max-width: 56rem) {
+  .about-page .about-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 42rem) {
+  .about-page .process-section li {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .about-page .process-section li h3,
+  .about-page .process-section li p {
+    grid-column: 2;
+  }
+
+  .about-next {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .about-experience .experience-list--timeline li {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .about-experience .experience-list li > p,
+  .about-experience .experience-list small {
+    grid-column: 2;
+  }
+}
+
 @media (max-width: 760px) {
   .home-page .experience-section__set { grid-template-columns: minmax(0,1fr); gap: var(--space-6); }
   .home-page .experience-section .experience-list li { grid-template-columns: minmax(0, 1fr) auto; align-items: start; block-size: auto; }

@@ -1,10 +1,11 @@
 # Third-party notices
 
-This project uses [Iconoir](https://iconoir.com/) through `iconoir-react`.
+This project uses [Tabler Icons](https://tabler.io/icons) through `@tabler/icons-react`, including a modified wand with configurable corner rounding.
+The custom Canvas globe uses locally sampled [Natural Earth 1:110m land data](https://www.naturalearthdata.com/) and its 1:10m populated-places dataset, which are public domain ([terms](https://www.naturalearthdata.com/about/terms-of-use/)). Run `node scripts/generate-globe-land.mjs` and `node scripts/generate-globe-places.mjs` to regenerate the local geographic assets. Its renderer and geometry code are project-specific; it does not use COBE or 21st.dev component code.
 
 MIT License
 
-Copyright (c) 2021 Daniel Martin
+Copyright (c) 2020-2026 Paweł Kuna
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -53,7 +53,9 @@ function PrimaryNavigation({ className, showSocials = false }: { className: stri
 }
 
 function SiteFooterCard() {
-  const [bogotaTime, setBogotaTime] = useState(() => formatBogotaTime());
+  // Prerendered pages may be opened long after the build. Start with identical
+  // server/client text; the layout effect fills the live time before paint.
+  const [bogotaTime, setBogotaTime] = useState("—:—");
 
   useLayoutEffect(() => {
     const updateTime = () => setBogotaTime(formatBogotaTime());
@@ -172,9 +174,32 @@ export function SiteShell() {
     const nextPath = basePath && next.pathname.startsWith(`${basePath}/`)
       ? next.pathname.slice(basePath.length)
       : next.pathname;
+    const isHomeDestination = nextPath === "/" && next.search === "" && next.hash === "";
+    if (isHomeDestination && location.pathname === "/") {
+      event.preventDefault();
+      window.clearTimeout(routeTimer.current);
+      routeTransitionPending.current = false;
+      setRoutePhase("idle");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, left: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      return;
+    }
     if (nextPath === location.pathname && next.search === location.search) return;
     event.preventDefault();
     window.clearTimeout(routeTimer.current);
+    if (isHomeDestination) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        routeTransitionPending.current = false;
+        setRoutePhase("idle");
+        navigate("/", { preventScrollReset: true });
+        return;
+      }
+      routeTransitionPending.current = true;
+      document.documentElement.dataset.homeRouteIntro = "pending";
+      navigate("/", { preventScrollReset: true });
+      return;
+    }
     routeTransitionPending.current = true;
     const destination = `${nextPath}${next.search}${next.hash}`;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

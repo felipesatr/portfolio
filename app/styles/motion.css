@@ -24,9 +24,9 @@
   opacity: 0;
   transform: translateY(115%);
   transition:
-    opacity 680ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(var(--reveal-word-index, 0) * 42ms);
+    opacity var(--reveal-title-duration, 680ms) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--reveal-title-duration, 680ms) cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--reveal-word-index, 0) * var(--reveal-title-stagger, 42ms));
 }
 
 .reveal-title.is-revealed .reveal-title__word-inner {

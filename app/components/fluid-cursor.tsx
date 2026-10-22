@@ -27,6 +27,7 @@ const fragmentSource = `
   uniform float u_target_reveal;
   uniform float u_target_filled;
   uniform float u_target_neutral;
+  uniform float u_target_compact;
   uniform float u_target_dark;
   uniform vec2 u_target_half_size;
   uniform float u_target_corner_radius;
@@ -171,7 +172,7 @@ const fragmentSource = `
     float widthFactor = surfaceUnionWidthFactor(endcapProgress);
     // Compact neutral controls have no magnetic displacement. Keep their orb
     // at its actual spring position during the DOM/canvas handoff as well.
-    float visibleCursorDistance = u_target_neutral > 0.5
+    float visibleCursorDistance = max(u_target_neutral, u_target_compact) > 0.5
       ? cursorDistance : resistedCursorDistance(point, surfaceNormal, absorption);
     vec2 localPoint = point - u_projection_center;
     float surfacePlaneDistance = dot(localPoint, surfaceNormal) - u_target_radius;
@@ -184,7 +185,7 @@ const fragmentSource = `
     float surfaceDistance = mix(surfacePlaneDistance, curvedSurfaceDistance, endcapProgress);
     // Small neutral controls use the normal capsule merge with a restrained,
     // slimmer bridge so the orb does not overpower their compact geometry.
-    float neutralBridgeScale = mix(1.0, 0.72, u_target_neutral);
+    float neutralBridgeScale = mix(1.0, 0.72, max(u_target_neutral, u_target_compact));
     float kernelRadius = cursorMaximum * 3.2 * nearFactor * widthFactor * neutralBridgeScale;
     float kernelDistance = polynomialUnion(visibleCursorDistance, surfaceDistance, kernelRadius);
     float localShape = surfaceKernelShape(
@@ -245,7 +246,7 @@ const fragmentSource = `
       float cursorMaximum = max(u_cursor_radii.x, u_cursor_radii.y);
       float surfaceGap = max(length(u_cursor - u_projection_center) - u_target_radius, 0.0);
       float nearFactor = 1.0 - smoothstep(cursorMaximum * 0.55, cursorMaximum * 4.8, surfaceGap);
-      if (u_target_neutral > 0.5) {
+      if (max(u_target_neutral, u_target_compact) > 0.5) {
         // Zero deformation at the neutral activation boundary (34px). The
         // old wide kernel was already expanded when the renderer activated.
         nearFactor *= 1.0 - smoothstep(0.0, 34.0, surfaceGap);
@@ -463,6 +464,8 @@ export function FluidCursor() {
     const magnetStrength = 0.14;
     const cursorRadius = 10.8;
     let paintedCursorRadius = cursorRadius;
+    let globePulseStarted = 0;
+    const globePulseAmount = () => globePulseStarted ? Math.sin(Math.PI * Math.min(1, (performance.now() - globePulseStarted) / 460)) : 0;
     let datePull = 0;
     let activeDate: HTMLElement | null = null;
     let dateTargets: NegativeMaskTarget[] = [];
@@ -551,7 +554,7 @@ export function FluidCursor() {
       const previous = new Map(targets.map((target) => [target.element, target]));
       // Destination CTAs and a few explicitly marked neutral surfaces can use
       // the liquid field. Ordinary controls remain native.
-      const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, [data-fluid-cursor-surface]"))
+      const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, button[data-globe-color-button], [data-fluid-cursor-surface]"))
         .filter((element) => !element.matches(":disabled"))
         // The negative-ink overlay contains visual clones. They must never be
         // rediscovered as real interactive targets or they can disturb the
@@ -876,8 +879,10 @@ export function FluidCursor() {
       let target: NegativeMaskTarget | null = null;
       let closestDistance = Number.POSITIVE_INFINITY;
       const calendarContacts: NegativeMaskTarget[] = [];
+      const timelineContacts: NegativeMaskTarget[] = [];
       for (const candidate of negativeMaskTargets) {
         const { element } = candidate;
+        if (element.hasAttribute("data-fluid-cursor-canvas-mask") && activeTarget?.element.matches(".distance-globe__label")) continue;
         // Collapsed calendar rows keep their DOM for the reverse animation.
         // Their glyphs must not be cloned over the visible selected week.
         if (element.closest("[inert]")) continue;
@@ -909,6 +914,7 @@ export function FluidCursor() {
         }
         if (distance <= paintedCursorRadius * 1.04) {
           if (element.closest(".lab-calendar")) calendarContacts.push(candidate);
+          if (element.matches(".about-timeline__drawing")) timelineContacts.push(candidate);
           if (distance < closestDistance) {
             target = candidate;
             closestDistance = distance;
@@ -923,21 +929,26 @@ export function FluidCursor() {
       }
       if (!target.element.classList.contains("lab-etch__knob")) {
         knobMask.style.opacity = "0";
-        if (usesNativeTextInk(target.element)) {
+        if (usesNativeTextInk(target.element) && timelineContacts.length === 0) {
           textMask.style.opacity = "0";
           syncNativeTextInk(target.element, x, y, elongation);
           return;
         }
         clearNativeTextInk();
-        const contacts = target.element.closest(".lab-calendar") ? calendarContacts : [target];
+        // A dot and nearby copy may both touch the orb. Retain the timeline
+        // drawing even when the closest text target changes, otherwise the
+        // white dot disappears against the white cursor during that handoff.
+        const primaryContacts = target.element.closest(".lab-calendar") ? calendarContacts : [target];
+        const contacts = [...new Map([...primaryContacts, ...timelineContacts].map((contact) => [contact.element, contact])).values()];
         const paintRuns = contacts.flatMap((contact) => textPaintRunsFor(contact.element)).map((source) => ({
           source,
           rect: source.getBoundingClientRect(),
         }));
         const sourceSignature = paintRuns.map(({ source, rect }) => [
-          source.hasAttribute("data-fluid-cursor-svg-mask") ? source.innerHTML : source.textContent ?? "",
+          source.matches(".about-value-icon") ? [...source.querySelectorAll("path")].map((path) => path.getAttribute("d")).join(";") : source.hasAttribute("data-fluid-cursor-svg-mask") ? source.innerHTML : source.textContent ?? "",
           source.className,
           source.getAttribute("style") ?? "",
+          source.matches(".about-timeline__drawing") ? getComputedStyle(source).opacity : "",
           rect.left.toFixed(3),
           rect.top.toFixed(3),
           rect.width.toFixed(3),
@@ -949,18 +960,49 @@ export function FluidCursor() {
             const sourceStyle = window.getComputedStyle(source);
             const run = document.createElement("span");
             run.className = "fluid-cursor__text-mask-run";
-            if (source.matches("[data-fluid-cursor-svg-mask]")) {
+            if (source instanceof HTMLCanvasElement && source.hasAttribute("data-fluid-cursor-canvas-mask")) {
+              const copy = document.createElement("canvas");
+              copy.width = source.width; copy.height = source.height;
+              copy.style.width = `${rect.width}px`; copy.style.height = `${rect.height}px`;
+              run.append(copy);
+            } else if (source.matches("[data-fluid-cursor-svg-mask]")) {
               run.append(...Array.from(source.children, (child) => child.cloneNode(true)));
               run.style.display = "inline-flex";
               run.style.alignItems = "center";
               run.style.gap = window.getComputedStyle(source).gap;
+              run.style.maskImage = sourceStyle.maskImage;
               Array.from(run.children).forEach((child, index) => {
                 const size = source.children[index]?.getBoundingClientRect();
                 if (!(child instanceof SVGElement) || !size) return;
                 child.style.width = `${size.width}px`;
                 child.style.height = `${size.height}px`;
-                child.style.fill = "currentColor";
+                child.style.fill = child.getAttribute("fill") === "none" ? "none" : "currentColor";
                 child.style.color = "inherit";
+              });
+              if (source.matches(".about-timeline__drawing")) {
+                // Repaint the entire SVG (spine, branches and dots) in cursor
+                // ink. Its embedded SVG alpha mask preserves the exact top
+                // fade in both the original drawing and this cloned overlay.
+                run.querySelectorAll<SVGElement>("path").forEach((path) => {
+                  path.style.stroke = "currentColor";
+                  path.style.fill = "none";
+                });
+                run.querySelectorAll<SVGElement>("circle").forEach((dot) => {
+                  dot.style.fill = "currentColor";
+                  dot.style.stroke = "none";
+                });
+              }
+            } else if (source.closest(".about-rebuild") && source.querySelector("strong")) {
+              // About's inline emphasis must keep its original weight in the
+              // cursor overlay; flattening it into text shifts the glyphs.
+              source.childNodes.forEach((child) => {
+                const clone = child.cloneNode(true);
+                if (child instanceof HTMLElement && clone instanceof HTMLElement) {
+                  clone.style.font = "inherit";
+                  clone.style.color = "inherit";
+                  clone.style.fontWeight = window.getComputedStyle(child).fontWeight;
+                }
+                run.append(clone);
               });
             } else run.textContent = source.textContent;
             run.style.left = `${rect.left}px`;
@@ -1010,6 +1052,52 @@ export function FluidCursor() {
           textMaskSource = target.element;
           textMaskSignature = sourceSignature;
         }
+        // SVG animations run on the original paths. Mirror their current paint
+        // into the cursor copy, rather than restarting a second animation.
+        const maskRuns = [...textMask.querySelectorAll<HTMLElement>(".fluid-cursor__text-mask-run")];
+        paintRuns.forEach(({ source }, index) => {
+          if (source instanceof HTMLCanvasElement && source.hasAttribute("data-fluid-cursor-canvas-mask")) {
+            const copy = maskRuns[index]?.querySelector("canvas");
+            const paint = copy?.getContext("2d");
+            if (copy && paint) {
+              if (copy.width !== source.width || copy.height !== source.height) { copy.width = source.width; copy.height = source.height; }
+              paint.globalCompositeOperation = "copy";
+              paint.drawImage(source, 0, 0);
+              paint.globalCompositeOperation = "source-in";
+              paint.fillStyle = getComputedStyle(maskRuns[index]).color;
+              paint.fillRect(0, 0, copy.width, copy.height);
+              paint.globalCompositeOperation = "source-over";
+            }
+            return;
+          }
+          if (!source.matches(".about-value-icon")) return;
+          const originals = [...source.querySelectorAll<SVGPathElement>("path")];
+          const copies = [...(maskRuns[index]?.querySelectorAll<SVGPathElement>("path") ?? [])];
+          originals.forEach((path, part) => {
+            const copy = copies[part];
+            if (!copy) return;
+            const style = getComputedStyle(path);
+            // The icon playhead animates dash progress, visibility, fills and
+            // transforms directly on its paths. Mirror the full painted state
+            // into the cursor-ink clone every frame so the reveal/reverse is
+            // visible through the same mask, not just the completed outline.
+            copy.setAttribute("d", path.getAttribute("d") ?? "");
+            copy.style.strokeDasharray = style.strokeDasharray;
+            copy.style.strokeDashoffset = style.strokeDashoffset;
+            copy.style.stroke = style.stroke === "none" ? "none" : "currentColor";
+            copy.style.strokeWidth = style.strokeWidth;
+            copy.style.strokeLinecap = style.strokeLinecap;
+            copy.style.strokeLinejoin = style.strokeLinejoin;
+            copy.style.strokeOpacity = style.strokeOpacity;
+            copy.style.opacity = style.opacity;
+            copy.style.visibility = style.visibility;
+            copy.style.fill = style.fill === "none" ? "none" : "currentColor";
+            copy.style.fillOpacity = style.fillOpacity;
+            copy.style.transform = style.transform;
+            copy.style.transformOrigin = style.transformOrigin;
+            copy.style.transformBox = style.transformBox;
+          });
+        });
         // Intersect with the real scroll viewport; mask contact is based on the
         // painted orb, including contact when its centre is outside the box.
         textMask.style.clipPath = cursorClipPolygon(x, y, rotation, elongation);
@@ -1656,7 +1744,8 @@ export function FluidCursor() {
       setUniform2("u_cursor_radii", paintedCursorRadius * (1 + stretch), paintedCursorRadius * (1 - stretch * 0.52));
       setUniform2("u_cursor_direction", directionX, directionY);
       syncNegativeMask(cursor.x, cursor.y, angle, stretch);
-      setUniform3("u_cursor_color", themeColors.cursor);
+      const pulse = globePulseAmount();
+      setUniform3("u_cursor_color", [themeColors.cursor[0] + (themeColors.secondary[0] - themeColors.cursor[0]) * pulse, themeColors.cursor[1] + (themeColors.secondary[1] - themeColors.cursor[1]) * pulse, themeColors.cursor[2] + (themeColors.secondary[2] - themeColors.cursor[2]) * pulse]);
       setUniform3("u_primary_color", themeColors.primary);
       setUniform3("u_primary_hover_color", themeColors.primaryHover);
       setUniform3("u_primary_active_color", themeColors.primaryActive);
@@ -1700,7 +1789,7 @@ export function FluidCursor() {
         const cursorToRectangle = Math.hypot(Math.max(rectDeltaX, 0), Math.max(rectDeltaY, 0)) +
           Math.min(Math.max(rectDeltaX, rectDeltaY), 0) - cornerRadius;
         const targetSeparation = activeTarget.isNeutralMerge ? cursorToRectangle : cursorToCapsule;
-        const absorption = activeTarget.isNeutralMerge
+        const absorption = activeTarget.isNeutralMerge || activeTarget.element.hasAttribute('data-globe-color-button')
           // Begin drawing the cursor into the screen before its centre reaches
           // the edge, then finish only after it has travelled inside.
           ? 1 - smootherstep(activeTarget.element.hasAttribute("data-fluid-cursor-tight") ? cursorRadius * 0.2 : -cursorRadius * 1.2, activeTarget.element.hasAttribute("data-fluid-cursor-tight") ? cursorRadius * 1.12 : cursorRadius * 1.8, targetSeparation)
@@ -1758,6 +1847,7 @@ export function FluidCursor() {
         setUniform1("u_target_reveal", revealProgress);
         setUniform1("u_target_filled", activeTarget.isOutline ? 0 : 1);
         setUniform1("u_target_neutral", activeTarget.isNeutralMerge ? 1 : 0);
+        setUniform1("u_target_compact", activeTarget.element.hasAttribute('data-globe-color-button') ? 1 : 0);
         setUniform1("u_target_dark", activeTarget.isDarkMerge ? 1 : 0);
         setUniform2("u_target_half_size", halfWidth, halfHeight);
         setUniform1("u_target_corner_radius", cornerRadius);
@@ -1775,6 +1865,7 @@ export function FluidCursor() {
         setUniform1("u_target_reveal", 0);
         setUniform1("u_target_filled", 0);
         setUniform1("u_target_neutral", 0);
+        setUniform1("u_target_compact", 0);
         setUniform1("u_target_dark", 0);
         setUniform2("u_target_half_size", 0, 0);
         setUniform1("u_target_corner_radius", 0);
@@ -1793,6 +1884,7 @@ export function FluidCursor() {
       let closest: LiquidTarget | null = null;
       let closestDistance = Number.POSITIVE_INFINITY;
       for (const target of targets) {
+        if (target.element.matches(".distance-globe__label")) target.rect = target.element.getBoundingClientRect();
         const distance = distanceToRect(x, y, renderedRectFor(target));
         const activationRange = activationRangeFor(target);
         if (distance <= activationRange && distance < closestDistance && targetIsPainted(target)) {
@@ -1829,9 +1921,12 @@ export function FluidCursor() {
         const dx = x - centerX;
         const dy = y - centerY;
         const distance = Math.max(Math.hypot(dx, dy), 1);
-        if (magneticTranslationSuspended || target.isNeutralMerge) {
+        if (magneticTranslationSuspended || target.isNeutralMerge || target.element.hasAttribute("data-globe-color-button")) {
           target.tx = 0;
           target.ty = 0;
+          if (target.element.hasAttribute("data-globe-color-button")) {
+            target.x = target.y = target.vx = target.vy = 0;
+          }
           return;
         }
         const proximity = 1 - clamp(closestDistance / activationRangeFor(target), 0, 1);
@@ -2034,8 +2129,10 @@ export function FluidCursor() {
       const dateRect = nearestDate?.rect;
       const goalX = dateRect ? pointer.x + ((dateRect.left + dateRect.width / 2) - pointer.x) * datePull * 0.92 : pointer.x;
       const goalY = dateRect ? pointer.y + ((dateRect.top + dateRect.height / 2) - pointer.y) * datePull * 0.92 : pointer.y;
-      const wantedRadius = dateRect ? dateRect.height / 2 : cursorRadius;
+      const pulse = globePulseAmount();
+      const wantedRadius = dateRect ? dateRect.height / 2 : cursorRadius * (1 - pulse * .5);
       paintedCursorRadius += (wantedRadius - paintedCursorRadius) * 0.16;
+      fallback.style.backgroundColor = pulse > .001 ? `rgb(${themeColors.cursor.map((v, i) => Math.round((v + (themeColors.secondary[i] - v) * pulse) * 255)).join(',')})` : '';
       const dateMoving = Math.abs(wantedPull - datePull) + Math.abs(wantedRadius - paintedCursorRadius) > 0.01;
       fallback.classList.toggle("fluid-cursor--date-attraction", datePull > 0.001 || paintedCursorRadius > cursorRadius + 0.01);
       fallback.style.inlineSize = `${paintedCursorRadius * 2}px`;
@@ -2098,13 +2195,21 @@ export function FluidCursor() {
       else settledFrames += 1;
       const insideIdleGrace = performance.now() - lastPointerMoveAt < cursorIdleGrace;
       const liquidWorkNeeded = activeTarget !== null || pointerNearTarget || buttonsMoving;
-      if (cursorMoving || buttonsMoving || (liquidWorkNeeded && (insideIdleGrace || settledFrames < settledFrameLimit))) {
+      const animatedCanvasInk = pointer.active && negativeMaskTargets.some(({ element, rect }) => element.hasAttribute("data-fluid-cursor-canvas-mask") && distanceToRect(cursor.x, cursor.y, rect) <= cursorRadius);
+      const movingGlobeLabel = activeTarget?.element.matches(".distance-globe__label");
+      if (cursorMoving || buttonsMoving || pulse > .001 || performance.now() - globePulseStarted < 480 || animatedCanvasInk || movingGlobeLabel || (liquidWorkNeeded && (insideIdleGrace || settledFrames < settledFrameLimit))) {
         if (!scrollFrameDriven) frame = window.requestAnimationFrame(render);
       } else {
         running = false;
         if (pointer.active && !activeTarget) showFallbackAtCursor(angle, stretch);
       }
     }
+
+    const syncAnimatedSvgInk = (event: Event) => {
+      const source = event.target;
+      if (!pointer.active || document.hidden || source !== textMaskSource || !(source instanceof HTMLElement) || !source.hasAttribute('data-fluid-cursor-animated-mask')) return;
+      if (distanceToRect(cursor.x, cursor.y, source.getBoundingClientRect()) <= paintedCursorRadius * 1.04) syncNegativeMask(cursor.x, cursor.y, angle, stretch);
+    };
 
     const followPointer = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
@@ -2288,6 +2393,7 @@ export function FluidCursor() {
       startLoop();
     };
     const resumeAfterHeroIntro = () => startLoop();
+    const pulseGlobeCursor = () => { globePulseStarted = performance.now(); startLoop(); };
     const resyncCursor = (event: Event) => {
       const detail = (event as CustomEvent<{ x: number; y: number }>).detail;
       if (!detail) return;
@@ -2374,12 +2480,14 @@ export function FluidCursor() {
     window.addEventListener("resize", handleResize, { passive: true });
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("portfolio-scroll-frame", afterScrollFrame);
+    window.addEventListener("portfolio-svg-paint", syncAnimatedSvgInk);
     window.addEventListener("portfolio-scroll-frame-stop", releaseScrollFrameDriver);
     document.documentElement.addEventListener("pointerleave", leaveWindow);
     document.documentElement.addEventListener("pointerenter", enterWindow);
     document.addEventListener("visibilitychange", syncVisibility);
     window.addEventListener("portfolio-theme-change", syncThemeColors);
     window.addEventListener("portfolio-hero-intro-complete", resumeAfterHeroIntro);
+    window.addEventListener('portfolio-globe-pulse', pulseGlobeCursor);
     window.addEventListener("portfolio-fluid-cursor-resync", resyncCursor);
     window.addEventListener("portfolio-calendar-cursor", calendarCursor);
     window.addEventListener("portfolio-calendar-geometry", calendarGeometry);
@@ -2416,12 +2524,14 @@ export function FluidCursor() {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("portfolio-scroll-frame", afterScrollFrame);
+      window.removeEventListener("portfolio-svg-paint", syncAnimatedSvgInk);
       window.removeEventListener("portfolio-scroll-frame-stop", releaseScrollFrameDriver);
       document.documentElement.removeEventListener("pointerleave", leaveWindow);
       document.documentElement.removeEventListener("pointerenter", enterWindow);
       document.removeEventListener("visibilitychange", syncVisibility);
       window.removeEventListener("portfolio-theme-change", syncThemeColors);
       window.removeEventListener("portfolio-hero-intro-complete", resumeAfterHeroIntro);
+      window.removeEventListener('portfolio-globe-pulse', pulseGlobeCursor);
       window.removeEventListener("portfolio-fluid-cursor-resync", resyncCursor);
       window.removeEventListener("portfolio-calendar-cursor", calendarCursor);
       window.removeEventListener("portfolio-calendar-geometry", calendarGeometry);

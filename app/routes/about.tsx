@@ -1,10 +1,11 @@
-import { Fragment, type ReactNode, useRef } from "react";
+import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import type { Route } from "./+types/about";
 import { Link } from "react-router";
-import { IconBook as Book, IconMusic as MusicNote, IconVolume as SoundHigh, IconHeartHandshake, IconCompass, IconUserScan, IconUsers, IconAccessible, IconSearch, IconTarget, IconPencil, IconAdjustments, IconCode, IconRefresh, IconBrain } from "@tabler/icons-react";
+import { IconBook as Book, IconVolume as SoundHigh, IconHeartHandshake, IconCompass, IconUserScan, IconUsers, IconAccessible, IconWorldSearch, IconTarget, IconPalette, IconAdjustmentsHorizontal, IconTools, IconListCheck, IconRefresh, IconBrain } from "@tabler/icons-react";
 import { AboutTimelineDrawing } from "~/components/about-timeline-drawing";
 import { AnimatedValueIcon } from "~/components/animated-value-icon";
 import { DistanceGlobe } from "~/components/distance-globe";
+import { SpotifyPlayerProvider, SpotifyWidget } from "~/components/spotify-widget";
 import { ContactCta } from "~/components/contact-cta";
 import { ArrowRightIcon, ArrowUpRightIcon } from "~/components/icons";
 import { RevealTitle } from "~/components/motion-reveal";
@@ -26,14 +27,38 @@ function ActionLink({ to, children }: { to: string; children: ReactNode }) {
 }
 
 const valueIcons = [IconHeartHandshake, IconCompass, IconUserScan, IconUsers, IconAccessible, IconBrain];
-const processIcons = [IconSearch, IconTarget, IconPencil, IconAdjustments, IconCode, IconRefresh];
+const processIcons = [IconWorldSearch, IconTarget, IconPalette, IconTools, IconListCheck, IconAdjustmentsHorizontal];
 
 // Only explicit emphasis markers from our own copy; never render raw HTML.
 function AboutCopy({ children }: { children: string }) {
   return children.split(/(\*\*[^*]+\*\*)/g).map((part, index) => part.startsWith("**") ? <strong key={index}>{part.slice(2, -2)}</strong> : <Fragment key={index}>{part}</Fragment>);
 }
 
+function AboutInterestList({ items }: { items: string[] }) {
+  const listRef = useRef<HTMLUListElement>(null);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    let active = true;
+    const updateRowEnds = () => {
+      if (!active) return;
+      const entries = Array.from(list.children) as HTMLElement[];
+      const tops = entries.map((entry) => entry.offsetTop);
+      entries.forEach((entry, index) => entry.toggleAttribute('data-row-end', index === entries.length - 1 || tops[index + 1] > tops[index] + 1));
+    };
+    const observer = new ResizeObserver(updateRowEnds);
+    observer.observe(list);
+    void document.fonts.ready.then(updateRowEnds);
+    updateRowEnds();
+    return () => { active = false; observer.disconnect(); };
+  }, [items]);
+  return <ul ref={listRef} className="about-interest-list">{items.map((item) => <li key={item}>{item}</li>)}</ul>;
+}
+
 export default function About() {
+  const [experienceView, setExperienceView] = useState<1 | 2>(1);
+  const [processView, setProcessView] = useState<3 | 4>(3);
+  const centered = processView === 4;
   const timelineRef = useRef<HTMLDivElement>(null);
   const experienceRef = useRef<HTMLDivElement>(null);
   const processRef = useRef<HTMLElement>(null);
@@ -41,7 +66,15 @@ export default function About() {
   const { storyVisible, onIntroSettled, onStorySettled } = useAboutMotion(timelineRef);
 
   return (
-    <SpotlightGrid className="standard-page about-page about-rebuild">
+    <SpotifyPlayerProvider><SpotlightGrid className="standard-page about-page about-rebuild">
+      <div className="lab-view-test about-view-test" data-no-reveal>
+        <div className="lab-view-test__group" role="group" aria-label="Globe and experience layout">
+          {([1, 2] as const).map((view) => <button key={view} className="rail-circle-control" type="button" aria-pressed={experienceView === view} aria-label={view === 1 ? "Globe left, experience right" : "Experience left, globe right"} title={view === 1 ? "Globe left, experience right" : "Experience left, globe right"} onClick={() => setExperienceView(view)}>{view}</button>)}
+        </div>
+        <div className="lab-view-test__group" role="group" aria-label="How I work layout">
+          {([3, 4] as const).map((view) => <button key={view} className="rail-circle-control" type="button" aria-pressed={processView === view} aria-label={view === 3 ? "Left aligned process" : "Centered process"} title={view === 3 ? "Left aligned process" : "Centered process"} onClick={() => setProcessView(view)}>{view}</button>)}
+        </div>
+      </div>
       <header className="about-hero" aria-labelledby="about-heading" data-about-motion>
         <RevealTitle id="about-heading" lines={["Who I am"]} speed={1.5} onRevealComplete={onIntroSettled} />
         <div className="about-hero__details">
@@ -110,7 +143,7 @@ export default function About() {
         </section>
       </div>
 
-      <div className="about-experience-row" ref={experienceRef}>
+      <div className={`about-experience-row${experienceView === 2 ? ' about-experience-row--reversed' : ''}`} ref={experienceRef}>
       <DistanceGlobe />
       <section className="about-section about-experience-section" id="experience" aria-labelledby="about-career-heading">
         <div className="about-experience__heading">
@@ -118,7 +151,7 @@ export default function About() {
         </div>
         <div className="about-section__content about-career">
           {[...experience.map((item) => ({ ...item, degree: false })), { id: "education", company: "Universidad de Los Andes", title: "Bachelor’s degree in Design", years: "2024", logo: "images/uniandes-logo-128.webp", logoVariant: "uniandes", degree: true }].map((item) => <article key={item.id} className={`about-career__entry${item.degree ? ' about-career__entry--degree' : ''}`}>
-            <span className={`about-career__logo about-career__logo--${item.logoVariant}`} aria-hidden="true"><img src={publicAsset(item.logo)} alt="" width={128} height={128} loading="lazy" decoding="async" /></span>
+            <span className={`about-career__logo about-career__logo--${item.logoVariant}`} aria-hidden="true"><img src={publicAsset(item.logo)} data-fluid-cursor-negative-mask data-fluid-cursor-image-mask={item.logoVariant === 'une' ? 'alpha' : 'contrast'} alt="" width={128} height={128} loading="lazy" decoding="async" /></span>
             <SpotlightCard className="career-spotlight-card about-career__copy"><div className="about-career__top"><div className="about-career__company"><h3>{item.company}</h3><span aria-hidden="true">•</span><p className="about-career__dates" title={item.years}>{item.years.includes('Present') ? 'Present' : [...new Set(item.years.match(/\d{4}/g))].join('–')}</p></div><p className="about-career__role">{item.title}</p></div></SpotlightCard>
           </article>)}
         </div>
@@ -128,31 +161,35 @@ export default function About() {
       </section>
       </div>
 
-      <section className="about-process-section" ref={processRef} aria-labelledby="about-process-heading">
-        <RevealTitle id="about-process-heading" lines={["How I work"]} speed={1.5} />
+      <section className={`about-process-section${centered ? ' about-process-section--centered' : ''}`} ref={processRef} aria-labelledby="about-process-heading">
+        <div className="about-process-section__heading">
+          <RevealTitle id="about-process-heading" lines={["How I work"]} speed={1.5} />
+          <div className="about-process-section__action"><ActionLink to="/services">More about my process</ActionLink></div>
+        </div>
         <ol className="about-process-steps">{aboutProcess.map(([title, body], index) => {
-          const Icon = processIcons[index];
-          return <li key={title}><span className="about-process-steps__icon" data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><Icon size={72} stroke={1.5} aria-hidden="true" /></span><h3>{title}</h3><p>{body}</p></li>;
+          const mirrored = centered && index === 5;
+          const Icon = mirrored ? IconRefresh : processIcons[index];
+          return <li key={title}><span className={`about-process-steps__icon${mirrored ? ' about-process-steps__icon--mirrored' : ''}`} data-fluid-cursor-negative-mask data-fluid-cursor-svg-mask><Icon size={144} stroke={1.5} aria-hidden="true" /></span><span className="about-process-steps__number" aria-hidden="true">-{index + 1}-</span><h3>{title}</h3><p>{body}</p></li>;
         })}</ol>
-        <div className="about-process-section__action"><ActionLink to="/services">More about my process</ActionLink></div>
       </section>
 
-      <section className="about-section about-personal-section" aria-label="Interests, music, and books">
+      {[0, 1, 2].map((copy) => <section key={copy} className="about-section about-personal-section" aria-label={`Interests, music, and books${copy ? ` — copy ${copy + 1}` : ''}`}>
         <div className="about-personal-row">
-        <SpotlightCard className="career-spotlight-card about-card about-interests">
-          <div><h3>Subjects I’m drawn to</h3><ul className="about-interest-list">{["Technology", "Automotive design", "Art & tattooing", "Games & interactive media", "Sports"].map((item) => <li key={item}><span>{item}</span></li>)}</ul></div>
-          <div><h3>More directions to explore</h3><p>Fashion &amp; lifestyle · Luxury · Responsible design</p><p className="about-draft-note">A few possible directions, still to narrow down.</p></div>
-          <div><h3>Creative tools &amp; technologies</h3><p>Motion · 3D/CGI · AR/VR · AI · Creative technology</p><p className="about-draft-note">Interests and exploration, rather than a list of specialisms.</p></div>
-        </SpotlightCard>
-        <SpotlightCard className="career-spotlight-card about-card about-media about-media--music" aria-labelledby="about-music-heading">
-          <p className="about-eyebrow">Beyond the work</p><h2 id="about-music-heading">Listening lately</h2><div className="about-media__content"><div className="about-media__art" aria-hidden="true"><MusicNote width={40} height={40} /></div><div><p className="about-media__title">A track to add here soon</p><p className="about-draft-note">Song, artist &amp; artwork to come</p></div></div><p className="about-draft-note">Spotify connection planned. This isn’t a live listening status.</p>
-        </SpotlightCard>
-        <SpotlightCard className="career-spotlight-card about-card about-media about-media--book" aria-labelledby="about-book-heading">
-          <p className="about-eyebrow">Away from the screen</p><h2 id="about-book-heading">On my bookshelf</h2><div className="about-media__content"><div className="about-media__art about-media__art--book" aria-hidden="true"><Book width={40} height={40} /></div><div><p className="about-media__title">My current read will go here</p><p className="about-draft-note">Title, author &amp; a personal note to come</p></div></div>
+        <div className="about-interest-stack">
+          <SpotlightCard className="career-spotlight-card about-card about-interests" aria-labelledby={`about-expertise-heading-${copy}`}>
+            <div><h2 id={`about-expertise-heading-${copy}`}>Disciplines of expertise</h2><AboutInterestList items={["UX", "UI", "WEB DESIGN", "FRONTEND DEVELOPMENT", "VISUAL IDENTITY", "BRANDING", "STRATEGY", "ART DIRECTION", "INTERACTIVE DESIGN", "GRAPHIC DESIGN", "AI", "WORKFLOW AUTOMATIONS"]} /></div>
+          </SpotlightCard>
+          <SpotlightCard className="career-spotlight-card about-card about-interests" aria-labelledby={`about-interests-heading-${copy}`}>
+            <div><h2 id={`about-interests-heading-${copy}`}>Areas of interest</h2><AboutInterestList items={["FASHION", "TECHNOLOGY", "SPORTS", "MOTION DESIGN", "ART", "AUTOMOTIVE DESIGN", "3D/CGI", "VIDEOGAMES", "TATTOOING", "CREATIVE CODING", "GENERATIVE GRAPHICS"]} /></div>
+          </SpotlightCard>
+        </div>
+        <SpotifyWidget layout={copy === 0 ? 'timeline-controls' : copy === 1 ? 'cover' : 'side-controls'} />
+        <SpotlightCard className="career-spotlight-card about-card about-media about-media--book" aria-labelledby={`about-book-heading-${copy}`}>
+          <p className="about-eyebrow">Away from the screen</p><h2 id={`about-book-heading-${copy}`}>On my bookshelf</h2><div className="about-media__content"><div className="about-media__art about-media__art--book" aria-hidden="true"><Book width={40} height={40} /></div><div><p className="about-media__title">My current read will go here</p><p className="about-draft-note">Title, author &amp; a personal note to come</p></div></div>
         </SpotlightCard>
         </div>
-      </section>
+      </section>)}
       <ContactCta />
-    </SpotlightGrid>
+    </SpotlightGrid></SpotifyPlayerProvider>
   );
 }

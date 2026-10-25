@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ElementType } from "react";
+import { useLayoutEffect, useRef, type ElementType } from "react";
 
 // One geometric playhead runs forward and backward: reverse retraces the
 // actual strokes and part movements instead of fading or resetting the SVG.
@@ -21,7 +21,7 @@ function partWindow(icon: number, part: number): [number, number] {
 
 export function AnimatedValueIcon({ icon: Icon, index }: { icon: ElementType; index: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
     const parts = [...element.querySelectorAll<SVGPathElement>("path")]
@@ -34,7 +34,7 @@ export function AnimatedValueIcon({ icon: Icon, index }: { icon: ElementType; in
         return { path, length, window: partWindow(index, part), part, fill: path.getAttribute("fill") };
       });
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    let visible = false, disposed = false, first = true;
+    let visible = false, disposed = false;
     let timer = 0, frame = 0;
 
     const paint = (progress: number) => {
@@ -90,20 +90,28 @@ export function AnimatedValueIcon({ icon: Icon, index }: { icon: ElementType; in
       if (!canPlay()) { element.dataset.iconPhase = "static"; return; }
       const waitForReveal = () => {
         if (!canPlay()) return;
-        if (!element.closest(".is-soft-revealed")) { wait(waitForReveal, 80); return; }
-        if (first) {
-          first = false;
-          paint(0);
-          element.dataset.iconPhase = "waiting";
-          wait(() => travel(1), 160 + Math.random() * 740);
-        } else fullHold();
+        const card = element.closest(".soft-reveal-target");
+        const style = card ? getComputedStyle(card) : null;
+        // The reveal class is applied before its stagger/delayed transition.
+        // Wait for the icon's container to actually be painted before drawing.
+        if (card && (!card.classList.contains("is-soft-revealed") || Number(style?.opacity) < .999 || (style?.filter !== "none" && style?.filter !== "blur(0px)"))) {
+          wait(waitForReveal, 50); return;
+        }
+        // Entrance shows the complete icon. Keep it visible for a varied beat,
+        // then reverse and redraw; never blank it just after the fade finishes.
+        element.dataset.iconPhase = "entrance-hold";
+        wait(() => travel(-1), 1400 + Math.random() * 1800);
       };
       waitForReveal();
     };
     const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
+      const nextVisible = entry.isIntersecting && entry.intersectionRatio >= .75;
+      if (nextVisible === visible) return;
+      visible = nextVisible;
       begin();
-    });
+    }, { threshold: [0, .75] });
+    paint(1);
+    element.dataset.iconPhase = "static";
     observer.observe(element);
     motion.addEventListener("change", begin);
     document.addEventListener("visibilitychange", begin);

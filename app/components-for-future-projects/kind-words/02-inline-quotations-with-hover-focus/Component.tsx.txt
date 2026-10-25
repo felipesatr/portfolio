@@ -1,0 +1,12 @@
+function InlineQuotes() {
+  const [focused, setFocused] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  return <Frame variant={2} rows={5} expanded={expanded}><PreviewLabel />
+    <div className={`kw-flow${focused !== null ? " kw-flow--focused" : ""}`} onMouseLeave={() => setFocused(null)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(null); }}>
+      {references.slice(0, expanded ? 5 : 3).map((person, index) => <Fragment key={person.id}><span role="button" tabIndex={0} className={`kw-flow__item${focused === index ? " is-focused" : ""}`} onMouseEnter={() => setFocused(index)} onFocus={() => setFocused(index)} onClick={() => setFocused(index)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setFocused(index); } }} aria-label={`${person.name}: ${person.quote}`}>
+        <Portrait person={person} />{person.quote}<span className="kw-flow__attribution">{person.name}<small>Unpublished</small></span>
+      </span>{" "}</Fragment>)}
+    </div>
+    <button className="kw-show-more" type="button" aria-expanded={expanded} onClick={() => { setExpanded(!expanded); setFocused(null); }}>{expanded ? "Show less" : "Show more"}<NavArrowLeftIcon size={13} /></button>
+  </Frame>;
+}

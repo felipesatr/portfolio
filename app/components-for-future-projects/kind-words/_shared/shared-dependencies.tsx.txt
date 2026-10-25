@@ -1,0 +1,82 @@
+/* Shared helpers copied from app/components/kind-words.tsx for future reuse.
+   The variant-specific component snippets live in their numbered folders. */
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { testimonials } from "~/content/portfolio";
+import { publicAsset } from "~/lib/public-asset";
+import { ArrowLeftIcon, ArrowRightIcon, NavArrowLeftIcon } from "~/components/icons";
+
+const references = testimonials.slice(0, 5).map((item, index) => ({
+  ...item,
+  name: `Reference ${String(index + 1).padStart(2, "0")}`,
+  role: "Colleague reference",
+  company: "Pending approval",
+  portrait: publicAsset(`images/kind-words-demo/portrait-${index + 1}.webp`),
+}));
+type Reference = typeof references[number];
+const wrap = (index: number, length = references.length) => (index % length + length) % length;
+
+function Portrait({ person, className = "" }: { person: Reference; className?: string }) {
+  return <img className={`kw-portrait ${className}`} src={person.portrait} alt="" width={240} height={320} loading="lazy" decoding="async" />;
+}
+function Attribution({ person, portrait = false }: { person: Reference; portrait?: boolean }) {
+  return <div className="kw-author">{portrait && <Portrait person={person} />}<div><strong>{person.name}</strong><span>{person.role} · unpublished</span></div></div>;
+}
+function Stars({ rating = 5 }: { rating?: number }) {
+  return <span className="kw-stars" aria-label={`Sample ${rating} out of 5 star rating`}>{Array.from({ length: 5 }, (_, i) => <span key={i} className={i < rating ? "" : "kw-stars__empty"} aria-hidden="true">★</span>)}</span>;
+}
+function PreviewLabel() {
+  return <span className="kw-preview-label">Layout preview · unpublished references</span>;
+}
+function Arrows({ onPrevious, onNext }: { onPrevious: () => void; onNext: () => void }) {
+  return <div className="kw-arrows"><button type="button" onClick={onPrevious} aria-label="Previous reference"><ArrowLeftIcon size={17} /></button><button type="button" onClick={onNext} aria-label="Next reference"><ArrowRightIcon size={17} /></button></div>;
+}
+function AvatarTabs({ active, onSelect, count = references.length, ring = false }: { active: number; onSelect: (index: number) => void; count?: number; ring?: boolean }) {
+  return <div className={`kw-avatars${ring ? " kw-avatars--ring" : ""}`} role="group" aria-label="Choose a reference">
+    {references.slice(0, count).map((person, index) => <button key={person.id} type="button" aria-label={`Read ${person.name}`} aria-pressed={active === index} onClick={() => onSelect(index)}>
+      <Portrait person={person} />{ring && active === index && <svg key={index} className="kw-avatar-ring" viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="28" /></svg>}
+    </button>)}
+  </div>;
+}
+function Dots({ active, onSelect, count = references.length }: { active: number; onSelect: (index: number) => void; count?: number }) {
+  return <div className="kw-dots" role="group" aria-label="Reference pagination">{Array.from({ length: count }, (_, index) => <button type="button" key={index} aria-label={`Read reference ${index + 1}`} aria-pressed={active === index} onClick={() => onSelect(index)} />)}</div>;
+}
+function QuoteSlot({ active, count = references.length, reveal = false }: { active: number; count?: number; reveal?: boolean }) {
+  return <div className="kw-quote-slot">
+    {references.slice(0, count).map((person) => <blockquote key={person.id} className="kw-quote-reserve" aria-hidden="true">“{person.quote}”</blockquote>)}
+    <blockquote key={`active-${active}`} className={`kw-quote-active${reveal ? " kw-quote-active--reveal" : ""}`} aria-live="polite" aria-atomic="true">
+      {reveal ? `“${references[active].quote}”`.split(" ").map((word, index) => <Fragment key={index}><span className="kw-reveal-word" style={{ "--kw-word": index } as CSSProperties}>{word}</span>{" "}</Fragment>) : `“${references[active].quote}”`}
+    </blockquote>
+  </div>;
+}
+function Frame({ variant, rows, children }: { variant: number; rows: number; children: ReactNode }) {
+  const stage = useRef<HTMLDivElement>(null);
+  const natural = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = stage.current;
+    const content = natural.current;
+    if (!element || !content) return;
+    let frame = 0;
+    let disposed = false;
+    const measure = () => {
+      if (disposed) return;
+      const probe = element.querySelector<HTMLElement>(".kw-unit-probe");
+      const gridRow = probe?.getBoundingClientRect().height || 96;
+      const styles = getComputedStyle(element);
+      const padding = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+      const needed = Math.max(rows * gridRow, content.scrollHeight + padding);
+      const snapped = Math.ceil((needed - 0.5) / (gridRow / 2)) * (gridRow / 2);
+      element.style.setProperty("--kw-block-size", `${snapped}px`);
+    };
+    const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(content);
+    observer.observe(element);
+    measure();
+    void document.fonts.ready.then(schedule);
+    return () => { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [rows]);
+  return <div ref={stage} className={`kw-frame kw-frame--${variant}`} style={{ "--kw-rows": rows } as CSSProperties} data-no-reveal>
+    <i className="kw-unit-probe" aria-hidden="true" />
+    <div ref={natural} className="kw-natural">{children}</div>
+  </div>;
+}

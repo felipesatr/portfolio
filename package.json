@@ -14,6 +14,10 @@
     "preview": "vite preview",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
+    "spotify:connect": "node scripts/connect-spotify.mjs",
+    "spotify:dev": "wrangler dev --config server/spotify/wrangler.jsonc --ip 127.0.0.1 --port 8787",
+    "spotify:check": "wrangler deploy --dry-run --config server/spotify/wrangler.jsonc --outdir ../../artifacts/spotify-worker",
+    "test:spotify": "node --test scripts/test-spotify.mjs scripts/test-spotify-consent.mjs scripts/test-spotify-colors.mjs scripts/test-spotify-transitions.mjs",
     "test": "node scripts/test-globe.mjs && node scripts/calendar.test.mjs && node scripts/calendar-store.test.mjs",
     "check": "npm run typecheck && npm run lint && npm test"
   },
@@ -40,6 +44,7 @@
     "meshoptimizer": "^1.1.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "wrangler": "^4.152.0"
   }
 }

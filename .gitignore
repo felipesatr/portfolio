@@ -1,5 +1,13 @@
 .DS_Store
 .env
+.env.*
+!.env.example
+!.env.spotify.example
+.dev.vars
+.dev.vars.*
+/.spotify-private/
+/.wrangler/
+**/.wrangler/
 /node_modules/
 /.npm-cache/
 

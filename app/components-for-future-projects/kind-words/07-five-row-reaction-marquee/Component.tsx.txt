@@ -1,0 +1,15 @@
+const reactions = [
+  ["Clear communication", "Thoughtful process", "Attention to detail"],
+  ["A reliable teammate", "Responsive", "Carefully considered"],
+  ["Easy to work with", "From idea to delivery", "Always curious"],
+  ["Practical solutions", "A fresh perspective", "Collaborative"],
+  ["Quality matters", "Keeps things moving", "Happy to help"],
+];
+function ReactionMarquee() {
+  const [focused, setFocused] = useState(2);
+  return <Frame variant={7} rows={4}><PreviewLabel /><div className="kw-reactions" onMouseLeave={() => setFocused(2)}>
+    {reactions.map((row, rowIndex) => <div className={`kw-reaction-row${focused === rowIndex ? " is-focused" : ""}`} key={rowIndex} onMouseEnter={() => setFocused(rowIndex)} tabIndex={0} onFocus={() => setFocused(rowIndex)} onBlur={() => setFocused(2)} aria-label={`Sample reactions: ${row.join(", ")}`}>
+      <div className="kw-reaction-track">{[0, 1].map((copy) => <div className="kw-reaction-copy" key={copy} aria-hidden={copy === 1}>{[...row, ...row].map((text, index) => <span key={index} className="kw-reaction-pill"><Portrait person={references[wrap(index + rowIndex)]} /><span className="kw-reaction-message">{text}</span><span className="kw-typing" aria-hidden="true"><i /><i /><i /></span></span>)}</div>)}</div>
+    </div>)}
+  </div></Frame>;
+}

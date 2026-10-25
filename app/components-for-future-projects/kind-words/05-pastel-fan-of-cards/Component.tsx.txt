@@ -1,0 +1,15 @@
+function FanCarousel() {
+  const [active, setActive] = useState(0);
+  return <Frame variant={5} rows={4.5}><div className="kw-fan-controls"><PreviewLabel /><Arrows onPrevious={() => setActive(wrap(active - 1))} onNext={() => setActive(wrap(active + 1))} /></div>
+    <div className="kw-fan-window"><div className="kw-fan">
+      {references.map((person, index) => {
+        const offset = wrap(index - active + 2) - 2;
+        return <article key={person.id} className={`kw-fan-card kw-pastel-${index}`} aria-hidden={index !== active} style={{ "--kw-offset": offset, "--kw-distance": Math.abs(offset), zIndex: 5 - Math.abs(offset) } as CSSProperties}>
+          <div className="kw-fan-card__header"><span>Reference preview</span><Stars /></div>
+          <blockquote>“{person.quote.split(" ").map((word, wordIndex) => <Fragment key={wordIndex}>{wordIndex >= 6 && wordIndex <= 9 ? <mark>{word}</mark> : word}{" "}</Fragment>)}”</blockquote>
+          <Attribution person={person} portrait />
+        </article>;
+      })}
+    </div></div><div className="kw-pagination"><span>{String(active + 1).padStart(2, "0")} / 05</span><Dots active={active} onSelect={setActive} /></div>
+  </Frame>;
+}

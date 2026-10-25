@@ -2340,17 +2340,24 @@ html:not(.liquid-webgl-ready) .liquid-button__surface {
 }
 
 .what-i-do--stacked .service-stack__tools {
+  /* Set back to 28px to restore the previous size and spacing. */
+  --tool-icon-size: 30px;
   min-block-size: 2rem !important;
   padding-block: 0.45rem !important;
 }
 
 .what-i-do--stacked .service-stack__tool {
-  inline-size: 28px !important;
-  block-size: 28px !important;
+  inline-size: var(--tool-icon-size) !important;
+  block-size: var(--tool-icon-size) !important;
 }
 
 .what-i-do--stacked .service-stack__tool + .service-stack__tool {
-  margin-inline-start: -0.35rem !important;
+  margin-inline-start: calc(var(--tool-icon-size) * -0.2) !important;
+}
+
+.what-i-do--stacked .service-stack__tool:hover .service-stack__tile,
+.what-i-do--stacked .service-stack__tool:focus-visible .service-stack__tile {
+  transform: translateY(calc(var(--tool-icon-size) * -0.0685714286)) scale(1.14);
 }
 
 /* Section 2 experiment: give the stack marks a small, proportional size lift

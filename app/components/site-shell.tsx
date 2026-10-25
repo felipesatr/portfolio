@@ -14,8 +14,8 @@ import { ENABLE_KIND_WORDS_TEST, KindWordsTest, type KindWordsView } from "./kin
 const navigation = [
   { label: "Home", href: "/" },
   { label: "About me", href: "/about" },
-  { label: "Work", href: "/work" },
-  { label: "Process", href: "/services" },
+  { label: "Work & projects", href: "/work" },
+  { label: "My process", href: "/services" },
   { label: "Lab", href: "/lab" },
   { label: "Contact", href: "/contact" },
 ];

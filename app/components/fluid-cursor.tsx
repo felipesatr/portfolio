@@ -482,6 +482,37 @@ export function FluidCursor() {
     let negativeMaskTargets: NegativeMaskTarget[] = [];
     let textMaskSource: HTMLElement | null = null;
     let textMaskSignature = "";
+    const logoMasks = new Map<string, string>();
+    const logoMaskFor = (image: HTMLImageElement) => {
+      const key = `${image.currentSrc}|${image.dataset.fluidCursorImageMask}`;
+      const cached = logoMasks.get(key);
+      if (cached) return cached;
+      if (!image.complete || !image.naturalWidth) return null;
+      const bitmap = document.createElement("canvas");
+      bitmap.width = image.naturalWidth; bitmap.height = image.naturalHeight;
+      const paint = bitmap.getContext("2d", { willReadFrequently: true });
+      if (!paint) return null;
+      try {
+        paint.drawImage(image, 0, 0);
+        if (image.dataset.fluidCursorImageMask === "contrast") {
+          // These local logo assets have a uniform tile background. Key it
+          // out once, preserving antialiased edges rather than masking a box.
+          const pixels = paint.getImageData(0, 0, bitmap.width, bitmap.height);
+          const [red, green, blue] = pixels.data;
+          for (let i = 0; i < pixels.data.length; i += 4) {
+            const contrast = Math.max(Math.abs(pixels.data[i] - red), Math.abs(pixels.data[i + 1] - green), Math.abs(pixels.data[i + 2] - blue));
+            pixels.data[i + 3] *= Math.max(0, Math.min(1, (contrast - 12) / 96));
+          }
+          paint.putImageData(pixels, 0, 0);
+        }
+        const mask = bitmap.toDataURL();
+        logoMasks.set(key, mask);
+        return mask;
+      } catch {
+        // A future cross-origin image must not break the cursor if unreadable.
+        return null;
+      }
+    };
     let nativeInkSource: HTMLElement | null = null;
     let nativeInkRuns: HTMLElement[] = [];
     let nativePaintRuns = new Set<HTMLElement>();
@@ -554,7 +585,7 @@ export function FluidCursor() {
       const previous = new Map(targets.map((target) => [target.element, target]));
       // Destination CTAs and a few explicitly marked neutral surfaces can use
       // the liquid field. Ordinary controls remain native.
-      const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, button[data-globe-color-button], [data-fluid-cursor-surface]"))
+      const next = Array.from(document.querySelectorAll<HTMLElement>("a.button, button[data-fluid-cursor-button], button[data-globe-color-button], [data-fluid-cursor-surface]"))
         .filter((element) => !element.matches(":disabled"))
         // The negative-ink overlay contains visual clones. They must never be
         // rediscovered as real interactive targets or they can disturb the
@@ -627,6 +658,7 @@ export function FluidCursor() {
       const nextNegativeMaskTargets = Array.from(document.querySelectorAll<HTMLElement>(negativeMaskSelector))
         .filter((element) => {
           if (textMask.contains(element)) return false;
+          if (element.closest('[data-fluid-cursor-no-ink]')) return false;
           if (element.matches("button, .button")) return false;
           const explicitlyMasked = element.hasAttribute("data-fluid-cursor-negative-mask") ||
             element.hasAttribute("data-fluid-cursor-native-ink");
@@ -716,9 +748,13 @@ export function FluidCursor() {
     const targetIsPainted = (target: LiquidTarget) => {
       const element = target.element;
       if (!element.isConnected || element.matches(":disabled") || element.closest('[aria-hidden="true"], [inert]')) return false;
+      const consentLayer = element.closest<HTMLElement>('.spotify-consent-layer');
+      // The ordinary DOM button shares the entire popup entrance. The global
+      // fluid silhouette may take over only after that entrance is complete.
+      if (consentLayer && (consentLayer.dataset.open !== 'true' || Number(getComputedStyle(consentLayer).getPropertyValue('--spotify-consent-progress')) < 1)) return false;
       if (element.closest('.soft-reveal-target:not(.is-soft-revealed), .reveal-following-action:not(.is-revealed), .lab-preview:not(.lab-preview--title-revealed)')) return false;
       for (let node: HTMLElement | null = element; node && node !== document.body; node = node.parentElement) {
-        if (node !== element && !node.matches('.soft-reveal-target, .reveal-following-action, .page-transition-content')) continue;
+        if (node !== element && !node.matches('.soft-reveal-target, .reveal-following-action, .page-transition-content, .spotify-consent, [data-fluid-cursor-mask-boundary]')) continue;
         const style = getComputedStyle(node);
         if (style.visibility !== "visible" || style.display === "none" || Number(style.opacity) < 0.999 || style.pointerEvents === "none") return false;
         if (style.filter !== "none" && /blur\((?!0px\))/u.test(style.filter)) return false;
@@ -745,6 +781,9 @@ export function FluidCursor() {
     };
 
     const usesNativeTextInk = (element: HTMLElement) => {
+      // Marquee copies must retain their real transforms and overflow clip;
+      // flattening both copies into an overlay would repeat/overlap the title.
+      if (element.matches('.spotify-widget__title, .spotify-widget__artist')) return true;
       // Spotlight cards are isolated/stacked below the fixed cursor. Their
       // headings must use the global overlay clone, just like card body copy,
       // so the masked glyphs can paint above the cursor instead of being
@@ -867,7 +906,7 @@ export function FluidCursor() {
     const syncNegativeMask = (x: number, y: number, rotation = 0, elongation = 0) => {
       // These clones belong only to the mouse ball. A tooltip/pill, its
       // reverse morph, or a native-cursor dialog must never retain old ink.
-      if (activeTool || activePill || toolMorphing || cursorSuppressed || document.documentElement.classList.contains("calendar-overlay-open") || !pointer.active) {
+      if (liquidWasRendering || activeTool || activePill || toolMorphing || cursorSuppressed || document.documentElement.classList.contains("calendar-overlay-open") || !pointer.active) {
         clearNativeTextInk();
         knobMask.style.opacity = "0";
         textMask.style.opacity = "0";
@@ -885,7 +924,11 @@ export function FluidCursor() {
         if (element.hasAttribute("data-fluid-cursor-canvas-mask") && activeTarget?.element.matches(".distance-globe__label")) continue;
         // Collapsed calendar rows keep their DOM for the reverse animation.
         // Their glyphs must not be cloned over the visible selected week.
-        if (element.closest("[inert]")) continue;
+        if (element.closest('[inert], [data-fluid-cursor-no-ink]')) continue;
+        // A global ink clone must never sharpen content under the local
+        // consent glass, including its reverse/unblur transition.
+        const maskBoundary = element.closest<HTMLElement>('[data-fluid-cursor-mask-boundary]');
+        if (maskBoundary && !['none', 'blur(0px)'].includes(getComputedStyle(maskBoundary).filter)) continue;
         // Scroll/resize already refresh the cache. Only nearby text needs a
         // live transform read; don't measure every heading on pointer frames.
         if (distanceToRect(x, y, candidate.rect) > cursorRadius + 64) continue;
@@ -915,7 +958,13 @@ export function FluidCursor() {
         if (distance <= paintedCursorRadius * 1.04) {
           if (element.closest(".lab-calendar")) calendarContacts.push(candidate);
           if (element.matches(".about-timeline__drawing")) timelineContacts.push(candidate);
-          if (distance < closestDistance) {
+          // The elevated routes canvas extends beyond the globe, including
+          // over the caption. Its empty pixels must not win over real text
+          // when both rectangles touch the cursor at the same distance.
+          const textOverCanvas = distance === closestDistance &&
+            target?.element.hasAttribute("data-fluid-cursor-canvas-mask") &&
+            !element.hasAttribute("data-fluid-cursor-canvas-mask");
+          if (distance < closestDistance || textOverCanvas) {
             target = candidate;
             closestDistance = distance;
           }
@@ -948,7 +997,9 @@ export function FluidCursor() {
           source.matches(".about-value-icon") ? [...source.querySelectorAll("path")].map((path) => path.getAttribute("d")).join(";") : source.hasAttribute("data-fluid-cursor-svg-mask") ? source.innerHTML : source.textContent ?? "",
           source.className,
           source.getAttribute("style") ?? "",
+          source instanceof HTMLImageElement ? `${source.currentSrc}|${source.complete}` : "",
           source.matches(".about-timeline__drawing") ? getComputedStyle(source).opacity : "",
+          source.matches(".about-value-icon") && source.closest(".soft-reveal-target") ? getComputedStyle(source.closest(".soft-reveal-target")!).opacity + getComputedStyle(source.closest(".soft-reveal-target")!).filter : "",
           rect.left.toFixed(3),
           rect.top.toFixed(3),
           rect.width.toFixed(3),
@@ -960,7 +1011,15 @@ export function FluidCursor() {
             const sourceStyle = window.getComputedStyle(source);
             const run = document.createElement("span");
             run.className = "fluid-cursor__text-mask-run";
-            if (source instanceof HTMLCanvasElement && source.hasAttribute("data-fluid-cursor-canvas-mask")) {
+            if (source instanceof HTMLImageElement && source.hasAttribute("data-fluid-cursor-image-mask")) {
+              const mask = logoMaskFor(source);
+              if (mask) {
+                const ink = document.createElement("span");
+                ink.style.cssText = "display:block;width:100%;height:100%;background:currentColor;mask-repeat:no-repeat;mask-position:center;mask-size:contain";
+                ink.style.maskImage = `url("${mask}")`;
+                run.append(ink);
+              }
+            } else if (source instanceof HTMLCanvasElement && source.hasAttribute("data-fluid-cursor-canvas-mask")) {
               const copy = document.createElement("canvas");
               copy.width = source.width; copy.height = source.height;
               copy.style.width = `${rect.width}px`; copy.style.height = `${rect.height}px`;
@@ -978,6 +1037,7 @@ export function FluidCursor() {
                 child.style.height = `${size.height}px`;
                 child.style.fill = child.getAttribute("fill") === "none" ? "none" : "currentColor";
                 child.style.color = "inherit";
+                child.style.transform = getComputedStyle(source.children[index]).transform;
               });
               if (source.matches(".about-timeline__drawing")) {
                 // Repaint the entire SVG (spine, branches and dots) in cursor
@@ -1025,6 +1085,14 @@ export function FluidCursor() {
             run.style.direction = sourceStyle.direction;
             run.style.writingMode = sourceStyle.writingMode;
             run.style.opacity = sourceStyle.opacity;
+            if (source.matches(".about-value-icon")) {
+              const revealingItem = source.closest(".soft-reveal-target");
+              if (revealingItem) {
+                const revealStyle = getComputedStyle(revealingItem);
+                run.style.opacity = String(Number(sourceStyle.opacity) * Number(revealStyle.opacity));
+                run.style.filter = revealStyle.filter;
+              }
+            }
             if (source.matches(".calendar-hour-divider, .calendar-week-divider") || source.closest(".calendar-scrollbar")) {
               run.style.setProperty("color", "#55575a", "important");
               run.style.opacity = "1";
@@ -1608,6 +1676,11 @@ export function FluidCursor() {
       if (!wasRendering) clearLiquidFrame();
       fallback.classList.add("fluid-cursor--liquid-handoff");
       fallback.classList.remove("fluid-cursor--visible");
+      // The orb's last text clone must not survive its handoff into a solid
+      // liquid button. Otherwise stale glyphs float over the button's fill.
+      clearNativeTextInk();
+      textMask.style.opacity = "0";
+      knobMask.style.opacity = "0";
       canvas.classList.add("is-visible");
     };
 
@@ -1752,9 +1825,14 @@ export function FluidCursor() {
       setUniform3("u_secondary_color", themeColors.secondary);
       setUniform3("u_secondary_hover_color", themeColors.secondaryHover);
       setUniform3("u_secondary_active_color", themeColors.secondaryActive);
-      const neutralColor = activeTarget?.element.matches("[data-fluid-cursor-theme-fill], [data-fluid-cursor-calendar-fill]")
+      let neutralColor = activeTarget?.element.matches("[data-fluid-cursor-theme-fill], [data-fluid-cursor-calendar-fill]")
         ? hexToRgb(getComputedStyle(activeTarget.element).getPropertyValue(activeTarget.element.hasAttribute("data-fluid-cursor-theme-fill") ? "--calendar-today" : "--calendar-fluid-fill"), themeColors.neutralTarget)
         : themeColors.neutralTarget;
+      // Match the lab Play/Try Again hover without dimming or deforming glyphs.
+      if (activeTarget?.element.matches('.spotify-widget__control')) {
+        const shade = 1 - (13 / 255) * activeTarget.hoverProgress;
+        neutralColor = [shade, shade, shade];
+      }
       setUniform3("u_neutral_target_color", neutralColor);
       setUniform3("u_dark_target_color", themeColors.darkTarget);
       if (activeTarget) {
@@ -2463,7 +2541,7 @@ export function FluidCursor() {
       refreshTargets();
       if (!activeTool) startLoop();
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "hidden"] });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "hidden", "inert", "data-consent-open"] });
     /* The fallback reads --cursor directly from CSS, while WebGL receives a
        numeric uniform. Observe stylesheet replacement too (including Vite
        hot updates) so both rendering paths always use the same token. */

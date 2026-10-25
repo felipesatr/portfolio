@@ -1,4 +1,4 @@
-export type GlobeLabelBox = { id: string; x: number; y: number; width: number; height: number; alpha: number; priority?: number; previousY?: number };
+export type GlobeLabelBox = { id: string; x: number; y: number; width: number; height: number; alpha: number; priority?: number; previousY?: number; maxOffsetY?: number };
 export type GlobeLabelPointer = { x: number; y: number; revision: number; inside: boolean };
 export type GlobeLabelHover = { id: string | null; blockedRevision: number; outsideSince: number | null };
 
@@ -22,11 +22,17 @@ export function updateGlobeLabelHover(state: GlobeLabelHover, pointer: GlobeLabe
 }
 export function separateGlobeLabels(labels: GlobeLabelBox[], width: number, height: number, bounds = { left: 0, right: width, top: 0, bottom: height }) {
   const result = labels.map((label) => ({ ...label }));
-  const clampY = (item: GlobeLabelBox, y: number) => Math.max(bounds.top + item.height + 4, Math.min(bounds.bottom - 4, y));
+  const origins = new Map(labels.map((label) => [label.id, label.y]));
+  const clampY = (item: GlobeLabelBox, y: number) => {
+    const origin = origins.get(item.id)!;
+    const limit = item.maxOffsetY ?? Infinity;
+    return Math.max(bounds.top + item.height + 4, origin - limit, Math.min(bounds.bottom - 4, origin + limit, y));
+  };
   result.forEach((item) => {
     const half = Math.min((bounds.right - bounds.left) / 2 - 4, item.width / 2 + 4);
     item.x = Math.max(bounds.left + half, Math.min(bounds.right - half, item.x));
     item.y = clampY(item, item.y);
+    if (Math.abs(item.y - origins.get(item.id)!) > (item.maxOffsetY ?? Infinity) || item.y > bounds.bottom - 4) item.alpha = 0;
   });
   const collides = (a: GlobeLabelBox, b: GlobeLabelBox) =>
     Math.abs(a.x - b.x) < (a.width + b.width) / 2 + 10 &&

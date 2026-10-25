@@ -1,0 +1,25 @@
+/* Layout 07 — Endless duplicated tracks, row focus, and typing states */
+.kw-frame--7 { --kw-pad: 24px; }
+.kw-frame--7 .kw-natural { justify-content: center; gap: 18px; }
+.kw-reactions { display: grid; gap: 18px; margin-inline: calc(-1 * var(--kw-pad)); overflow: clip; padding-block: 7px; }
+.kw-reaction-row { min-inline-size: 0; opacity: .54; filter: blur(1.3px); transition: opacity 250ms ease, filter 250ms ease; }
+.kw-reaction-row.is-focused { opacity: 1; filter: none; }
+.kw-reaction-track { display: flex; inline-size: max-content; animation: kw-marquee 44s linear infinite; }
+.kw-reaction-row:nth-child(even) .kw-reaction-track { animation-direction: reverse; animation-duration: 51s; }
+.kw-reaction-row:where(:hover, :focus-visible) .kw-reaction-track { animation-play-state: paused; }
+.kw-reaction-copy { display: flex; gap: 12px; padding-inline-end: 12px; }
+.kw-reaction-pill { position: relative; display: inline-flex; align-items: center; gap: 8px; block-size: 40px; padding: 4px 13px 4px 4px; border: 1px solid var(--kw-line); border-radius: var(--radius-pill); background: var(--kw-raised); color: var(--kw-ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.kw-reaction-pill .kw-portrait { flex: 0 0 32px; inline-size: 32px; block-size: 32px; border-radius: 50%; }
+.kw-reaction-message { animation: kw-message 9s linear infinite; }
+.kw-typing { position: absolute; inset-inline-start: 45px; inset-block-start: 50%; display: flex; gap: 3px; transform: translateY(-50%); opacity: 0; animation: kw-typing-visibility 9s linear infinite; }
+.kw-typing i { inline-size: 3px; block-size: 3px; border-radius: 50%; background: var(--kw-ink); animation: kw-dot-bounce 800ms ease infinite alternate; }
+.kw-typing i:nth-child(2) { animation-delay: 130ms; }
+.kw-typing i:nth-child(3) { animation-delay: 260ms; }
+.kw-reaction-pill:nth-child(even) :is(.kw-reaction-message, .kw-typing) { animation-delay: -4s; }
+.kw-reaction-row:nth-child(even) .kw-reaction-pill :is(.kw-reaction-message, .kw-typing) { animation-delay: -2s; }
+@keyframes kw-marquee { to { transform: translateX(-50%); } }
+@keyframes kw-message { 0%, 67%, 100% { opacity: 1; } 73%, 92% { opacity: 0; } }
+@keyframes kw-typing-visibility { 0%, 67%, 100% { opacity: 0; } 73%, 92% { opacity: 1; } }
+@keyframes kw-dot-bounce { to { transform: translateY(-2px); opacity: .4; } }
+@media (max-width: 38rem) { .kw-frame--7 { --kw-pad: 18px; padding-block: 24px; } .kw-reactions { gap: 18px; } }
+@media (prefers-reduced-motion: reduce) { .kw-reaction-message { opacity: 1; } .kw-typing { display: none; } }

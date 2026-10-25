@@ -1,0 +1,4 @@
+function CenteredQuote() {
+  const [active, setActive] = useState(0);
+  return <Frame variant={9} rows={3}><PreviewLabel /><Stars /><QuoteSlot active={active} count={4} /><Attribution person={references[active]} /><AvatarTabs active={active} onSelect={setActive} count={4} /></Frame>;
+}

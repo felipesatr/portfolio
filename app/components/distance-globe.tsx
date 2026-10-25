@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent, type KeyboardEvent } fr
 import { createPortal } from "react-dom";
 import { GlobeLabel } from "./globe-label";
 import { publicAsset } from "~/lib/public-asset";
-import { cameraFor, decodeLand, exactDistanceKm, greatCircle, project, spherePoint, unproject, type Coordinate, type Vector } from "~/lib/globe-geometry";
+import { cameraFor, decodeLand, exactDistanceKm, project, spherePoint, unproject, type Coordinate, type Vector } from "~/lib/globe-geometry";
 import { separateGlobeLabels, updateGlobeLabelHover, type GlobeLabelHover, type GlobeLabelPointer } from "~/lib/globe-label-layout";
 import { getApproximateLocation, locationDetail, type ApproximatePlace } from '~/lib/approximate-location';
 import { stepDistance, catDistance, formatDistance, makeGlobeArc, makeExplorationArcs, nameClickedPoint, playfulDistance, type GlobeCity } from '~/lib/globe-play';
@@ -65,6 +65,8 @@ export function DistanceGlobe() {
     const routesCanvas = routesRef.current;
     const routeContext = routesCanvas?.getContext('2d', { alpha: true });
     let disposed = false, visible = false, loading = false;
+    let spinStarted = false;
+    container.dataset.globeSpin = "waiting";
     let frame = 0, previousTime = 0, size = 0, dpr = 1, delta = 16;
     let land: Vector[] = [];
     let other: Place | null = null, nearby = false;
@@ -79,6 +81,8 @@ export function DistanceGlobe() {
     sprite.width = sprite.height = 24;
     const positions = new Map<string, { x: number; y: number }>();
     const renderedPositions = new Map<string, { x: number; y: number }>();
+    let previousCanvasOrigin: { x: number; y: number } | null = null;
+    let scrollLabelLag = 0;
     const hoveredLabelOffset = new Map<string, { x: number; y: number }>();
     const labelPointer: GlobeLabelPointer = { x: 0, y: 0, revision: 0, inside: false };
     let labelHover: GlobeLabelHover = { id: null, blockedRevision: -1, outsideSince: null };
@@ -106,6 +110,17 @@ export function DistanceGlobe() {
     });
     const positionLabels = () => {
       const bounds = canvas.getBoundingClientRect();
+      // Carry the anchor with the page, but allow a small, bounded scroll float.
+      if (previousCanvasOrigin) {
+        const dx = bounds.left - previousCanvasOrigin.x;
+        const dy = bounds.top - previousCanvasOrigin.y;
+        scrollLabelLag = reduceMotion.matches ? 0 : Math.max(-18, Math.min(18, scrollLabelLag - dy * .25));
+        for (const history of [positions, renderedPositions]) {
+          for (const point of history.values()) { point.x += dx; point.y += dy; }
+        }
+      }
+      previousCanvasOrigin = { x: bounds.left, y: bounds.top };
+      scrollLabelLag *= Math.exp(-delta / 110);
       const safeTop = innerWidth <= 1280 ? document.querySelector('.mobile-header')?.getBoundingClientRect().bottom ?? 8 : 8;
       const experience = innerWidth > 896 ? document.querySelector('.about-experience-section')?.getBoundingClientRect() : null;
       const railEdge = innerWidth > 1280 ? document.querySelector('.desktop-rail')?.getBoundingClientRect().right ?? 0 : 0;
@@ -172,7 +187,7 @@ export function DistanceGlobe() {
         current.x += (target.x - current.x) * follow;
         current.y += (target.y - current.y) * follow;
         const previousPosition = renderedPositions.get(id);
-        return [{ id, x: current.x + (activeOffset?.x ?? 0) - bounds.left, y: current.y + (activeOffset?.y ?? 0) - bounds.top, width: Math.min(availableWidth, Math.ceil(reservedWidth) + 1), height: button.offsetHeight, alpha: Math.max(visibility, paintedVisibility > .02 ? paintedVisibility : 0), priority: directlyEngaged ? 3 : 0, previousY: previousPosition && paintedVisibility > .02 ? previousPosition.y - bounds.top : undefined }];
+        return [{ id, x: current.x + (activeOffset?.x ?? 0) - bounds.left, y: current.y + (activeOffset?.y ?? 0) - bounds.top, width: Math.min(availableWidth, Math.ceil(reservedWidth) + 1), height: button.offsetHeight, alpha: Math.max(visibility, paintedVisibility > .02 ? paintedVisibility : 0), priority: directlyEngaged ? 3 : 0, maxOffsetY: 64, previousY: previousPosition && paintedVisibility > .02 ? previousPosition.y - bounds.top : undefined }];
       });
       // Reserve the full expansion footprint before it grows. Previous positions
       // retain each neighbor's side while the painted pills ease into free slots.
@@ -191,7 +206,7 @@ export function DistanceGlobe() {
           rendered.x += (destination.x - rendered.x) * follow;
           rendered.y += (destination.y - rendered.y) * follow;
         }
-        anchor.style.transform = `translate3d(${rendered.x}px,${rendered.y}px,0)`;
+        anchor.style.transform = `translate3d(${rendered.x}px,${rendered.y + scrollLabelLag}px,0)`;
         const alpha = box.alpha >= .1 ? desiredVisibility.get(box.id) ?? 0 : 0;
         button.style.opacity = String(alpha);
         button.style.pointerEvents = alpha > .85 ? "auto" : "none";
@@ -299,7 +314,14 @@ export function DistanceGlobe() {
       if (disposed || !visible || document.hidden || reduceMotion.matches) return;
       delta = Math.min((time - previousTime) || 16, 50);
       previousTime = time;
-      if (!rotation.current.dragging) {
+      const revealStarted = !document.documentElement.classList.contains('soft-reveal-ready') ||
+        (container.classList.contains('is-soft-revealed') && Number(getComputedStyle(container).opacity) > 0);
+      if (!spinStarted && revealStarted) {
+        Object.assign(rotation.current, cameraFor(home));
+        spinStarted = true;
+        container.dataset.globeSpin = "spinning";
+      }
+      if (spinStarted && !rotation.current.dragging) {
         rotation.current.yaw += delta * AUTO_SPIN_RADIANS_PER_MS + rotation.current.velocity * delta / 16;
         rotation.current.velocity *= Math.pow(.9, delta / 16);
         if (rotation.current.recovering) {
@@ -364,8 +386,6 @@ export function DistanceGlobe() {
       setVisitor(place); setPhrase(phraseForPage()); setLocated(true);
       if (place) {
         const to = spherePoint(place.coordinates);
-        const midpoint = greatCircle(home, to, .5);
-        Object.assign(rotation.current, cameraFor(midpoint));
         arc = makeGlobeArc(home, to, nearby ? .055 : undefined);
         if (trip) trip.arcs = makeExplorationArcs(home, to, trip.point, nearby, exactDistanceKm(HOME.coordinates, place.coordinates));
       }
@@ -401,14 +421,15 @@ export function DistanceGlobe() {
       }
       playback();
     });
-    observer.observe(container);
+    observer.observe(canvas);
     // Scroll restoration can put the section in view before an observer's
     // first delivery. Initialize from the real viewport too, without waiting
     // for a new intersection transition.
     const syncViewport = () => {
       if (disposed) return;
-      const bounds = container.getBoundingClientRect();
+      const bounds = canvas.getBoundingClientRect();
       const inView = bounds.bottom > 0 && bounds.top < innerHeight;
+      if (!inView && visible) { visible = false; playback(); }
       if (inView) {
         visible = true;
         void init();
@@ -428,6 +449,7 @@ export function DistanceGlobe() {
     reduceMotion.addEventListener("change", playback);
     return () => {
       disposed = true; cancelAnimationFrame(frame); cancelAnimationFrame(startupFrame);
+      delete container.dataset.globeSpin;
       window.removeEventListener("scroll", syncViewport);
       window.removeEventListener('pointermove', trackLabelPointer);
       document.documentElement.removeEventListener('pointerleave', leaveLabelPointer);
@@ -495,10 +517,10 @@ export function DistanceGlobe() {
       {visitor && distance !== null && <GlobeLabel anchorRef={distanceLabel} label={distanceText} detail={catDistance(distance)} title="Approximate great-circle distance. Playful comparison using a reference cat length of 46 cm, excluding the tail; real cats vary. Rounded to the nearest whole cat." />}
       {picked && <>
         <GlobeLabel anchorRef={pickedLabel} label={picked.name} accent onClick={() => choosePoint.current(null)} accessibleLabel={`Remove explored location: ${picked.name}`} title="Approximate map location. Click to remove this point and retract both routes." />
-        <GlobeLabel anchorRef={pickedHomeDistance} label={formatDistance(exactDistanceKm(HOME.coordinates, picked.coordinates))} detail={playfulDistance(exactDistanceKm(HOME.coordinates, picked.coordinates), picked.phrase).text} title={playfulDistance(exactDistanceKm(HOME.coordinates, picked.coordinates), picked.phrase).basis} />
-        {visitor && !neighbour && <GlobeLabel anchorRef={pickedVisitorDistance} label={formatDistance(exactDistanceKm(visitor.coordinates, picked.coordinates))} detail={playfulDistance(exactDistanceKm(visitor.coordinates, picked.coordinates), picked.phrase).text} title={playfulDistance(exactDistanceKm(visitor.coordinates, picked.coordinates), picked.phrase).basis} />}
+        <GlobeLabel anchorRef={pickedHomeDistance} accent label={formatDistance(exactDistanceKm(HOME.coordinates, picked.coordinates))} detail={playfulDistance(exactDistanceKm(HOME.coordinates, picked.coordinates), picked.phrase).text} title={playfulDistance(exactDistanceKm(HOME.coordinates, picked.coordinates), picked.phrase).basis} />
+        {visitor && !neighbour && <GlobeLabel anchorRef={pickedVisitorDistance} accent label={formatDistance(exactDistanceKm(visitor.coordinates, picked.coordinates))} detail={playfulDistance(exactDistanceKm(visitor.coordinates, picked.coordinates), picked.phrase).text} title={playfulDistance(exactDistanceKm(visitor.coordinates, picked.coordinates), picked.phrase).basis} />}
       </>}
     </div>, document.body)}
-    <p className="distance-globe__caption" title="Approximate city-to-city straight-line distance from IP, not a walking route or precise location. One step is defined as 1 meter; steps are rounded to the nearest whole step." aria-live="polite">{caption.split(/(\d[\d,]* steps)/g).map((part, index) => /\d[\d,]* steps/.test(part) ? <strong key={index}>{part}</strong> : part)}</p>
+    <p className="distance-globe__caption" data-fluid-cursor-negative-mask aria-live="polite">{caption.split(/(\d[\d,]* steps)/g).map((part, index) => /\d[\d,]* steps/.test(part) ? <strong key={index}>{part}</strong> : part)}</p>
   </section>;
 }

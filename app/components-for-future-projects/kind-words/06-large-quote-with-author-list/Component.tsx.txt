@@ -1,0 +1,9 @@
+function AuthorList() {
+  const [active, setActive] = useState(0);
+  return <Frame variant={6} rows={5}><div className="kw-editorial-head"><PreviewLabel /><span>{active + 1} / 4</span></div><div className="kw-editorial-columns">
+    <QuoteSlot active={active} count={4} reveal />
+    <div className="kw-author-list" role="group" aria-label="Choose a reference">{references.slice(0, 4).map((person, index) => <button type="button" key={person.id} aria-pressed={active === index} onClick={() => setActive(index)}>
+      <strong>{person.name}</strong><div className="kw-author-list__detail"><div><span>{person.role}</span><small>Pending approval</small></div><Portrait person={person} /></div>
+    </button>)}</div>
+  </div></Frame>;
+}

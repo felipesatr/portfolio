@@ -1,21 +1,21 @@
 // Reviewed About draft. Values and working preferences remain provisional
 // until Felipe adds personal examples. The research bank is not a skills claim.
 export const aboutValues = [
-  ["Empathy with evidence", "**Understanding what people need** and what matters to them before deciding on a solution, guides the details that make an experience **clearer, easier, and more enjoyable** to use."],
-  ["Curiosity across disciplines", "**Exploring different fields** gives me more ways to approach a problem and more questions worth asking."],
-  ["Self-awareness", "I value the act of **recognizing my assumptions** and making room for perspectives that challenge them."],
-  ["Collaboration and shared learning", "**Honest conversations and useful feedback** often lead somewhere I wouldn’t have reached alone."],
-  ["Accessibility and inclusion", "Thoughtful experiences should always consider **different abilities, devices, and situations** from the beginning."],
-  ["Continuous self-improvement", "There’s always something to build on, whether it’s a new skill or a better way to use what I already know."],
+  ["Empathy with evidence", "**Understanding** what **people need** and what **matters** to them before deciding on a solution, guides the details that make an **experience** **clearer**, **easier**, and more **enjoyable** to use."],
+  ["Curiosity across disciplines", "**Exploring different fields** gives me more ways to **approach a problem** and more questions worth asking."],
+  ["Self-awareness", "I value the act of **recognizing my assumptions** and making room for **perspectives** that **challenge** them."],
+  ["Collaboration and shared learning", "**Honest conversations** and **useful feedback** often lead somewhere I wouldn’t have reached alone."],
+  ["Accessibility and inclusion", "**Thoughtful experiences** should always consider **different abilities**, **devices**, and **situations** from the beginning."],
+  ["Continuous self-improvement", "There’s always something to **build** on, whether it’s a **new skill** or a **better way** to use what I already know."],
 ] as const;
 
 export const aboutProcess = [
-  ["Understand the context", "Get clear on who the work is for, what they need, and what the project has to achieve."],
-  ["Define the direction", "Bring the findings together, identify the problem worth solving, and agree on the priorities."],
-  ["Explore and make", "Try different approaches, then develop the most useful direction into something people can see and interact with."],
-  ["Evaluate and refine", "Gather feedback, examine what works, and return to earlier decisions when needed."],
-  ["Build", "Carry design decisions into implementation and refine how the experience behaves."],
-  ["Follow through", "Check the finished work in use and identify what could be improved next."],
+  ["Research & understand", "Exploring the subjects, context, needs, goals and constraints that will guide the project."],
+  ["Define & strategize", "Connecting the findings, clarifying the problem, and establishing priorities for a direction with purpose."],
+  ["Ideate & design", "Developing concepts and comparing alternatives that give ideas form, exploring how the experience could look, feel, and work."],
+  ["Prototype & build", "Turning designs tangible through carefully developed samples that bridge aesthetics and function."],
+  ["Test & evaluate", "Examining what works and what doesn't through practical testing and gathered feedback to ensure the solution meets all set goals."],
+  ["Learn & iterate", "Reflecting on results and refining the experience until a perfected implementation is reached."],
 ] as const;
 
 export const sweetSpots = [

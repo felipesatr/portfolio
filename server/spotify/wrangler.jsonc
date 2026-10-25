@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "felipe-portfolio-spotify",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-22",
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": { "crons": ["0 5 * * *"] },
+  "vars": { "ALLOWED_ORIGIN": "https://felipesatr.github.io" },
+  "durable_objects": { "bindings": [{ "name": "SPOTIFY_OWNER", "class_name": "SpotifyOwner" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpotifyOwner"] }],
+  "observability": { "enabled": false }
+}

@@ -1,0 +1,49 @@
+/* Shared base styles copied from app/styles/kind-words.css for future reuse. */
+.kind-words-sections { --kw-bg: var(--service-card-bg, var(--soft)); --kw-ink: var(--service-card-ink, var(--text)); --kw-muted: color-mix(in srgb, var(--kw-ink) 72%, var(--kw-bg) 28%); --kw-accent: var(--secondary, var(--primary)); --kw-active-ink: color-mix(in srgb, var(--kw-ink) 85%, var(--kw-accent) 15%); --kw-line: color-mix(in srgb, var(--kw-ink) 18%, transparent); --kw-raised: color-mix(in srgb, var(--kw-bg) 88%, var(--kw-ink) 12%); --kw-shadow: color-mix(in srgb, var(--page) 65%, transparent); min-inline-size: 0; }
+.home-page .kind-words-section { display: grid; grid-template-columns: calc(3 * var(--layout-column)) minmax(0, 1fr); align-items: start; padding: 0; margin-block: 0 calc(2 * var(--grid-row)); min-inline-size: 0; }
+.home-page .kind-words-section[hidden] { display: none; }
+.kind-words-intro { padding-inline-end: 1.5rem; min-inline-size: 0; }
+.kind-words-intro h2 { font-size: var(--type-h2); }
+.kw-frame { --kw-pad: clamp(24px, 1.7vw, 32px); position: relative; min-inline-size: 0; inline-size: 100%; block-size: var(--kw-block-size, calc(var(--kw-rows) * var(--grid-row))); padding: var(--kw-pad); border-radius: var(--radius-card); color: var(--kw-ink); background: var(--kw-bg); font-family: var(--font-body); font-size: 15px; line-height: 1.4; isolation: isolate; overflow: clip; container-type: inline-size; }
+.kw-frame :is(p, blockquote, strong, small) { color: inherit; }
+.kw-frame :is(p, blockquote) { margin: 0; max-inline-size: none; }
+.kw-frame button { cursor: pointer; font-family: inherit; }
+.kw-frame :focus-visible { outline: 2px solid var(--kw-accent); outline-offset: 4px; }
+.kw-natural { display: flex; flex-direction: column; gap: 16px; min-inline-size: 0; min-block-size: calc(var(--kw-rows) * var(--grid-row) - 2 * var(--kw-pad)); }
+.kw-unit-probe { position: absolute; block-size: var(--grid-row); inline-size: 0; visibility: hidden; pointer-events: none; }
+.kw-preview-label { display: block; color: var(--kw-muted); font-size: 10px; line-height: 1.4; letter-spacing: normal; }
+.kw-portrait { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: center; }
+.kw-author { display: flex; align-items: center; gap: var(--space-2); font-size: 14.5px; line-height: 1.4; }
+.kw-author > .kw-portrait { flex: 0 0 36px; inline-size: 36px; block-size: 36px; border-radius: 50%; }
+.kw-author > div { min-inline-size: 0; }
+.kw-author strong { display: block; font-weight: 700; }
+.kw-author span { display: block; color: var(--kw-muted); font-size: 12.5px; }
+.kw-quote-slot { position: relative; display: grid; min-inline-size: 0; font-family: var(--font-heading); font-size: 24px; font-weight: 400; line-height: 1.25; letter-spacing: normal; }
+.kw-quote-slot > blockquote { grid-area: 1 / 1; font: inherit; }
+.kw-quote-reserve { visibility: hidden; pointer-events: none; user-select: none; }
+.kw-quote-active { animation: kw-quote-in 350ms ease both; }
+.kw-quote-active--reveal { animation: none; }
+.kw-reveal-word { display: inline-block; animation: kw-word-in 600ms cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--kw-word) * 23ms); }
+@keyframes kw-quote-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes kw-word-in { from { opacity: 0; filter: blur(5px); transform: translateY(5px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+.kw-arrows { display: flex; align-items: center; gap: 8px; }
+.kw-arrows button { display: grid; place-items: center; inline-size: 32px; block-size: 32px; border: 0; border-radius: var(--radius-pill); background: var(--secondary); color: var(--secondary-ink); padding: 0; transition: transform 200ms ease, background 200ms ease; }
+.kw-arrows button:hover { background: var(--secondary-active, var(--secondary-hover)); transform: scale(1.08); }
+.kw-arrows svg { pointer-events: none; }
+.kw-stars { display: inline-flex; gap: 2px; color: var(--kw-ink); font-size: 15px; letter-spacing: 0; white-space: nowrap; }
+.kw-stars__empty { color: var(--kw-line); }
+.kw-avatars { display: flex; gap: 10px; align-items: center; }
+.kw-avatars button { position: relative; flex: 0 0 auto; inline-size: 46px; block-size: 46px; border: 0; border-radius: 50%; background: transparent; padding: 0; }
+.kw-avatars img { border-radius: 50%; opacity: 0.38; filter: grayscale(1); transition: opacity 280ms ease, filter 280ms ease, transform 280ms ease; }
+.kw-avatars button[aria-pressed="true"] img { opacity: 1; filter: grayscale(0); }
+.kw-avatars button:hover img { opacity: 0.8; }
+.kw-avatar-ring { position: absolute; inset: -4px; inline-size: calc(100% + 8px); block-size: calc(100% + 8px); overflow: visible; transform: rotate(-90deg); }
+.kw-avatar-ring circle { fill: none; stroke: var(--kw-accent); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 176; animation: kw-ring 6.5s linear infinite; }
+@keyframes kw-ring { from { stroke-dashoffset: 172; } to { stroke-dashoffset: 0; } }
+.kw-dots { display: flex; align-items: center; gap: 7px; }
+.kw-dots button { position: relative; inline-size: 5px; block-size: 5px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--kw-line); transition: width 300ms ease, background 300ms ease; }
+.kw-dots button::before { content: ""; position: absolute; inset: -8px -3px; }
+.kw-dots button[aria-pressed="true"] { inline-size: 17px; background: var(--kw-accent); }
+@media (max-width: 80rem) { .home-page .kind-words-section { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-inline: clamp(1.125rem, 5.8vw, 4.4rem); } .kind-words-intro { padding: 0; } .kw-frame { max-inline-size: 680px; block-size: auto; } }
+@media (max-width: 38rem) { .kw-frame { --kw-pad: 22px; } .kw-natural { min-block-size: 0; } }
+@media (prefers-reduced-motion: reduce) { .kw-frame *, .kw-frame *::before { animation: none !important; transition: none !important; } .kw-quote-active, .kw-reveal-word { opacity: 1; filter: none; transform: none; } .kw-avatar-ring circle { stroke-dashoffset: 0; } }

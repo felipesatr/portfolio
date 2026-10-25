@@ -13,9 +13,10 @@ export function GlobeLabel({ anchorRef, label, detail = '', accessibleLabel, tit
     measure();
     void document.fonts.ready.then(measure);
   }, [detail]);
+  const content = <><span>{label}</span>{detail && <span className="globe-label__expansion"><span ref={detailRef} className="globe-label__detail"><span aria-hidden="true">•</span><span>{detail}</span></span></span>}</>;
   return <div ref={anchorRef} className="globe-label-anchor" data-no-reveal>
-    <button ref={buttonRef} type="button" className={`distance-globe__label${accent ? ' distance-globe__label--picked button button--red' : ''}`} data-fluid-cursor-surface={!accent || undefined} data-fluid-cursor-tight data-globe-color-button={accent || undefined} aria-label={accessibleLabel ?? (detail ? `${label}: ${detail}` : label)} title={title} onClick={onClick}>
-      {accent ? <span className="liquid-button__surface"><span>{label}</span></span> : <><span>{label}</span>{detail && <span className="globe-label__expansion"><span ref={detailRef} className="globe-label__detail"><span aria-hidden="true">•</span><span>{detail}</span></span></span>}</>}
+    <button ref={buttonRef} type="button" className={`distance-globe__label${accent ? ` distance-globe__label--picked button${onClick ? ' button--red' : ' distance-globe__label--distance'}` : ''}`} data-globe-removable={onClick ? '' : undefined} data-fluid-cursor-surface={!accent || undefined} data-fluid-cursor-tight data-globe-color-button={accent || undefined} aria-label={accessibleLabel ?? (detail ? `${label}: ${detail}` : label)} title={title} onClick={onClick}>
+      {accent ? <span className="liquid-button__surface">{content}</span> : content}
     </button>
   </div>;
 }

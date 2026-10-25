@@ -2090,7 +2090,7 @@ function ExperienceList() {
           <span className="spotlight-card__glow" aria-hidden="true" />
           <span className="spotlight-card__face" aria-hidden="true" />
           <div className="experience-list__identity">
-            <span className={`experience-list__logo experience-list__logo--${item.logoVariant}`} aria-hidden="true"><img src={publicAsset(item.logo)} alt="" loading="lazy" decoding="async" /></span>
+            <span className={`experience-list__logo experience-list__logo--${item.logoVariant}`} aria-hidden="true"><img src={publicAsset(item.logo)} data-fluid-cursor-negative-mask data-fluid-cursor-image-mask={item.logoVariant === 'nmg' || item.logoVariant === 'galgo' ? 'contrast' : 'alpha'} alt="" loading="lazy" decoding="async" /></span>
             <div className="experience-list__identity-copy">
               <p className="experience-list__company-name">{item.company}</p>
               <p className="experience-list__role">{item.title}</p>
@@ -2104,7 +2104,7 @@ function ExperienceList() {
         <span className="spotlight-card__glow" aria-hidden="true" />
         <span className="spotlight-card__face" aria-hidden="true" />
         <div className="experience-list__identity">
-          <span className="experience-list__logo experience-list__logo--uniandes" aria-hidden="true"><img src={publicAsset("images/uniandes-logo-128.webp")} alt="" width={128} height={128} loading="lazy" decoding="async" /></span>
+          <span className="experience-list__logo experience-list__logo--uniandes" aria-hidden="true"><img src={publicAsset("images/uniandes-logo-128.webp")} data-fluid-cursor-negative-mask data-fluid-cursor-image-mask="contrast" alt="" width={128} height={128} loading="lazy" decoding="async" /></span>
           <p className="experience-list__degree">Bachelor’s degree in Design</p>
         </div>
         <p className="experience-list__contribution">Universidad de Los Andes</p>

@@ -32,11 +32,14 @@ jobs:
         run: npm ci
       - name: Check types, lint, and behavior
         run: npm run check
+      - name: Check Spotify credential isolation and OAuth behavior
+        run: npm run test:spotify
       - name: Build for project Pages URL
         run: npm run build
         env:
           PORTFOLIO_BASE_PATH: /portfolio/
           VITE_PORTFOLIO_BASE_PATH: /portfolio/
+          VITE_SPOTIFY_ENDPOINT: ${{ vars.VITE_SPOTIFY_ENDPOINT }}
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload built site

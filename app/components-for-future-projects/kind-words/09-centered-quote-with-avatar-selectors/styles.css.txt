@@ -1,0 +1,10 @@
+/* Layout 09 — Centered quote, stars, and four author avatars */
+.kw-frame--9 .kw-natural { align-items: center; justify-content: center; gap: 15px; text-align: center; }
+.kw-frame--9 .kw-preview-label { font-size: 10px; }
+.kw-frame--9 .kw-stars { font-size: 12px; }
+.kw-frame--9 .kw-quote-slot { font-size: clamp(18px, 4.5cqw, 21px); line-height: 1.35; }
+.kw-frame--9 .kw-author { justify-content: center; }
+.kw-frame--9 .kw-avatars { justify-content: center; gap: 8px; }
+.kw-frame--9 .kw-avatars button { inline-size: 32px; block-size: 32px; }
+.kw-frame--9 .kw-avatars [aria-pressed="true"] img { transform: scale(1.12); }
+@media (max-width: 38rem) { .kw-frame--9 { padding-block: 28px; } }

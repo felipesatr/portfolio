@@ -119,4 +119,12 @@ const crossing = layout.separateGlobeLabels([
   { id: 'neighbor', x: 210, y: 120, previousY: 240, width: 140, height: 28, alpha: 1 },
 ], 600, 400);
 assert.ok(crossing[1].y >= 216, 'A displaced neighbor does not switch sides through the active pill');
-console.log('PASS: location consensus, globe geometry/units/routes, collision layout, expansion ownership and stable neighboring slots.');
+const bounded = layout.separateGlobeLabels(Array.from({ length: 6 }, (_, i) => ({
+  id: `bounded-${i}`, x: 200, y: 200, width: 180, height: 28, alpha: 1, maxOffsetY: 64,
+})), 600, 400);
+assert.ok(bounded.every((box) => box.alpha === 0 || Math.abs(box.y - 200) <= 64), 'Crowded labels wait rather than drift more than 64px from their globe anchor');
+const offscreen = layout.separateGlobeLabels([
+  { id: 'offscreen', x: 200, y: -300, width: 180, height: 28, alpha: 1, maxOffsetY: 64 },
+], 600, 400);
+assert.equal(offscreen[0].alpha, 0, 'An offscreen globe label cannot stick to the viewport edge');
+console.log('PASS: location consensus, globe geometry/units/routes, collision layout, expansion ownership, bounded displacement and stable neighboring slots.');
